@@ -1,7 +1,5 @@
 import json
 import statistics
-import urllib.parse
-from datetime import datetime
 from pathlib import Path
 
 
@@ -23,16 +21,6 @@ MARKET_UNIVERSE_FS = "m:0+t:6,m:0+t:80,m:1+t:2,m:1+t:23,m:0+t:81+s:2048"
 MARKET_UNIVERSE_FIELDS = "f2,f3,f6,f12,f13,f14,f15,f18"
 MARKET_UNIVERSE_PAGE_SIZE = 10000
 LAST_BREADTH = None
-
-BIAS_ZH = {
-    "STRONG_BULLISH": "明显偏强",
-    "BULLISH": "偏强",
-    "NEUTRAL": "中性",
-    "MIXED": "分化",
-    "BEARISH": "偏弱",
-    "STRONG_BEARISH": "明显偏弱",
-    "UNKNOWN": "未知",
-}
 
 REGIME_ZH = {
     "BROAD_RISK_ON": "普涨偏强",
@@ -123,7 +111,6 @@ def _record_metrics(record):
     code = str(record.get("f12") or "")
     name = str(record.get("f14") or code)
     pct = _as_float(record.get("f3"))
-    latest = _as_float(record.get("f2"))
     amount = _as_float(record.get("f6"))
     high = _as_float(record.get("f15"))
     previous_close = _as_float(record.get("f18"))
@@ -158,11 +145,13 @@ def _summarize_market_records(records):
     up = sum(1 for x in pcts if x > 0)
     down = sum(1 for x in pcts if x < 0)
     flat = len(pcts) - up - down
+    unavailable = len(metrics) - len(usable)
     amount_raw = sum(x["amount_raw"] or 0.0 for x in metrics)
 
     return {
         "count": len(metrics),
         "change_covered_count": len(usable),
+        "unavailable_change_count": unavailable,
         "up_count": up,
         "down_count": down,
         "flat_count": flat,
@@ -181,54 +170,7 @@ def _summarize_market_records(records):
 
 
 def fetch_market_breadth(base, now):
-    params = {
-        "pn": "1",
-        "pz": str(MARKET_UNIVERSE_PAGE_SIZE),
-        "po": "1",
-        "np": "1",
-        "fltt": "2",
-        "invt": "2",
-        "fid": "f3",
-        "fs": MARKET_UNIVERSE_FS,
-        "fields": MARKET_UNIVERSE_FIELDS,
-        "_": str(int(now.timestamp() * 1000)),
-    }
-    url = "https://push2.eastmoney.com/api/qt/clist/get?" + urllib.parse.urlencode(params)
-    payload = json.loads(base.http_get(url, timeout=12, attempts=2))
-    data = payload.get("data") or {}
-    records = _normalize_diff(data.get("diff"))
-    reported_total = int(data.get("total") or len(records))
-    if not records:
-        raise RuntimeError("Eastmoney market universe returned no records")
-
-    overall = _summarize_market_records(records)
-    boards = {}
-    for board in ("main_board", "chinext", "star_market", "bse"):
-        subset = [x for x in records if _board_for(x.get("f12")) == board]
-        boards[board] = _summarize_market_records(subset)
-
-    exchanges = {}
-    for exchange in ("SH", "SZ", "BJ"):
-        subset = [x for x in records if _exchange_for(x.get("f12")) == exchange]
-        exchanges[exchange] = _summarize_market_records(subset)
-
-    coverage = len(records) / reported_total * 100.0 if reported_total else 100.0
-    return {
-        "status": "OK" if len(records) >= reported_total else "PARTIAL",
-        "source": "Eastmoney clist",
-        "snapshot_time_cst": now.strftime("%Y-%m-%d %H:%M:%S"),
-        "freshness": "LIVE" if base.in_market_window(now) else "CURRENT_SESSION",
-        "reported_total_count": reported_total,
-        "covered_count": len(records),
-        "coverage_percent": _round(coverage, 2),
-        "overall": overall,
-        "boards": boards,
-        "exchanges": exchanges,
-        "limit_statistics": {
-            "method": "approximate_by_board_price_limit_threshold",
-            "note": "ST/board thresholds are handled; IPO/special trading rules can differ, so these counts are diagnostic rather than exchange-certified.",
-        },
-    }
+    raise RuntimeError("market breadth source is not configured")
 
 
 def install(base):
@@ -244,14 +186,15 @@ def install(base):
             print(
                 "MARKET_BREADTH "
                 f"status={LAST_BREADTH['status']} coverage={LAST_BREADTH['covered_count']}/{LAST_BREADTH['reported_total_count']} "
-                f"up/down/flat={overall.get('up_count')}/{overall.get('down_count')}/{overall.get('flat_count')} "
+                f"up/down/flat/unavailable={overall.get('up_count')}/{overall.get('down_count')}/"
+                f"{overall.get('flat_count')}/{overall.get('unavailable_change_count')} "
                 f"amount_1e8={overall.get('amount_1e8')}",
                 flush=True,
             )
         except Exception as exc:
             LAST_BREADTH = {
                 "status": "ERROR",
-                "source": "Eastmoney clist",
+                "source": "market breadth source",
                 "snapshot_time_cst": now.strftime("%Y-%m-%d %H:%M:%S"),
                 "freshness": None,
                 "error": f"{type(exc).__name__}: {exc}",
@@ -293,6 +236,7 @@ def _bias(mean_pct, up_count, down_count, total_count, dispersion_pct=None):
 def _build_indices(indices):
     members = []
     values = []
+    by_name = {}
     for name in CORE_INDICES:
         item = (indices or {}).get(name) or {}
         quote = _index_quote(item)
@@ -308,6 +252,7 @@ def _build_indices(indices):
             "available": quote is not None,
         }
         members.append(member)
+        by_name[name] = member
         if pct is not None:
             values.append(pct)
 
@@ -316,6 +261,13 @@ def _build_indices(indices):
     flat = len(values) - up - down
     mean_pct = _mean(values)
     median_pct = _median(values)
+    broad_reference = _mean(
+        [
+            _as_float((by_name.get("上证指数") or {}).get("change_percent")),
+            _as_float((by_name.get("沪深300") or {}).get("change_percent")),
+            _as_float((by_name.get("深证成指") or {}).get("change_percent")),
+        ]
+    )
     dispersion = max(values) - min(values) if len(values) >= 2 else 0.0 if values else None
     coverage = len(values) / len(CORE_INDICES) * 100.0
 
@@ -326,6 +278,8 @@ def _build_indices(indices):
         "coverage_percent": _round(coverage, 2),
         "mean_change_percent": _round(mean_pct, 4),
         "median_change_percent": _round(median_pct, 4),
+        "broad_market_reference_percent": _round(broad_reference, 4),
+        "broad_market_reference_members": ["上证指数", "沪深300", "深证成指"],
         "dispersion_percent": _round(dispersion, 4),
         "up_count": up,
         "down_count": down,
@@ -409,40 +363,41 @@ def _build_groups(groups):
 
 
 def _market_regime(index_summary, breadth):
-    index_mean = _as_float(index_summary.get("mean_change_percent"))
+    market_reference = _as_float(index_summary.get("broad_market_reference_percent"))
     overall = (breadth or {}).get("overall") or {}
     up_ratio = _as_float(overall.get("up_ratio_percent"))
     down_ratio = _as_float(overall.get("down_ratio_percent"))
     score = _as_float(overall.get("breadth_score_percent"))
 
-    if index_mean is None:
-        return {"status": "UNKNOWN", "reason_codes": ["INDEX_DATA_MISSING"]}
+    if market_reference is None:
+        return {"status": "UNKNOWN", "reason_codes": ["BROAD_INDEX_DATA_MISSING"]}
     if up_ratio is None or down_ratio is None:
         return {
             "status": "UNKNOWN",
             "reason_codes": ["MARKET_BREADTH_MISSING"],
-            "index_mean_change_percent": _round(index_mean, 4),
+            "broad_market_reference_percent": _round(market_reference, 4),
         }
 
-    if index_mean >= 0.5 and up_ratio >= 60:
+    if market_reference >= 0.5 and up_ratio >= 60:
         status = "BROAD_RISK_ON"
-    elif index_mean <= -0.5 and down_ratio >= 60:
+    elif market_reference <= -0.5 and down_ratio >= 60:
         status = "BROAD_RISK_OFF"
-    elif index_mean >= 0.5 and up_ratio < 50:
+    elif market_reference >= 0.5 and up_ratio < 50:
         status = "INDEX_UP_NARROW"
-    elif index_mean <= -0.5 and down_ratio < 50:
+    elif market_reference <= -0.5 and down_ratio < 50:
         status = "INDEX_DOWN_BREADTH_RESILIENT"
-    elif abs(index_mean) <= 0.35 and abs(score or 0) <= 15:
+    elif abs(market_reference) <= 0.35 and abs(score or 0) <= 15:
         status = "BALANCED"
     else:
         status = "ROTATION_MIXED"
 
     return {
         "status": status,
-        "index_mean_change_percent": _round(index_mean, 4),
+        "broad_market_reference_percent": _round(market_reference, 4),
         "market_up_ratio_percent": _round(up_ratio, 2),
         "market_down_ratio_percent": _round(down_ratio, 2),
         "market_breadth_score_percent": _round(score, 2),
+        "breadth_estimated": bool((breadth or {}).get("estimated")),
         "reason_codes": [status],
     }
 
@@ -489,10 +444,23 @@ def _driver_attribution(stock_pct, market_pct, sector_pct, style_pct=None):
             reasons.append("SECTOR_ALSO_TRACKS_MARKET")
     elif vs_market is not None and abs(vs_market) >= 0.9 and (vs_sector is None or abs(vs_sector) >= 0.9):
         driver = "IDIOSYNCRATIC"
-        reasons.extend(["STOCK_DIVERGES_FROM_MARKET", "STOCK_DIVERGES_FROM_SECTOR"] if sector_pct is not None else ["STOCK_DIVERGES_FROM_MARKET"])
+        reasons.append("STOCK_DIVERGES_FROM_MARKET")
+        if sector_pct is not None:
+            reasons.append("STOCK_DIVERGES_FROM_SECTOR")
     else:
         driver = "MIXED"
-        reasons.append("MULTIPLE_DRIVERS_OR_WEAK_SEPARATION")
+        if vs_market is not None and abs(vs_market) >= 0.6:
+            reasons.append("STOCK_DIVERGES_FROM_MARKET")
+        if vs_sector is not None and abs(vs_sector) >= 0.6:
+            reasons.append("STOCK_DIVERGES_FROM_SECTOR")
+        if vs_sector is not None and vs_sector >= 0.6:
+            reasons.append("STOCK_OUTPERFORMS_SECTOR")
+        elif vs_sector is not None and vs_sector <= -0.6:
+            reasons.append("STOCK_UNDERPERFORMS_SECTOR")
+        if sector_vs_market is not None and abs(sector_vs_market) >= 0.6:
+            reasons.append("SECTOR_DIVERGES_FROM_MARKET")
+        if not reasons:
+            reasons.append("MULTIPLE_DRIVERS_OR_WEAK_SEPARATION")
 
     available_refs = sum(x is not None for x in (market_pct, sector_pct, style_pct))
     confidence = "HIGH" if available_refs >= 2 else ("MEDIUM" if available_refs == 1 else "LOW")
@@ -521,7 +489,7 @@ def _style_reference_for_code(code, style):
     return None, None
 
 
-def _build_targets(detail_stocks, groups, index_mean, style):
+def _build_targets(detail_stocks, groups, market_reference, style):
     group_by_target = {}
     for group_id, group in (groups or {}).items():
         target = group.get("target") or {}
@@ -533,7 +501,7 @@ def _build_targets(detail_stocks, groups, index_mean, style):
     for code, item in (detail_stocks or {}).items():
         quote = (item or {}).get("quote") or {}
         pct = _as_float(quote.get("change_percent"))
-        vs_index = pct - index_mean if pct is not None and index_mean is not None else None
+        vs_market = pct - market_reference if pct is not None and market_reference is not None else None
         group_id = None
         group_mean = None
         vs_group = None
@@ -549,16 +517,19 @@ def _build_targets(detail_stocks, groups, index_mean, style):
             "change_percent": _round(pct, 4),
             "freshness": quote.get("freshness"),
             "relative_strength": {
-                "vs_market_mean_percent": _round(vs_index, 4),
-                "relative_to_market": _relative_label(vs_index),
+                "market_reference_percent": _round(market_reference, 4),
+                "vs_market_percent": _round(vs_market, 4),
+                "relative_to_market": _relative_label(vs_market),
                 "group_id": group_id,
+                "group_reference_percent": _round(group_mean, 4),
                 "vs_group_mean_percent": _round(vs_group, 4),
                 "relative_to_group": _relative_label(vs_group),
                 "style_reference_type": style_ref_type,
+                "style_reference_percent": _round(style_ref, 4),
                 "vs_style_reference_percent": _round(pct - style_ref, 4) if pct is not None and style_ref is not None else None,
                 "relative_to_style": _relative_label(pct - style_ref) if pct is not None and style_ref is not None else "UNKNOWN",
             },
-            "driver_attribution": _driver_attribution(pct, index_mean, group_mean, style_ref),
+            "driver_attribution": _driver_attribution(pct, market_reference, group_mean, style_ref),
             "intraday_context": {
                 "bias": intraday.get("bias") or intraday.get("structure_bias"),
                 "price_vs_vwap_percent": _round(_as_float(intraday.get("price_vs_vwap_percent")), 4),
@@ -589,7 +560,7 @@ def _fmt_pct(value):
 
 
 def _summary_text(index_summary, breadth, regime, style, groups, confidence):
-    parts = [f"{REGIME_ZH.get(regime.get('status'), '市场状态未知')}"]
+    parts = [REGIME_ZH.get(regime.get("status"), "市场状态未知")]
     parts.append(
         "宽基：" + "、".join(
             f"{item['name']} {_fmt_pct(item.get('change_percent'))}"
@@ -599,10 +570,20 @@ def _summary_text(index_summary, breadth, regime, style, groups, confidence):
     )
     overall = (breadth or {}).get("overall") or {}
     if overall:
-        parts.append(
-            f"全市场上涨/下跌/平盘 {overall.get('up_count')}/{overall.get('down_count')}/{overall.get('flat_count')}，"
-            f"成交额约 {overall.get('amount_1e8')} 亿元"
+        prefix = "估算" if overall.get("estimated") else ""
+        text = (
+            f"全市场{prefix}上涨/下跌/平盘 "
+            f"{overall.get('up_count')}/{overall.get('down_count')}/{overall.get('flat_count')}"
         )
+        unavailable = overall.get("unavailable_change_count")
+        if unavailable:
+            text += f"，另有约 {unavailable} 只无涨跌数据"
+        amount = overall.get("amount_1e8")
+        if amount is not None:
+            text += f"，成交额约 {amount} 亿元"
+        elif overall.get("sample_amount_1e8") is not None:
+            text += "，全市场总成交额在样本模式下不外推"
+        parts.append(text)
     parts.append(f"风格 {style.get('status')}")
     group_parts = []
     for group in groups.values():
@@ -619,13 +600,16 @@ def build_market_environment(snapshot, breadth=None):
     style = _build_style(index_summary)
     group_summary = _build_groups(snapshot.get("groups") or {})
     regime = _market_regime(index_summary, breadth)
-    index_mean = _as_float(index_summary.get("mean_change_percent"))
-    targets = _build_targets(snapshot.get("detail_stocks") or {}, snapshot.get("groups") or {}, index_mean, style)
+    market_reference = _as_float(index_summary.get("broad_market_reference_percent"))
+    targets = _build_targets(snapshot.get("detail_stocks") or {}, snapshot.get("groups") or {}, market_reference, style)
     confidence = _confidence(index_summary, group_summary, breadth, snapshot)
 
     status = index_summary.get("status")
-    if (breadth or {}).get("status") == "ERROR" or any(x.get("status") == "ERROR" for x in group_summary.values()):
-        status = "PARTIAL" if status != "ERROR" else "ERROR"
+    breadth_status = (breadth or {}).get("status")
+    if status == "OK" and breadth_status in {"PARTIAL", "ERROR", None}:
+        status = "PARTIAL"
+    if any(x.get("status") == "ERROR" for x in group_summary.values()) and status != "ERROR":
+        status = "PARTIAL"
 
     return {
         "status": status,
@@ -640,7 +624,9 @@ def build_market_environment(snapshot, breadth=None):
             "quote_resilience_status": (snapshot.get("quote_resilience") or {}).get("status"),
             "live_price_guard_status": (snapshot.get("live_price_guard") or {}).get("status"),
             "market_window": snapshot.get("market_window"),
-            "breadth_status": (breadth or {}).get("status"),
+            "breadth_status": breadth_status,
+            "breadth_estimated": bool((breadth or {}).get("estimated")),
+            "breadth_sample_coverage_percent": ((breadth or {}).get("sampling") or {}).get("sample_coverage_percent"),
         },
         "summary": _summary_text(index_summary, breadth, regime, style, group_summary, confidence),
     }
@@ -654,13 +640,13 @@ def finalize_snapshot(snapshot_path):
     data.setdefault("features", {})["market_environment"] = "v1"
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
-    env = data["market_environment"]
-    breadth = env.get("breadth") or {}
+    result = data["market_environment"]
+    breadth = result.get("breadth") or {}
     print(
         "MARKET_ENVIRONMENT "
-        f"status={env['status']} confidence={env['confidence']} regime={env['regime']['status']} "
-        f"index_coverage={env['indices']['covered_count']}/{env['indices']['expected_count']} "
-        f"breadth={breadth.get('status')} style={env['style']['status']}",
+        f"status={result['status']} confidence={result['confidence']} regime={result['regime']['status']} "
+        f"index_coverage={result['indices']['covered_count']}/{result['indices']['expected_count']} "
+        f"breadth={breadth.get('status')} estimated={breadth.get('estimated')} style={result['style']['status']}",
         flush=True,
     )
     print("SNAPSHOT_SCHEMA_UPGRADED schema_version=9 feature=market_environment:v1", flush=True)
