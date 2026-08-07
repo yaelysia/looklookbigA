@@ -9,6 +9,7 @@ on:
       - ".github/workflows/reusable-selftest.yml"
       - ".github/workflows/pre-merge-security-gate.yml"
       - ".github/workflows/v1-smoke.yml"
+      - "requirements-event-facts.txt"
       - "scripts/realtime_quotes_watchlist.py"
       - "scripts/realtime_quotes_watchlist_runner.py"
       - "scripts/intraday_metrics.py"
@@ -48,6 +49,9 @@ jobs:
 
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Install pinned event-fact parser
+        run: python3 -m pip install --disable-pip-version-check --no-deps --require-hashes -r requirements-event-facts.txt
 
       - name: Checkout persistent market history
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
