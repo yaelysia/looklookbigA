@@ -1,0 +1,147 @@
+name: Realtime A-share Quotes
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/realtime-quotes.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  fetch-quotes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - name: Fetch realtime A-share quotes
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import time
+          import urllib.parse
+          import urllib.request
+          from datetime import datetime, timezone, timedelta
+
+          CST = timezone(timedelta(hours=8))
+
+          stocks = [
+              ("002558", "0.002558", "sz002558", "巨人网络"),
+              ("600795", "1.600795", "sh600795", "国电电力"),
+          ]
+
+          indices = [
+              ("上证指数", "1.000001"),
+              ("深证成指", "0.399001"),
+              ("创业板指", "0.399006"),
+          ]
+
+          fields = "f43,f44,f45,f46,f47,f48,f57,f58,f60,f71,f86,f169,f170,f171"
+
+          def http_get(url, timeout=12):
+              req = urllib.request.Request(
+                  url,
+                  headers={
+                      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/150 Safari/537.36",
+                      "Accept": "application/json,text/plain,*/*",
+                      "Referer": "https://quote.eastmoney.com/",
+                      "Cache-Control": "no-cache",
+                      "Pragma": "no-cache",
+                  },
+              )
+              with urllib.request.urlopen(req, timeout=timeout) as resp:
+                  return resp.read().decode("utf-8", errors="replace")
+
+          def eastmoney(secid):
+              params = {
+                  "secid": secid,
+                  "fields": fields,
+                  "invt": "2",
+                  "fltt": "2",
+                  "_": str(int(time.time() * 1000)),
+              }
+              url = "https://push2.eastmoney.com/api/qt/stock/get?" + urllib.parse.urlencode(params)
+              return json.loads(http_get(url)).get("data")
+
+          def tencent_minutes(code):
+              params = {
+                  "code": code,
+                  "_t": str(int(time.time() * 1000)),
+              }
+              url = "https://web.ifzq.gtimg.cn/appstock/app/minute/query?" + urllib.parse.urlencode(params)
+              obj = json.loads(http_get(url))
+              node = obj.get("data", {}).get(code, {})
+              data = node.get("data", {})
+              date = data.get("date")
+              rows = data.get("data") or []
+              return date, rows
+
+          def fmt_market_time(ts):
+              try:
+                  return datetime.fromtimestamp(float(ts), CST).strftime("%Y-%m-%d %H:%M:%S")
+              except Exception:
+                  return str(ts)
+
+          now = datetime.now(CST)
+          print("=" * 78)
+          print("REALTIME A-SHARE SNAPSHOT")
+          print("runner_time_cst:", now.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3])
+          print("cache_buster_ms:", int(time.time() * 1000))
+          print("=" * 78)
+
+          for code, secid, tcode, fallback_name in stocks:
+              print(f"\n### {fallback_name} {code}")
+              try:
+                  d = eastmoney(secid)
+                  if not d:
+                      raise RuntimeError("Eastmoney returned no data")
+                  print("source_latest: Eastmoney")
+                  print("name:", d.get("f58") or fallback_name)
+                  print("latest:", d.get("f43"))
+                  print("open:", d.get("f46"))
+                  print("high:", d.get("f44"))
+                  print("low:", d.get("f45"))
+                  print("prev_close:", d.get("f60"))
+                  print("avg:", d.get("f71"))
+                  print("change:", d.get("f169"))
+                  print("change_pct:", d.get("f170"))
+                  print("amplitude_pct:", d.get("f171"))
+                  print("volume_raw:", d.get("f47"))
+                  print("amount_raw:", d.get("f48"))
+                  print("market_time_cst:", fmt_market_time(d.get("f86")))
+              except Exception as e:
+                  print("Eastmoney ERROR:", repr(e))
+
+              try:
+                  date, rows = tencent_minutes(tcode)
+                  print("source_minutes: Tencent")
+                  print("minute_date:", date)
+                  print("minute_count:", len(rows))
+                  if rows:
+                      print("first_15_minutes:")
+                      for row in rows[:15]:
+                          print("  ", row)
+                      print("last_20_minutes:")
+                      for row in rows[-20:]:
+                          print("  ", row)
+              except Exception as e:
+                  print("Tencent minute ERROR:", repr(e))
+
+          print("\n### Major indices")
+          for name, secid in indices:
+              try:
+                  d = eastmoney(secid)
+                  if not d:
+                      raise RuntimeError("no data")
+                  print(
+                      f"{name}: latest={d.get('f43')} change_pct={d.get('f170')} "
+                      f"open={d.get('f46')} high={d.get('f44')} low={d.get('f45')} "
+                      f"market_time_cst={fmt_market_time(d.get('f86'))}"
+                  )
+              except Exception as e:
+                  print(f"{name} ERROR: {e!r}")
+
+          print("\nDONE")
+          PY
