@@ -1,3 +1,9 @@
+import {
+  ABUSE_PROTECTION_POLICY,
+  checkRequestLimit,
+  getCachedQuote,
+} from "./abuse-protection.js";
+
 const STOCKS = [
   {
     code: "002558",
@@ -86,41 +92,44 @@ function formatAmount(value) {
 }
 
 async function fetchQuote(stock) {
-  const upstreamUrl = new URL(WORKING_QUOTE_WORKER);
-  upstreamUrl.searchParams.set("code", stock.code);
+  return getCachedQuote(stock.code, async () => {
+    const upstreamUrl = new URL(WORKING_QUOTE_WORKER);
+    upstreamUrl.searchParams.set("code", stock.code);
 
-  // 每次生成不同的上游URL，防止命中旧缓存
-  upstreamUrl.searchParams.set("_", Date.now().toString());
+    // 每次真正访问上游时生成不同URL，避免命中不可控的旧行情缓存。
+    // Worker自身只做2秒短缓存，用于合并突发重复请求。
+    upstreamUrl.searchParams.set("_", Date.now().toString());
 
-  const response = await fetch(upstreamUrl.toString(), {
-    method: "GET",
-    headers: {
-      Accept: "application/json, text/plain, */*",
-      Referer: "https://quote.eastmoney.com/",
-    },
+    const response = await fetch(upstreamUrl.toString(), {
+      method: "GET",
+      headers: {
+        Accept: "application/json, text/plain, */*",
+        Referer: "https://quote.eastmoney.com/",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(
+        `${stock.code}上游请求失败，状态码：${response.status}`,
+      );
+    }
+
+    let payload;
+
+    try {
+      payload = await response.json();
+    } catch {
+      throw new Error(`${stock.code}上游没有返回有效JSON`);
+    }
+
+    const quote = payload?.quote;
+
+    if (!quote) {
+      throw new Error(`${stock.code}没有获得行情数据`);
+    }
+
+    return quote;
   });
-
-  if (!response.ok) {
-    throw new Error(
-      `${stock.code}上游请求失败，状态码：${response.status}`,
-    );
-  }
-
-  let payload;
-
-  try {
-    payload = await response.json();
-  } catch {
-    throw new Error(`${stock.code}上游没有返回有效JSON`);
-  }
-
-  const quote = payload?.quote;
-
-  if (!quote) {
-    throw new Error(`${stock.code}没有获得行情数据`);
-  }
-
-  return quote;
 }
 
 function renderQuoteCard(quote) {
@@ -363,7 +372,7 @@ function renderHtml(quotes) {
 
     <div class="description">
       A股实时行情查询，当前支持巨人网络（002558）和国电电力（600795）。
-      页面由服务器生成，每次访问都会重新获取最新行情。<br>
+      页面由服务器生成；短时间内的重复访问会复用最多2秒的服务端行情结果，避免重复请求上游。<br>
       数据源：东方财富｜服务器生成时间：
       ${escapeHtml(formatChinaTime())}
     </div>
@@ -372,20 +381,59 @@ function renderHtml(quotes) {
 
     <div class="footer">
       页面由Cloudflare Worker服务器端生成，不依赖浏览器执行JavaScript。
-      每次请求都会重新查询上游行情。
+      浏览器端不缓存行情；服务器仅做极短TTL去重并对异常高频访问返回429。
     </div>
   </main>
 </body>
 </html>`;
 }
 
-function jsonResponse(data, status = 200) {
+function rateLimitHeaders(rateLimit) {
+  if (!rateLimit) {
+    return {};
+  }
+
+  return {
+    "X-RateLimit-Limit": String(rateLimit.limit),
+    "X-RateLimit-Remaining": String(rateLimit.remaining),
+  };
+}
+
+function jsonResponse(data, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(data, null, 2), {
     status,
     headers: {
       ...NO_CACHE_HEADERS,
       "Content-Type": "application/json; charset=utf-8",
       "Access-Control-Allow-Origin": "*",
+      ...extraHeaders,
+    },
+  });
+}
+
+function rateLimitedResponse(requestUrl, rateLimit) {
+  const headers = {
+    ...rateLimitHeaders(rateLimit),
+    "Retry-After": String(rateLimit.retryAfterSeconds),
+  };
+
+  if (requestUrl.pathname === "/quote") {
+    return jsonResponse(
+      {
+        error: "Rate limit exceeded",
+        retryAfterSeconds: rateLimit.retryAfterSeconds,
+      },
+      429,
+      headers,
+    );
+  }
+
+  return new Response("Too Many Requests", {
+    status: 429,
+    headers: {
+      ...NO_CACHE_HEADERS,
+      "Content-Type": "text/plain; charset=utf-8",
+      ...headers,
     },
   });
 }
@@ -393,6 +441,13 @@ function jsonResponse(data, status = 200) {
 export default {
   async fetch(request) {
     const requestUrl = new URL(request.url);
+    const protectedRoute =
+      requestUrl.pathname === "/" || requestUrl.pathname === "/quote";
+    const rateLimit = protectedRoute ? checkRequestLimit(request) : null;
+
+    if (rateLimit && !rateLimit.allowed) {
+      return rateLimitedResponse(requestUrl, rateLimit);
+    }
 
     try {
       // 保留原来的单只股票JSON接口
@@ -408,16 +463,24 @@ export default {
               supportedCodes: STOCKS.map((item) => item.code),
             },
             400,
+            rateLimitHeaders(rateLimit),
           );
         }
 
         const quote = await fetchQuote(stock);
 
-        return jsonResponse({
-          source: "Eastmoney",
-          fetchedAt: new Date().toISOString(),
-          quote,
-        });
+        return jsonResponse(
+          {
+            source: "Eastmoney",
+            fetchedAt: new Date().toISOString(),
+            quote,
+            abuseProtection: {
+              serverQuoteCacheTtlMs: ABUSE_PROTECTION_POLICY.quoteCacheTtlMs,
+            },
+          },
+          200,
+          rateLimitHeaders(rateLimit),
+        );
       }
 
       // 固定根地址：直接返回服务器生成的HTML
@@ -433,6 +496,7 @@ export default {
           headers: {
             ...NO_CACHE_HEADERS,
             "Content-Type": "text/html; charset=utf-8",
+            ...rateLimitHeaders(rateLimit),
           },
         });
       }
@@ -466,6 +530,7 @@ export default {
         headers: {
           ...NO_CACHE_HEADERS,
           "Content-Type": "text/html; charset=utf-8",
+          ...rateLimitHeaders(rateLimit),
         },
       });
     }
