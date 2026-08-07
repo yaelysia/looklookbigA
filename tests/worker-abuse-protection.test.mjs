@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
@@ -16,39 +17,51 @@ function request(path = "/quote", ip = "203.0.113.10") {
   });
 }
 
-test("public quote limiter returns 429 boundary state after burst limit", () => {
-  resetAbuseProtectionForTests();
-  const now = 1_000_000;
-  const req = request();
+function fakeRateLimiter(results) {
+  const calls = [];
+  let index = 0;
+  return {
+    calls,
+    async limit({ key }) {
+      calls.push(key);
+      const success = results[Math.min(index, results.length - 1)];
+      index += 1;
+      return { success };
+    },
+  };
+}
 
-  for (let i = 0; i < ABUSE_PROTECTION_POLICY.rateLimitMaxRequests; i += 1) {
-    const result = checkRequestLimit(req, now);
-    assert.equal(result.allowed, true);
-  }
+test("Cloudflare rate-limit binding is keyed by client and route", async () => {
+  const limiter = fakeRateLimiter([true, false]);
+  const req = request("/quote", "203.0.113.10");
 
-  const blocked = checkRequestLimit(req, now);
+  const allowed = await checkRequestLimit(req, limiter);
+  const blocked = await checkRequestLimit(req, limiter);
+
+  assert.equal(allowed.allowed, true);
+  assert.equal(allowed.unavailable, false);
   assert.equal(blocked.allowed, false);
-  assert.equal(blocked.remaining, 0);
+  assert.equal(blocked.unavailable, false);
   assert.equal(blocked.retryAfterSeconds, 60);
-
-  const reset = checkRequestLimit(
-    req,
-    now + ABUSE_PROTECTION_POLICY.rateLimitWindowMs + 1,
-  );
-  assert.equal(reset.allowed, true);
+  assert.deepEqual(limiter.calls, [
+    "203.0.113.10:/quote",
+    "203.0.113.10:/quote",
+  ]);
 });
 
-test("rate counters are isolated by route and client", () => {
-  resetAbuseProtectionForTests();
-  const now = 2_000_000;
+test("rate limiter fails closed when binding is unavailable", async () => {
+  const result = await checkRequestLimit(request(), null);
+  assert.equal(result.allowed, false);
+  assert.equal(result.unavailable, true);
+  assert.equal(result.retryAfterSeconds, 60);
+});
 
-  const quoteA = checkRequestLimit(request("/quote", "203.0.113.10"), now);
-  const rootA = checkRequestLimit(request("/", "203.0.113.10"), now);
-  const quoteB = checkRequestLimit(request("/quote", "203.0.113.11"), now);
-
-  assert.equal(quoteA.remaining, ABUSE_PROTECTION_POLICY.rateLimitMaxRequests - 1);
-  assert.equal(rootA.remaining, ABUSE_PROTECTION_POLICY.rateLimitMaxRequests - 1);
-  assert.equal(quoteB.remaining, ABUSE_PROTECTION_POLICY.rateLimitMaxRequests - 1);
+test("Vite worker config declares the managed rate-limit binding", () => {
+  const text = readFileSync("vite.config.ts", "utf8");
+  assert.match(text, /ratelimits\s*:/);
+  assert.match(text, /name:\s*"PUBLIC_QUOTE_RATE_LIMITER"/);
+  assert.match(text, /limit:\s*60/);
+  assert.match(text, /period:\s*60/);
 });
 
 test("short quote cache coalesces concurrent and immediate duplicate loads", async () => {
@@ -71,6 +84,10 @@ test("short quote cache coalesces concurrent and immediate duplicate loads", asy
   assert.deepEqual(third, first);
   assert.equal(loads, 1);
   assert.equal(ABUSE_PROTECTION_POLICY.quoteCacheTtlMs, 2_000);
+  assert.equal(
+    ABUSE_PROTECTION_POLICY.rateLimitBackend,
+    "Cloudflare Rate Limiting binding",
+  );
 });
 
 test("failed upstream loads are not cached", async () => {
