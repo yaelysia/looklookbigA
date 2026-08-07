@@ -62,6 +62,19 @@ jobs:
           fetch-depth: 1
           persist-credentials: false
 
+      - name: Validate watchlist configuration
+        shell: bash
+        env:
+          CONFIG_JSON: ${{ inputs.config_json }}
+          CONFIG_PATH: ${{ inputs.config_path }}
+        run: |
+          python3 .engine/scripts/reusable_input_guard.py \
+            --caller-root .caller \
+            --config-path "$CONFIG_PATH" \
+            --config-json "$CONFIG_JSON" \
+            --engine-default .engine/config/quote_watchlist.json \
+            --output .engine/config/quote_watchlist.json
+
       - name: Restore reusable daily-K cache
         if: ${{ inputs.enable_history_cache }}
         id: history-cache
@@ -71,43 +84,6 @@ jobs:
           key: looklookbigA-${{ runner.os }}-${{ github.repository_id }}-${{ inputs.cache_namespace }}-${{ github.run_id }}
           restore-keys: |
             looklookbigA-${{ runner.os }}-${{ github.repository_id }}-${{ inputs.cache_namespace }}-
-
-      - name: Resolve watchlist configuration
-        shell: bash
-        env:
-          CONFIG_JSON: ${{ inputs.config_json }}
-          CONFIG_PATH: ${{ inputs.config_path }}
-        run: |
-          python3 - <<'PY'
-          import json
-          import os
-          import shutil
-          from pathlib import Path
-
-          engine_config = Path('.engine/config/quote_watchlist.json')
-          inline = os.environ.get('CONFIG_JSON', '').strip()
-          caller_path = Path('.caller') / os.environ.get('CONFIG_PATH', 'config/quote_watchlist.json')
-
-          if inline:
-              parsed = json.loads(inline)
-              engine_config.parent.mkdir(parents=True, exist_ok=True)
-              engine_config.write_text(json.dumps(parsed, ensure_ascii=False, indent=2), encoding='utf-8')
-              print('REUSABLE_CONFIG source=inline-json')
-          elif caller_path.is_file():
-              engine_config.parent.mkdir(parents=True, exist_ok=True)
-              shutil.copy2(caller_path, engine_config)
-              print(f'REUSABLE_CONFIG source=caller path={caller_path}')
-          else:
-              print('REUSABLE_CONFIG source=engine-default')
-
-          parsed = json.loads(engine_config.read_text(encoding='utf-8'))
-          print(
-              'REUSABLE_CONFIG_READY '
-              f"detail={len(parsed.get('detail_codes', []))} "
-              f"light={len(parsed.get('light_codes', []))} "
-              f"groups={len(parsed.get('groups', {}) or {})}"
-          )
-          PY
 
       - name: Generate realtime snapshot
         shell: bash
