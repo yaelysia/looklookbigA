@@ -33,6 +33,24 @@ def test_reusable_defaults_to_called_workflow_sha():
     print("PASS reusable_engine_binds_to_job_workflow_sha")
 
 
+def test_pre_merge_gate_is_unconditional_for_protected_branches():
+    path = WORKFLOW_DIR / "pre-merge-security-gate.yml"
+    text = path.read_text(encoding="utf-8")
+
+    assert "pull_request:" in text
+    assert "- master" in text
+    assert "- v1" in text
+    assert "paths:" not in text
+    assert "pre-merge-security-gate:" in text
+    assert "name: pre-merge-security-gate" in text
+    assert "needs:" in text
+    assert "- safety-tests" in text
+    assert "- reusable-smoke" in text
+    assert 'if: ${{ always() }}' in text
+    assert "enable_history_cache: false" in text
+    print("PASS unconditional_pre_merge_security_gate")
+
+
 def test_tencent_transport_never_downgrades_to_http():
     seen = []
     original = quote_resilience.urllib.request.urlopen
@@ -67,6 +85,7 @@ def main():
     tests = [
         test_actions_are_sha_pinned,
         test_reusable_defaults_to_called_workflow_sha,
+        test_pre_merge_gate_is_unconditional_for_protected_branches,
         test_tencent_transport_never_downgrades_to_http,
     ]
     for test in tests:
