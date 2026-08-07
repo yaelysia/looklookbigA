@@ -66,11 +66,22 @@ def _container_metadata(events, fetched_at):
     )
 
 
+def _decorate_event(event, fetched_at):
+    event["metadata"] = _event_metadata(event, fetched_at)
+    event["provenance"] = {
+        "type": "OFFICIAL_DISCLOSURE",
+        "provider": event.get("source"),
+        "document_id": event.get("source_document_id"),
+        "document_url": event.get("source_url"),
+        "fact_extraction": (event.get("facts") or {}).get("extraction_scope"),
+        "classification": "deterministic_title_rules_v1",
+    }
+
+
 def finalize_snapshot(snapshot_path):
     path = Path(snapshot_path)
     data = json.loads(path.read_text(encoding="utf-8"))
     fetched_at = data_metadata._iso_cst_from_runner(data)
-    seen = set()
 
     for code, item in (data.get("detail_stocks") or {}).items():
         events = item.get("events")
@@ -84,23 +95,15 @@ def finalize_snapshot(snapshot_path):
             "cache_path": (events.get("cache") or {}).get("path"),
             "lookback_days": events.get("lookback_days"),
         }
+        # latest/recent/upcoming are separate objects after snapshot JSON is
+        # reloaded between finalizers. Decorate every representation so an LLM
+        # sees the same metadata regardless of which view it reads.
         for bucket in ("latest", "recent", "upcoming"):
             value = events.get(bucket)
             values = value if isinstance(value, list) else [value] if isinstance(value, dict) else []
             for event in values:
-                event_id = event.get("event_id")
-                if not event_id or event_id in seen:
-                    continue
-                seen.add(event_id)
-                event["metadata"] = _event_metadata(event, fetched_at)
-                event["provenance"] = {
-                    "type": "OFFICIAL_DISCLOSURE",
-                    "provider": event.get("source"),
-                    "document_id": event.get("source_document_id"),
-                    "document_url": event.get("source_url"),
-                    "fact_extraction": (event.get("facts") or {}).get("extraction_scope"),
-                    "classification": "deterministic_title_rules_v1",
-                }
+                if isinstance(event, dict) and event.get("event_id"):
+                    _decorate_event(event, fetched_at)
 
     summary = data.get("company_events")
     if isinstance(summary, dict):
