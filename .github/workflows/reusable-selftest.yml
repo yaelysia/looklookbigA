@@ -15,6 +15,7 @@ on:
       - "scripts/history_store.py"
       - "scripts/live_price_guard.py"
       - "scripts/quote_resilience.py"
+      - "scripts/transport_security.py"
       - "scripts/config_security.py"
       - "scripts/prepare_reusable_config.py"
       - "scripts/test_live_price_guard.py"
