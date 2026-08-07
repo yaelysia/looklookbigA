@@ -9,6 +9,7 @@ on:
       - "docs/DATA_PROVENANCE.md"
       - "docs/CHANGES_SINCE_PREVIOUS.md"
       - "docs/COMPANY_EVENTS.md"
+      - "requirements-event-facts.txt"
       - "vite.config.ts"
       - ".github/workflows/reusable-a-share-quotes.yml"
       - ".github/workflows/reusable-selftest.yml"
@@ -41,6 +42,7 @@ on:
       - "scripts/test_changes_since_previous.py"
       - "scripts/test_company_events.py"
       - "scripts/test_company_event_facts.py"
+      - "scripts/test_company_event_metadata.py"
       - "scripts/test_config_security.py"
       - "scripts/test_workflow_security.py"
       - "worker/index.ts"
@@ -74,6 +76,8 @@ jobs:
         run: python3 scripts/test_company_events.py
       - name: Run official PDF event fact tests
         run: python3 scripts/test_company_event_facts.py
+      - name: Run company event metadata tests
+        run: python3 scripts/test_company_event_metadata.py
       - name: Run public quote abuse-protection tests
         run: node --test tests/worker-abuse-protection.test.mjs
 
