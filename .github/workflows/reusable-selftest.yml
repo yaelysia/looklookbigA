@@ -29,6 +29,7 @@ on:
       - "scripts/data_metadata.py"
       - "scripts/changes_since_previous.py"
       - "scripts/company_events.py"
+      - "scripts/company_event_facts.py"
       - "scripts/company_event_metadata.py"
       - "scripts/transport_security.py"
       - "scripts/config_security.py"
@@ -39,6 +40,7 @@ on:
       - "scripts/test_data_metadata.py"
       - "scripts/test_changes_since_previous.py"
       - "scripts/test_company_events.py"
+      - "scripts/test_company_event_facts.py"
       - "scripts/test_config_security.py"
       - "scripts/test_workflow_security.py"
       - "worker/index.ts"
@@ -70,6 +72,8 @@ jobs:
         run: python3 scripts/test_changes_since_previous.py
       - name: Run structured company event tests
         run: python3 scripts/test_company_events.py
+      - name: Run official PDF event fact tests
+        run: python3 scripts/test_company_event_facts.py
       - name: Run public quote abuse-protection tests
         run: node --test tests/worker-abuse-protection.test.mjs
 
