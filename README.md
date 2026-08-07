@@ -15,24 +15,51 @@
 ## 当前能力
 
 - **重点标的实时行情**：现价、开高低、均价、涨跌幅、成交额和时间戳。
+- **行情源容错**：重点股和主要指数使用东方财富主源 + 腾讯备用源；主源失败或不可用时自动降级，并记录每个 provider 的状态及双源价格一致性。
 - **当日分钟线**：腾讯分钟行情，生成 5 / 15 / 30 分钟动量、VWAP 位置、日内位置和量能强度。
 - **板块对照组**：支持轻量批量行情与组内均值、中位数、涨跌家数、领涨领跌、目标股相对强弱。
 - **20～60 日日 K 背景**：MA5 / MA10 / MA20 / MA60、ATR14、5 / 10 / 20 日高低、20 日收益、日线 swing high / low。
 - **支撑 / 压力上下文**：综合均线、昨日 OHLC、近期高低和日线拐点生成可解释的候选价位及共振强度。
 - **历史缓存**：主仓库使用独立 `market-data` 分支持久保存日 K 和轻量盘中快照；同一交易阶段重复分析时日 K 可以做到 0 次网络请求。
 - **实时价格保险**：历史缓存、历史快照和日 K 数据被禁止进入 `quote.latest`。盘中实时 quote 失效时，只允许降级到仍然 LIVE 的当日分钟价；两者都不新鲜时当前价直接标记不可用。
-- **结构化产物**：每次运行生成 `snapshot.json`，当前 schema 会包含实时行情、分时结构、日 K 背景、板块对照、历史缓存状态和实时价格保护状态。
+- **结构化产物**：每次运行生成 `snapshot.json`，当前 schema 会包含实时行情、分时结构、日 K 背景、板块对照、历史缓存状态、行情源容错状态和实时价格保护状态。
 
 ## 数据源与实时性
 
 目前主要使用：
 
-- 东方财富：重点标的最新 quote、指数等实时行情；
-- 腾讯：分钟线、批量轻量行情、前复权日 K；
+- 东方财富：重点标的最新 quote、指数等实时行情的主源；
+- 腾讯：重点股 / 指数备用 quote、分钟线、批量轻量行情、前复权日 K；
 - 东方财富日 K：腾讯日 K 不可用时的备用源；
 - `market-data` / GitHub Actions cache：**仅用于历史日 K 与历史分析上下文，不作为实时现价来源**。
 
 盘中数据会携带 `market_time_cst`、`lag_seconds` 和 `freshness`。重点标的还会生成 `current_price_guard`，用于明确记录本次当前价来自实时 quote、实时分钟线，还是已经不可用。
+
+### 行情源容错规则
+
+重点股票和主要指数的 quote 会同时尝试东方财富与腾讯，优先使用可用的东方财富结果；东方财富失败、缺失或新鲜度不满足要求时，自动使用腾讯。两个来源都可用时会计算价格差异：
+
+```text
+Eastmoney + Tencent
+        ↓
+provider health / freshness
+        ↓
+price consensus
+        ↓
+selected quote
+```
+
+每个重点 quote 会带有 `quote.resilience`，其中包括：
+
+- `selected_source` / `fallback_used` / `selection_reason`；
+- 东方财富、腾讯各自的 `status`、`freshness`、时间戳、延迟和错误；
+- `consensus.status` 与双源价格差。
+
+当前一致性分级为：价格差不超过 `0.08%` 视为 `CONSISTENT`，超过 `0.35%` 视为 `DIVERGENT`。如果两个实时源都可用但明显分歧，会优先选择时间更新的一侧并保留告警信息。
+
+轻量板块股票默认一次性走腾讯批量行情，批量接口漏失的股票会回退到双源单股查询。分钟线目前仍保留腾讯单源：在没有验证第二个分钟源与现有累计成交量 / 成交额语义完全一致前，不为了形式上的“双源”引入可能错误的分时数据；这一状态会写入 `quote_resilience.minute_data_policy`。
+
+行情源容错与 `live_price_guard` 是两层不同机制：前者负责“尽量取得正确实时数据”，后者负责“任何 stale / history / cache 数据都不能冒充当前价”。
 
 ## 默认观察列表
 
@@ -169,16 +196,18 @@ snapshot.json
 ├─ groups
 ├─ indices
 ├─ history
-└─ live_price_guard
+├─ live_price_guard
+└─ quote_resilience
 ```
 
 其中：
 
-- `quote`：联网获得的当前行情；
+- `quote`：联网获得的当前行情，并包含该 quote 的双源容错 / 一致性元数据；
 - `intraday`：分时结构和最终可用当前价来源；
 - `daily_context`：历史日 K 指标及支撑压力；
 - `history`：缓存状态和历史快照位置；
-- `live_price_guard`：实时价格源安全检查。
+- `live_price_guard`：实时价格源安全检查；
+- `quote_resilience`：本次运行的 provider 使用情况、fallback 数量、双源分歧和不可用统计。
 
 历史日 K 的 `source` 可能显示为 `History cache (...)`，这是正常的；**只有 `daily_context` 可以使用历史缓存，`quote.latest` 不允许使用任何 History / cache / snapshot 来源。**
 
@@ -227,7 +256,13 @@ history/
 .github/workflows/reusable-selftest.yml
 ```
 
-修改 reusable workflow、核心行情脚本或实时价格保护逻辑时，会调用 reusable workflow 本身跑一组小型观察列表，避免出现“主仓库能跑、外部调用方式已经坏掉”的情况。
+修改 reusable workflow、核心行情脚本、行情源容错或实时价格保护逻辑时，会同时运行：
+
+- live-price guard 故障注入测试；
+- quote resilience 主源失败 / stale / 双源分歧等选择测试；
+- reusable workflow 小型观察列表实跑。
+
+这样可以避免“主仓库能跑，但外部调用或 fallback 已经坏掉”的情况。
 
 稳定分支还有独立：
 
@@ -235,7 +270,7 @@ history/
 .github/workflows/v1-smoke.yml
 ```
 
-每次 `v1` 晋升后会再次执行 live-price guard 故障注入测试和 reusable workflow 冒烟测试。稳定版发布/维护规则见：
+每次 `v1` 晋升后会再次执行两类 safety tests 和 reusable workflow 冒烟测试。稳定版发布/维护规则见：
 
 ```text
 docs/STABLE_V1.md
@@ -272,6 +307,8 @@ config/quote_watchlist.json          默认观察列表 / 板块分组
 docs/STABLE_V1.md                    稳定分支发布与兼容策略
 scripts/realtime_quotes_watchlist.py 基础实时行情与分钟数据
 scripts/realtime_quotes_watchlist_runner.py 组合运行入口
+scripts/quote_resilience.py          东方财富 / 腾讯 quote 双源容错与一致性检查
+scripts/test_quote_resilience.py     行情源故障与分歧选择测试
 scripts/intraday_metrics.py          分时结构指标
 scripts/daily_k_context.py           日 K 背景与支撑压力
 scripts/history_store.py             历史缓存与盘中快照
@@ -282,4 +319,4 @@ worker/                              Cloudflare Worker / Web 行情逻辑
 
 ## 说明
 
-该项目输出的是行情数据与分析上下文，不构成投资建议。实时行情接口可能出现上游限流、502、数据延迟等情况，因此程序会保留数据源、时间戳、新鲜度和降级状态，供上层分析判断是否可以使用。
+该项目输出的是行情数据与分析上下文，不构成投资建议。实时行情接口可能出现上游限流、502、数据延迟等情况，因此程序会保留数据源、时间戳、新鲜度、双源一致性和降级状态，供上层分析判断是否可以使用。

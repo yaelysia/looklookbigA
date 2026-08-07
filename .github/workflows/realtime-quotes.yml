@@ -12,6 +12,8 @@ on:
       - "scripts/daily_k_context.py"
       - "scripts/history_store.py"
       - "scripts/live_price_guard.py"
+      - "scripts/quote_resilience.py"
+      - "scripts/test_quote_resilience.py"
       - "config/quote_watchlist.json"
 
 permissions:
