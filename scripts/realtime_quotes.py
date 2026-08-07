@@ -3,13 +3,14 @@ import math
 import time
 import urllib.parse
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
 CST = timezone(timedelta(hours=8))
 SNAPSHOT_PATH = Path("snapshot.json")
 
-# Detailed intraday tracking stays intentionally small.  The full A-share
+# Detailed intraday tracking stays intentionally small. The full A-share
 # universe is fetched separately as a lightweight snapshot below.
 DETAIL_CODES = ["002558", "600795"]
 
@@ -49,7 +50,6 @@ def http_get(url: str, timeout: int = 12, attempts: int = 3) -> str:
 
 def infer_market(code: str, eastmoney_market=None) -> str:
     code = str(code).zfill(6)
-    # Beijing Stock Exchange codes include legacy 4/8 prefixes and newer 920xxx.
     if code.startswith(("4", "8", "92")):
         return "BJ"
     if eastmoney_market == 1 or code.startswith(("5", "6", "9")):
@@ -63,7 +63,6 @@ def infer_identifiers(code: str):
     if market == "SH":
         return market, f"1.{code}", f"sh{code}"
     if market == "BJ":
-        # Eastmoney uses market id 0 for BSE securities in its quote endpoints.
         return market, f"0.{code}", f"bj{code}"
     return market, f"0.{code}", f"sz{code}"
 
@@ -81,7 +80,7 @@ def eastmoney(secid: str):
     return payload.get("data")
 
 
-def eastmoney_all_a_page(page: int, page_size: int = 500):
+def eastmoney_all_a_page(page: int, page_size: int = 100):
     params = {
         "pn": str(page),
         "pz": str(page_size),
@@ -92,7 +91,7 @@ def eastmoney_all_a_page(page: int, page_size: int = 500):
         "fid": "f3",
         "fs": ALL_A_FS,
         "fields": ALL_A_FIELDS,
-        "_": str(int(time.time() * 1000)),
+        "_": f"{int(time.time() * 1000)}{page:03d}",
     }
     url = "https://push2.eastmoney.com/api/qt/clist/get?" + urllib.parse.urlencode(params)
     payload = json.loads(http_get(url, timeout=15))
@@ -194,6 +193,39 @@ def print_minute_block(label, items):
         )
 
 
+def normalize_all_a_rows(rows, stocks, max_quote_dt):
+    if isinstance(rows, dict):
+        rows = list(rows.values())
+    for row in rows or []:
+        code = str(row.get("f12") or "").zfill(6)
+        if len(code) != 6 or not code.isdigit():
+            continue
+        em_market = row.get("f13")
+        quote_dt = market_dt(row.get("f124"))
+        if quote_dt and (max_quote_dt is None or quote_dt > max_quote_dt):
+            max_quote_dt = quote_dt
+        stocks[code] = {
+            "code": code,
+            "name": row.get("f14"),
+            "market": infer_market(code, em_market),
+            "latest": clean_num(row.get("f2")),
+            "change_percent": clean_num(row.get("f3")),
+            "change": clean_num(row.get("f4")),
+            "volume_raw": clean_num(row.get("f5")),
+            "amount_raw": clean_num(row.get("f6")),
+            "amplitude_percent": clean_num(row.get("f7")),
+            "turnover_percent": clean_num(row.get("f8")),
+            "high": clean_num(row.get("f15")),
+            "low": clean_num(row.get("f16")),
+            "open": clean_num(row.get("f17")),
+            "previous_close": clean_num(row.get("f18")),
+            "total_market_cap": clean_num(row.get("f20")),
+            "float_market_cap": clean_num(row.get("f21")),
+            "market_time_cst": fmt_dt(quote_dt),
+        }
+    return max_quote_dt
+
+
 def fetch_all_a_light(now: datetime):
     result = {
         "source": "Eastmoney clist",
@@ -201,6 +233,7 @@ def fetch_all_a_light(now: datetime):
         "count": 0,
         "reported_total": None,
         "pages": 0,
+        "failed_pages": [],
         "market_time_cst": None,
         "lag_seconds": None,
         "freshness": "UNKNOWN",
@@ -208,67 +241,56 @@ def fetch_all_a_light(now: datetime):
         "error": None,
     }
     try:
-        page_size = 500
-        page = 1
-        reported_total = None
-        max_quote_dt = None
+        page_size = 100
+        first = eastmoney_all_a_page(1, page_size)
+        reported_total = int(first.get("total") or 0)
+        total_pages = max(1, math.ceil(reported_total / page_size))
         stocks = {}
+        max_quote_dt = normalize_all_a_rows(first.get("diff") or [], stocks, None)
+        page_results = {1: first}
+        failed_pages = []
 
-        while True:
-            data = eastmoney_all_a_page(page, page_size)
-            if reported_total is None:
-                reported_total = int(data.get("total") or 0)
-            rows = data.get("diff") or []
-            if isinstance(rows, dict):
-                rows = list(rows.values())
-            if not rows:
-                break
+        def fetch_page(page):
+            return page, eastmoney_all_a_page(page, page_size)
 
-            for row in rows:
-                code = str(row.get("f12") or "").zfill(6)
-                if len(code) != 6 or not code.isdigit():
-                    continue
-                em_market = row.get("f13")
-                quote_dt = market_dt(row.get("f124"))
-                if quote_dt and (max_quote_dt is None or quote_dt > max_quote_dt):
-                    max_quote_dt = quote_dt
-                stocks[code] = {
-                    "code": code,
-                    "name": row.get("f14"),
-                    "market": infer_market(code, em_market),
-                    "latest": clean_num(row.get("f2")),
-                    "change_percent": clean_num(row.get("f3")),
-                    "change": clean_num(row.get("f4")),
-                    "volume_raw": clean_num(row.get("f5")),
-                    "amount_raw": clean_num(row.get("f6")),
-                    "amplitude_percent": clean_num(row.get("f7")),
-                    "turnover_percent": clean_num(row.get("f8")),
-                    "high": clean_num(row.get("f15")),
-                    "low": clean_num(row.get("f16")),
-                    "open": clean_num(row.get("f17")),
-                    "previous_close": clean_num(row.get("f18")),
-                    "total_market_cap": clean_num(row.get("f20")),
-                    "float_market_cap": clean_num(row.get("f21")),
-                    "market_time_cst": fmt_dt(quote_dt),
-                }
+        if total_pages > 1:
+            with ThreadPoolExecutor(max_workers=8) as pool:
+                futures = [pool.submit(fetch_page, p) for p in range(2, total_pages + 1)]
+                for future in as_completed(futures):
+                    try:
+                        page, data = future.result()
+                        page_results[page] = data
+                    except Exception as exc:
+                        page = getattr(future, "page", None)
+                        failed_pages.append((page, str(exc)))
 
-            result["pages"] = page
-            if reported_total and len(stocks) >= reported_total:
-                break
-            if len(rows) < page_size:
-                break
-            if reported_total and page >= math.ceil(reported_total / page_size):
-                break
-            page += 1
-            if page > 20:
-                raise RuntimeError("all-A pagination safety limit exceeded")
+        # Futures do not reliably expose the page number on failure, so derive
+        # missing pages and retry them sequentially once more.
+        missing_pages = [p for p in range(2, total_pages + 1) if p not in page_results]
+        final_failed = []
+        for page in missing_pages:
+            try:
+                page_results[page] = eastmoney_all_a_page(page, page_size)
+            except Exception as exc:
+                final_failed.append({"page": page, "error": f"{type(exc).__name__}: {exc}"})
+
+        for page in sorted(page_results):
+            if page == 1:
+                continue
+            max_quote_dt = normalize_all_a_rows(
+                page_results[page].get("diff") or [], stocks, max_quote_dt
+            )
 
         state, lag = freshness(now, max_quote_dt)
+        complete = reported_total > 0 and len(stocks) >= reported_total and not final_failed
+        status = "OK" if complete else ("PARTIAL" if stocks else "EMPTY")
         result.update(
             {
-                "status": "OK" if stocks else "EMPTY",
+                "status": status,
                 "count": len(stocks),
                 "reported_total": reported_total,
+                "pages": len(page_results),
+                "failed_pages": final_failed,
                 "market_time_cst": fmt_dt(max_quote_dt),
                 "lag_seconds": lag,
                 "freshness": state,
@@ -276,8 +298,8 @@ def fetch_all_a_light(now: datetime):
             }
         )
         print(
-            f"ALL_A status={result['status']} count={result['count']} "
-            f"reported_total={reported_total} pages={result['pages']} "
+            f"ALL_A status={status} count={len(stocks)} reported_total={reported_total} "
+            f"pages={len(page_results)}/{total_pages} failed={len(final_failed)} "
             f"time={result['market_time_cst']} lag={lag}s freshness={state}"
         )
     except Exception as exc:
