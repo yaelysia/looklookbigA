@@ -6,12 +6,16 @@ from datetime import datetime
 import daily_k_context
 import history_store
 import intraday_metrics
+import live_price_guard
 import realtime_quotes_watchlist as base
 
 
-# Install persistent daily-K caching first, then detailed-stock enrichers.
+# Install persistent daily-K caching first. Intraday metrics are built next,
+# then the live-price guard sanitizes current-price inputs before daily-context
+# support/resistance calculations consume them.
 history_store.install_daily_k_cache(base, daily_k_context)
 intraday_metrics.install(base)
+live_price_guard.install(base)
 daily_k_context.install(base)
 
 
@@ -166,3 +170,4 @@ if __name__ == "__main__":
     intraday_metrics.finalize_snapshot(base.SNAPSHOT_PATH)
     daily_k_context.finalize_snapshot(base.SNAPSHOT_PATH)
     history_store.finalize_snapshot(base.SNAPSHOT_PATH)
+    live_price_guard.finalize_snapshot(base.SNAPSHOT_PATH)

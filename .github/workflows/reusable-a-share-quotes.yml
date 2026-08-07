@@ -1,0 +1,134 @@
+name: Reusable A-share Quote Snapshot
+
+on:
+  workflow_call:
+    inputs:
+      source_ref:
+        description: Ref of yaelysia/looklookbigA to execute (master, v1, tag, or commit SHA).
+        required: false
+        type: string
+        default: master
+      config_path:
+        description: Quote watchlist JSON path in the caller repository. Used when config_json is empty.
+        required: false
+        type: string
+        default: config/quote_watchlist.json
+      config_json:
+        description: Optional inline quote_watchlist JSON. Takes precedence over config_path.
+        required: false
+        type: string
+        default: ""
+      enable_history_cache:
+        description: Reuse daily-K history through the caller repository's GitHub Actions cache.
+        required: false
+        type: boolean
+        default: true
+      cache_namespace:
+        description: Namespace for reusable daily-K cache isolation.
+        required: false
+        type: string
+        default: default
+      snapshot_artifact_name:
+        description: Artifact name containing snapshot.json.
+        required: false
+        type: string
+        default: realtime-snapshot
+      retention_days:
+        description: Snapshot artifact retention days.
+        required: false
+        type: number
+        default: 1
+
+jobs:
+  quotes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout caller repository
+        uses: actions/checkout@v4
+        with:
+          path: .caller
+          persist-credentials: false
+
+      - name: Checkout looklookbigA engine
+        uses: actions/checkout@v4
+        with:
+          repository: yaelysia/looklookbigA
+          ref: ${{ inputs.source_ref }}
+          path: .engine
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Restore reusable daily-K cache
+        if: ${{ inputs.enable_history_cache }}
+        id: history-cache
+        uses: actions/cache/restore@v4
+        with:
+          path: .engine/.reusable-history/history
+          key: looklookbigA-${{ runner.os }}-${{ github.repository_id }}-${{ inputs.cache_namespace }}-${{ github.run_id }}
+          restore-keys: |
+            looklookbigA-${{ runner.os }}-${{ github.repository_id }}-${{ inputs.cache_namespace }}-
+
+      - name: Resolve watchlist configuration
+        shell: bash
+        env:
+          CONFIG_JSON: ${{ inputs.config_json }}
+          CONFIG_PATH: ${{ inputs.config_path }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import shutil
+          from pathlib import Path
+
+          engine_config = Path('.engine/config/quote_watchlist.json')
+          inline = os.environ.get('CONFIG_JSON', '').strip()
+          caller_path = Path('.caller') / os.environ.get('CONFIG_PATH', 'config/quote_watchlist.json')
+
+          if inline:
+              parsed = json.loads(inline)
+              engine_config.parent.mkdir(parents=True, exist_ok=True)
+              engine_config.write_text(json.dumps(parsed, ensure_ascii=False, indent=2), encoding='utf-8')
+              print('REUSABLE_CONFIG source=inline-json')
+          elif caller_path.is_file():
+              engine_config.parent.mkdir(parents=True, exist_ok=True)
+              shutil.copy2(caller_path, engine_config)
+              print(f'REUSABLE_CONFIG source=caller path={caller_path}')
+          else:
+              print('REUSABLE_CONFIG source=engine-default')
+
+          parsed = json.loads(engine_config.read_text(encoding='utf-8'))
+          print(
+              'REUSABLE_CONFIG_READY '
+              f"detail={len(parsed.get('detail_codes', []))} "
+              f"light={len(parsed.get('light_codes', []))} "
+              f"groups={len(parsed.get('groups', {}) or {})}"
+          )
+          PY
+
+      - name: Generate realtime snapshot
+        shell: bash
+        env:
+          MARKET_HISTORY_DIR: ${{ github.workspace }}/.engine/.reusable-history/history
+        run: |
+          cd .engine
+          python3 scripts/realtime_quotes_watchlist_runner.py
+
+      - name: Upload realtime snapshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ inputs.snapshot_artifact_name }}
+          path: .engine/snapshot.json
+          if-no-files-found: error
+          retention-days: ${{ inputs.retention_days }}
+
+      - name: Save reusable daily-K cache
+        if: ${{ inputs.enable_history_cache && success() }}
+        uses: actions/cache/save@v4
+        with:
+          path: .engine/.reusable-history/history
+          key: looklookbigA-${{ runner.os }}-${{ github.repository_id }}-${{ inputs.cache_namespace }}-${{ github.run_id }}

@@ -1,0 +1,36 @@
+name: Reusable Workflow Selftest
+
+on:
+  push:
+    paths:
+      - ".github/workflows/reusable-a-share-quotes.yml"
+      - ".github/workflows/reusable-selftest.yml"
+      - "scripts/realtime_quotes_watchlist.py"
+      - "scripts/realtime_quotes_watchlist_runner.py"
+      - "scripts/intraday_metrics.py"
+      - "scripts/daily_k_context.py"
+      - "scripts/history_store.py"
+      - "scripts/live_price_guard.py"
+      - "scripts/test_live_price_guard.py"
+
+permissions:
+  contents: read
+
+jobs:
+  live-price-guard-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run live-price guard fault-injection tests
+        run: python3 scripts/test_live_price_guard.py
+
+  reusable-selftest:
+    uses: ./.github/workflows/reusable-a-share-quotes.yml
+    with:
+      source_ref: ${{ github.sha }}
+      enable_history_cache: true
+      cache_namespace: reusable-selftest
+      snapshot_artifact_name: reusable-selftest-snapshot
+      retention_days: 1
+      config_json: >-
+        {"detail_codes":["002558"],"light_codes":["002555","002517"],"groups":{"game_smoke":{"label":"游戏股复用工作流冒烟测试","target_code":"002558","member_codes":["002555","002517"]}},"max_total_codes":10}
