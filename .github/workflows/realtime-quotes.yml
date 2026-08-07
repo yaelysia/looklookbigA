@@ -20,6 +20,8 @@ on:
       - "scripts/market_breadth_source.py"
       - "scripts/data_metadata.py"
       - "scripts/changes_since_previous.py"
+      - "scripts/company_events.py"
+      - "scripts/company_event_metadata.py"
       - "scripts/transport_security.py"
       - "scripts/config_security.py"
       - "scripts/prepare_reusable_config.py"
@@ -29,6 +31,7 @@ on:
       - "scripts/test_market_environment.py"
       - "scripts/test_data_metadata.py"
       - "scripts/test_changes_since_previous.py"
+      - "scripts/test_company_events.py"
       - "config/quote_watchlist.json"
 
 permissions:
