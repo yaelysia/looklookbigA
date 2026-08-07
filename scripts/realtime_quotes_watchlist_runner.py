@@ -1,4 +1,5 @@
 import changes_since_previous
+import company_event_metadata
 import company_events
 import config_security
 import daily_k_context
@@ -46,6 +47,7 @@ if __name__ == "__main__":
     # Official company events are collected before delta analysis so stable
     # event IDs participate in new/updated/closed changes_since_previous.
     company_events.finalize_snapshot(base.SNAPSHOT_PATH, runtime_config)
+    company_event_metadata.finalize_snapshot(base.SNAPSHOT_PATH)
     changes_since_previous.finalize_snapshot(base.SNAPSHOT_PATH)
     data_metadata.finalize_snapshot(base.SNAPSHOT_PATH)
 
