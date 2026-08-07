@@ -5,12 +5,16 @@ import intraday_metrics
 import live_price_guard
 import quote_resilience
 import realtime_quotes_watchlist as base
+import transport_security
 
 
 # Treat the watchlist as untrusted input before any network work starts.
 # This applies equally to the repository default config and reusable-workflow
 # caller/inline configs.
 config_security.install(base)
+
+# Never downgrade a failed HTTPS market-data request to plaintext HTTP.
+transport_security.install_quote_resilience(quote_resilience)
 
 # Install the quote-source resilience layer before downstream enrichers.
 # Current quotes/indices can fall back from Eastmoney to Tencent, while the
