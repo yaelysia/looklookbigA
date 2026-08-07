@@ -13,16 +13,19 @@ jobs:
   safety-tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Run live-price guard fault-injection tests
         run: python3 scripts/test_live_price_guard.py
       - name: Run quote resilience selection tests
         run: python3 scripts/test_quote_resilience.py
+      - name: Run watchlist/config boundary tests
+        run: python3 scripts/test_config_security.py
+      - name: Run workflow supply-chain and transport tests
+        run: python3 scripts/test_workflow_security.py
 
   stable-reusable-smoke:
     uses: ./.github/workflows/reusable-a-share-quotes.yml
     with:
-      source_ref: ${{ github.sha }}
       enable_history_cache: false
       snapshot_artifact_name: v1-smoke-snapshot
       retention_days: 1
