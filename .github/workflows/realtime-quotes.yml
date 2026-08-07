@@ -7,6 +7,7 @@ on:
       - ".github/workflows/realtime-quotes.yml"
       - "scripts/realtime_quotes_watchlist.py"
       - "scripts/realtime_quotes_watchlist_runner.py"
+      - "scripts/intraday_metrics.py"
       - "config/quote_watchlist.json"
 
 permissions:
