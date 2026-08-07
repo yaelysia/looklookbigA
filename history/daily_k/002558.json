@@ -3,9 +3,9 @@
   "code": "002558",
   "adjustment": "qfq",
   "source": "Tencent qfq",
-  "validation_key": "2026-08-07:intraday",
-  "validation_mode": "BOOTSTRAP_FULL",
-  "updated_at_cst": "2026-08-07 14:04:03",
+  "validation_key": "2026-08-07:closed",
+  "validation_mode": "INCREMENTAL_VALIDATION",
+  "updated_at_cst": "2026-08-07 15:30:05",
   "bar_count": 120,
   "latest_bar_date": "2026-08-07",
   "errors": [],
@@ -1203,10 +1203,10 @@
     {
       "date": "2026-08-07",
       "open": 29.52,
-      "close": 29.1,
+      "close": 29.34,
       "high": 29.6,
       "low": 28.6,
-      "volume": 758572.0,
+      "volume": 906604.0,
       "amount": null,
       "source": "Tencent qfq"
     }
