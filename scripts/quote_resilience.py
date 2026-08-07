@@ -12,6 +12,10 @@ PRIMARY_SOURCE = "Eastmoney"
 FALLBACK_SOURCE = "Tencent"
 CONSISTENT_GAP_PERCENT = 0.08
 DIVERGENT_GAP_PERCENT = 0.35
+TRANSPORT_POLICY = {
+    "https_only": True,
+    "plaintext_http_fallback": False,
+}
 
 INDEX_TENCENT_CODES = {
     "上证指数": "sh000001",
@@ -49,27 +53,18 @@ def _parse_tencent_time(base, value):
 
 def _fetch_tencent_text(tcodes):
     joined = ",".join(tcodes)
-    urls = [
-        "https://qt.gtimg.cn/q=" + joined,
-        "http://qt.gtimg.cn/q=" + joined,
-    ]
-    last_error = None
-    for url in urls:
-        req = urllib.request.Request(
-            url,
-            headers={
-                "User-Agent": "Mozilla/5.0",
-                "Referer": "https://gu.qq.com/",
-                "Cache-Control": "no-cache",
-                "Pragma": "no-cache",
-            },
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=7) as resp:
-                return resp.read().decode("gbk", errors="replace")
-        except Exception as exc:
-            last_error = exc
-    raise last_error or RuntimeError("Tencent quote returned no response")
+    url = "https://qt.gtimg.cn/q=" + joined
+    req = urllib.request.Request(
+        url,
+        headers={
+            "User-Agent": "Mozilla/5.0",
+            "Referer": "https://gu.qq.com/",
+            "Cache-Control": "no-cache",
+            "Pragma": "no-cache",
+        },
+    )
+    with urllib.request.urlopen(req, timeout=7) as resp:
+        return resp.read().decode("gbk", errors="replace")
 
 
 def _parse_tencent_records(base, now, text):
