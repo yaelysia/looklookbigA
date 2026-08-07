@@ -3,7 +3,13 @@ import time
 import urllib.request
 from datetime import datetime
 
+import intraday_metrics
 import realtime_quotes_watchlist as base
+
+
+# Install the detailed-stock intraday metric collector before the main runner
+# starts fetching quotes/minutes.
+intraday_metrics.install(base)
 
 
 def as_float(value):
@@ -154,3 +160,4 @@ base.fetch_light_group = fetch_light_group_reliable
 
 if __name__ == "__main__":
     base.main()
+    intraday_metrics.finalize_snapshot(base.SNAPSHOT_PATH)
