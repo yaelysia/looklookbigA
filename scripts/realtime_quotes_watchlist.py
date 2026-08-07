@@ -1,4 +1,5 @@
 import json
+import statistics
 import time
 import urllib.parse
 import urllib.request
@@ -63,7 +64,8 @@ def infer_identifiers(code: str):
 def load_config():
     raw = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
     detail = []
-    light = []
+    standalone_light = []
+    groups = {}
 
     for code in raw.get("detail_codes", []):
         c = normalize_code(code)
@@ -72,18 +74,53 @@ def load_config():
 
     for code in raw.get("light_codes", []):
         c = normalize_code(code)
-        if c not in detail and c not in light:
-            light.append(c)
+        if c not in detail and c not in standalone_light:
+            standalone_light.append(c)
+
+    group_light_candidates = []
+    raw_groups = raw.get("groups", {}) or {}
+    if not isinstance(raw_groups, dict):
+        raise ValueError("groups must be an object")
+
+    for group_id, group in raw_groups.items():
+        if not isinstance(group, dict):
+            raise ValueError(f"group {group_id!r} must be an object")
+        target = normalize_code(group["target_code"]) if group.get("target_code") else None
+        members = []
+        for code in group.get("member_codes", []):
+            c = normalize_code(code)
+            if c != target and c not in members:
+                members.append(c)
+            if c not in detail and c not in group_light_candidates:
+                group_light_candidates.append(c)
+        if target and target not in detail and target not in group_light_candidates:
+            group_light_candidates.append(target)
+        groups[group_id] = {
+            "label": str(group.get("label") or group_id),
+            "target_code": target,
+            "member_codes": members,
+        }
+
+    light = []
+    for code in group_light_candidates + standalone_light:
+        if code not in detail and code not in light:
+            light.append(code)
 
     max_total = int(raw.get("max_total_codes", 50))
     max_total = max(1, min(max_total, 100))
     allowed_light = max(0, max_total - len(detail))
     truncated = len(light) > allowed_light
     light = light[:allowed_light]
+    active_codes = set(detail) | set(light)
+
+    for group in groups.values():
+        group["active_member_codes"] = [c for c in group["member_codes"] if c in active_codes]
+        group["members_truncated"] = len(group["active_member_codes"]) != len(group["member_codes"])
 
     return {
         "detail_codes": detail,
         "light_codes": light,
+        "groups": groups,
         "max_total_codes": max_total,
         "truncated": truncated,
     }
@@ -262,7 +299,7 @@ def fetch_light_group(now: datetime, codes):
     results = {}
     if not codes:
         return results
-    workers = min(6, len(codes))
+    workers = min(4, len(codes))
     with ThreadPoolExecutor(max_workers=workers) as pool:
         future_map = {pool.submit(light_payload, now, code): code for code in codes}
         for future in as_completed(future_map):
@@ -302,16 +339,101 @@ def fetch_indices(now: datetime):
     return out
 
 
+def safe_float(value):
+    try:
+        if value is None:
+            return None
+        return float(value)
+    except (TypeError, ValueError):
+        return None
+
+
+def quote_for_code(code, detail, light):
+    item = detail.get(code)
+    if item and item.get("quote"):
+        return item["quote"]
+    item = light.get(code)
+    if item and item.get("quote"):
+        return item["quote"]
+    return None
+
+
+def build_group_summary(group_id, group, detail, light):
+    members = []
+    for code in group.get("active_member_codes", []):
+        q = quote_for_code(code, detail, light)
+        pct = safe_float(q.get("change_percent")) if q else None
+        members.append(
+            {
+                "code": code,
+                "name": q.get("name") if q else None,
+                "latest": q.get("latest") if q else None,
+                "change_percent": pct,
+                "amount_1e8": q.get("amount_1e8") if q else None,
+                "freshness": q.get("freshness") if q else None,
+                "available": pct is not None,
+            }
+        )
+
+    available = [m for m in members if m["available"]]
+    pcts = [m["change_percent"] for m in available]
+    mean_pct = statistics.fmean(pcts) if pcts else None
+    median_pct = statistics.median(pcts) if pcts else None
+    up = sum(1 for x in pcts if x > 0)
+    down = sum(1 for x in pcts if x < 0)
+    flat = len(pcts) - up - down
+
+    target_code = group.get("target_code")
+    target_quote = quote_for_code(target_code, detail, light) if target_code else None
+    target_pct = safe_float(target_quote.get("change_percent")) if target_quote else None
+
+    ranked = sorted(available, key=lambda x: x["change_percent"], reverse=True)
+    requested_count = len(group.get("member_codes", []))
+    coverage = len(available) / requested_count if requested_count else 1.0
+    status = "OK" if coverage >= 0.75 else ("PARTIAL" if available else "ERROR")
+
+    return {
+        "group_id": group_id,
+        "label": group.get("label") or group_id,
+        "status": status,
+        "target": {
+            "code": target_code,
+            "name": target_quote.get("name") if target_quote else None,
+            "change_percent": target_pct,
+        },
+        "requested_member_count": requested_count,
+        "active_member_count": len(group.get("active_member_codes", [])),
+        "covered_member_count": len(available),
+        "coverage_percent": round(coverage * 100, 2),
+        "mean_change_percent": round(mean_pct, 4) if mean_pct is not None else None,
+        "median_change_percent": round(median_pct, 4) if median_pct is not None else None,
+        "up_count": up,
+        "down_count": down,
+        "flat_count": flat,
+        "breadth_score_percent": round((up - down) / len(pcts) * 100, 2) if pcts else None,
+        "target_vs_peer_mean_percent": round(target_pct - mean_pct, 4)
+        if target_pct is not None and mean_pct is not None
+        else None,
+        "target_vs_peer_median_percent": round(target_pct - median_pct, 4)
+        if target_pct is not None and median_pct is not None
+        else None,
+        "leaders": ranked[:3],
+        "laggards": list(reversed(ranked[-3:])),
+        "members": members,
+    }
+
+
 def main():
     started = time.monotonic()
     now = datetime.now(CST)
     cfg = load_config()
 
-    print("REALTIME_A_SHARE_WATCHLIST_V1", flush=True)
+    print("REALTIME_A_SHARE_WATCHLIST_V2", flush=True)
     print(
         f"RUNNER_CST {now.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]} "
         f"detail={len(cfg['detail_codes'])} light={len(cfg['light_codes'])} "
-        f"max_total={cfg['max_total_codes']} truncated={cfg['truncated']}",
+        f"groups={len(cfg['groups'])} max_total={cfg['max_total_codes']} "
+        f"truncated={cfg['truncated']}",
         flush=True,
     )
 
@@ -334,10 +456,25 @@ def main():
     ok_light = sum(1 for x in light.values() if x.get("status") == "OK")
     print(f"LIGHT status={ok_light}/{len(light)} ok", flush=True)
 
+    groups = {}
+    for group_id, group in cfg["groups"].items():
+        summary = build_group_summary(group_id, group, detail, light)
+        groups[group_id] = summary
+        target = summary["target"]
+        print(
+            f"GROUP {group_id} status={summary['status']} "
+            f"coverage={summary['covered_member_count']}/{summary['requested_member_count']} "
+            f"mean={summary['mean_change_percent']}% median={summary['median_change_percent']}% "
+            f"up/down/flat={summary['up_count']}/{summary['down_count']}/{summary['flat_count']} "
+            f"target={target['code']}:{target['change_percent']}% "
+            f"vs_mean={summary['target_vs_peer_mean_percent']}%",
+            flush=True,
+        )
+
     indices = fetch_indices(now)
 
     snapshot = {
-        "schema_version": 2,
+        "schema_version": 3,
         "runner_time_cst": now.strftime("%Y-%m-%d %H:%M:%S.%f")[:-3],
         "runner_time_utc": now.astimezone(timezone.utc).isoformat(),
         "market_window": in_market_window(now),
@@ -345,6 +482,7 @@ def main():
         "config": cfg,
         "detail_stocks": detail,
         "light_stocks": light,
+        "groups": groups,
         "indices": indices,
     }
 
