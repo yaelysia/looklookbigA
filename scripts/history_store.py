@@ -249,19 +249,27 @@ def _load_manifest():
     return _load_json(_history_root() / "manifest.json") or {}
 
 
-def _update_manifest(data, archive_rel):
+def _build_manifest(data, archive_rel):
     root = _history_root()
     daily_dir = root / "daily_k"
     codes = sorted(p.stem for p in daily_dir.glob("*.json")) if daily_dir.exists() else []
-    manifest = {
+    return {
         "schema_version": 2,
         "latest_snapshot": str(archive_rel).replace("\\", "/"),
         "latest_runner_time_cst": data.get("runner_time_cst"),
         "daily_k_codes": codes,
         "updated_at_cst": data.get("runner_time_cst"),
     }
-    _write_json(root / "manifest.json", manifest)
-    return manifest
+
+
+def _safe_history_path(rel):
+    root = _history_root().resolve()
+    candidate = (root / str(rel)).resolve()
+    try:
+        candidate.relative_to(root)
+    except ValueError as exc:
+        raise ValueError("history snapshot path escapes history root") from exc
+    return candidate
 
 
 def load_previous_snapshot(data):
@@ -269,9 +277,13 @@ def load_previous_snapshot(data):
     rel = history.get("previous_snapshot_path")
     if not rel:
         return None, None
-    path = _history_root() / rel
-    previous = _load_json(path)
-    return previous, str(rel) if previous else (None, None)
+    try:
+        previous = _load_json(_safe_history_path(rel))
+    except Exception:
+        return None, None
+    if isinstance(previous, dict):
+        return previous, str(rel)
+    return None, None
 
 
 def finalize_snapshot(snapshot_path):
@@ -310,17 +322,20 @@ def finalize_snapshot(snapshot_path):
 
 
 def archive_final_snapshot(snapshot_path):
-    """Archive the fully enriched snapshot and then advance the manifest."""
+    """Archive the fully enriched snapshot, then advance the baseline pointer."""
     path = Path(snapshot_path)
     data = json.loads(path.read_text(encoding="utf-8"))
     rel = _archive_rel(data)
     rel_text = str(rel).replace("\\", "/")
-    manifest = _update_manifest(data, rel)
+    manifest = _build_manifest(data, rel)
 
     history = data.setdefault("history", {})
     history["archive_path"] = rel_text
     history["manifest"] = manifest
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
+    # Commit order matters: a baseline pointer must never advance before the
+    # archive it points to exists.
     _write_json(_history_root() / rel, _compact_snapshot(data))
+    _write_json(_history_root() / "manifest.json", manifest)
     print(f"HISTORY_ARCHIVED archive={rel_text} schema={data.get('schema_version')}", flush=True)
