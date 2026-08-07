@@ -5,6 +5,7 @@ on:
   push:
     paths:
       - ".github/workflows/realtime-quotes.yml"
+      - ".github/workflows/v1-smoke.yml"
       - "scripts/realtime_quotes_watchlist.py"
       - "scripts/realtime_quotes_watchlist_runner.py"
       - "scripts/intraday_metrics.py"
