@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/realtime-quotes.yml"
       - "scripts/realtime_quotes_watchlist.py"
+      - "scripts/realtime_quotes_watchlist_runner.py"
       - "config/quote_watchlist.json"
 
 permissions:
@@ -21,7 +22,7 @@ jobs:
 
       - name: Fetch realtime A-share watchlist
         shell: bash
-        run: python3 scripts/realtime_quotes_watchlist.py
+        run: python3 scripts/realtime_quotes_watchlist_runner.py
 
       - name: Upload realtime snapshot
         if: always()
