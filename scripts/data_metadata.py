@@ -146,6 +146,19 @@ def _quality_from_status(status):
     return "PARTIAL"
 
 
+def _composite_quality(qualities):
+    values = [q for q in qualities if q]
+    if not values:
+        return "PARTIAL"
+    # A composite detail node can remain partially usable when one auxiliary
+    # component fails. Criticality is handled separately by _quality_summary.
+    if "FAILED" in values or "PARTIAL" in values:
+        return "PARTIAL"
+    if "DEGRADED" in values:
+        return "DEGRADED"
+    return "PASS"
+
+
 def _quote_metadata(quote, fetched_at):
     if not isinstance(quote, dict) or quote.get("latest") is None:
         return _metadata(
@@ -214,9 +227,6 @@ def _minutes_metadata(minutes, fetched_at):
     freshness = minutes.get("freshness") or "UNKNOWN"
     flags = []
     if freshness in {"CURRENT_SESSION", "LAST_SESSION"}:
-        # A completed current/last trading session is valid minute context when
-        # the market is closed. It is not a live tick stream, but it is not
-        # missing or degraded data either.
         flags.append("NOT_LIVE_NOW")
     elif freshness == "STALE":
         flags.append("STALE_MINUTE_SERIES")
@@ -306,6 +316,7 @@ def _decorate_detail(snapshot, fetched_at):
             item["minutes_metadata"] = minute_meta
 
         intraday = item.get("intraday")
+        intraday_meta = None
         if isinstance(intraday, dict):
             intraday_quality = _quality_from_status(intraday.get("status"))
             input_qualities = {quote_meta["quality"], minute_meta["quality"]}
@@ -318,12 +329,13 @@ def _decorate_detail(snapshot, fetched_at):
                 flags.append("INPUT_DATA_DEGRADED")
                 if intraday_quality == "PASS":
                     intraday_quality = "DEGRADED"
-            intraday["metadata"] = _derived_metadata(
+            intraday_meta = _derived_metadata(
                 fetched_at,
                 quality=intraday_quality,
                 data_time=minute_meta.get("data_time") or quote_meta.get("data_time"),
                 flags=flags,
             )
+            intraday["metadata"] = intraday_meta
             intraday["provenance"] = {
                 "type": "DERIVED",
                 "derived_from": [
@@ -334,8 +346,10 @@ def _decorate_detail(snapshot, fetched_at):
             }
 
         daily = item.get("daily_context")
+        daily_meta = None
         if isinstance(daily, dict):
-            daily["metadata"] = _daily_metadata(daily, fetched_at)
+            daily_meta = _daily_metadata(daily, fetched_at)
+            daily["metadata"] = daily_meta
             daily["provenance"] = {
                 "type": "DERIVED",
                 "derived_from": [f"detail_stocks.{code}.daily_context.bars_last_60"],
@@ -350,10 +364,22 @@ def _decorate_detail(snapshot, fetched_at):
                 },
             }
 
+        component_qualities = [quote_meta["quality"], minute_meta["quality"]]
+        if intraday_meta:
+            component_qualities.append(intraday_meta["quality"])
+        if daily_meta:
+            component_qualities.append(daily_meta["quality"])
+        detail_quality = _composite_quality(component_qualities)
+        detail_flags = []
+        legacy_quality = _quality_from_status(item.get("status"))
+        if legacy_quality in {"PARTIAL", "FAILED"} and QUALITY_SEVERITY[detail_quality] < QUALITY_SEVERITY[legacy_quality]:
+            detail_flags.append("FINAL_COMPONENT_QUALITY_OVERRIDES_LEGACY_STATUS")
+
         item["metadata"] = _derived_metadata(
             fetched_at,
-            quality=_quality_from_status(item.get("status")),
+            quality=detail_quality,
             data_time=quote_meta.get("data_time") or minute_meta.get("data_time"),
+            flags=detail_flags,
         )
         item["provenance"] = {
             "type": "COMPOSITE",
@@ -531,9 +557,6 @@ def _iter_metadata(node, path=""):
                 continue
             child = f"{path}.{key}" if path else str(key)
             if key.endswith("_metadata") and _is_metadata_contract(value):
-                # Missing nodes use sibling metadata (quote_metadata,
-                # minutes_metadata). Report them under the logical node path so
-                # summaries/critical rules see exactly the same data node.
                 logical_key = key[: -len("_metadata")]
                 logical_path = f"{path}.{logical_key}" if path else logical_key
                 yield logical_path, value
@@ -594,9 +617,6 @@ def _quality_summary(snapshot):
     if critical:
         overall = "FAILED"
     elif qualities.get("FAILED") or qualities.get("PARTIAL"):
-        # An isolated non-critical FAILED node is missing usable data. It must
-        # never disappear into an overall PASS; PARTIAL preserves the fact that
-        # critical realtime data can still be usable.
         overall = "PARTIAL"
     elif qualities.get("DEGRADED"):
         overall = "DEGRADED"
