@@ -4,12 +4,12 @@ on:
   workflow_call:
     inputs:
       source_ref:
-        description: Ref of yaelysia/looklookbigA to execute (master, v1, tag, or commit SHA).
+        description: Optional immutable 40-character engine commit SHA override. Empty binds to the exact commit that defines this reusable workflow.
         required: false
         type: string
-        default: master
+        default: ""
       config_path:
-        description: Quote watchlist JSON path in the caller repository. Used when config_json is empty.
+        description: Quote watchlist JSON path inside the caller repository. Used when config_json is empty.
         required: false
         type: string
         default: config/quote_watchlist.json
@@ -47,67 +47,78 @@ jobs:
       contents: read
 
     steps:
+      - name: Resolve immutable engine revision
+        id: engine-ref
+        shell: bash
+        env:
+          SOURCE_REF: ${{ inputs.source_ref }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          if [[ -n "$SOURCE_REF" ]]; then
+            if [[ ! "$SOURCE_REF" =~ ^[0-9a-fA-F]{40}$ ]]; then
+              echo "source_ref must be an immutable 40-character commit SHA when explicitly provided" >&2
+              exit 1
+            fi
+            engine_ref="${SOURCE_REF,,}"
+            mode="explicit-sha"
+          else
+            if [[ ! "$WORKFLOW_SHA" =~ ^[0-9a-fA-F]{40}$ ]]; then
+              echo "job.workflow_sha is unavailable or invalid" >&2
+              exit 1
+            fi
+            engine_ref="${WORKFLOW_SHA,,}"
+            mode="called-workflow-sha"
+          fi
+          echo "ref=$engine_ref" >> "$GITHUB_OUTPUT"
+          echo "ENGINE_REVISION mode=$mode sha=$engine_ref"
+
       - name: Checkout caller repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           path: .caller
           persist-credentials: false
 
       - name: Checkout looklookbigA engine
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           repository: yaelysia/looklookbigA
-          ref: ${{ inputs.source_ref }}
+          ref: ${{ steps.engine-ref.outputs.ref }}
           path: .engine
           fetch-depth: 1
           persist-credentials: false
 
+      - name: Verify engine revision
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ steps.engine-ref.outputs.ref }}
+        run: |
+          set -euo pipefail
+          actual="$(git -C .engine rev-parse HEAD)"
+          if [[ "$actual" != "$EXPECTED_SHA" ]]; then
+            echo "engine checkout mismatch: expected=$EXPECTED_SHA actual=$actual" >&2
+            exit 1
+          fi
+          echo "ENGINE_REVISION_VERIFIED sha=$actual"
+
       - name: Restore reusable daily-K cache
         if: ${{ inputs.enable_history_cache }}
         id: history-cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: .engine/.reusable-history/history
           key: looklookbigA-${{ runner.os }}-${{ github.repository_id }}-${{ inputs.cache_namespace }}-${{ github.run_id }}
           restore-keys: |
             looklookbigA-${{ runner.os }}-${{ github.repository_id }}-${{ inputs.cache_namespace }}-
 
-      - name: Resolve watchlist configuration
+      - name: Resolve and validate watchlist configuration
         shell: bash
         env:
           CONFIG_JSON: ${{ inputs.config_json }}
           CONFIG_PATH: ${{ inputs.config_path }}
-        run: |
-          python3 - <<'PY'
-          import json
-          import os
-          import shutil
-          from pathlib import Path
-
-          engine_config = Path('.engine/config/quote_watchlist.json')
-          inline = os.environ.get('CONFIG_JSON', '').strip()
-          caller_path = Path('.caller') / os.environ.get('CONFIG_PATH', 'config/quote_watchlist.json')
-
-          if inline:
-              parsed = json.loads(inline)
-              engine_config.parent.mkdir(parents=True, exist_ok=True)
-              engine_config.write_text(json.dumps(parsed, ensure_ascii=False, indent=2), encoding='utf-8')
-              print('REUSABLE_CONFIG source=inline-json')
-          elif caller_path.is_file():
-              engine_config.parent.mkdir(parents=True, exist_ok=True)
-              shutil.copy2(caller_path, engine_config)
-              print(f'REUSABLE_CONFIG source=caller path={caller_path}')
-          else:
-              print('REUSABLE_CONFIG source=engine-default')
-
-          parsed = json.loads(engine_config.read_text(encoding='utf-8'))
-          print(
-              'REUSABLE_CONFIG_READY '
-              f"detail={len(parsed.get('detail_codes', []))} "
-              f"light={len(parsed.get('light_codes', []))} "
-              f"groups={len(parsed.get('groups', {}) or {})}"
-          )
-          PY
+          CALLER_ROOT: ${{ github.workspace }}/.caller
+          ENGINE_CONFIG: ${{ github.workspace }}/.engine/config/quote_watchlist.json
+        run: python3 .engine/scripts/prepare_reusable_config.py
 
       - name: Generate realtime snapshot
         shell: bash
@@ -119,7 +130,7 @@ jobs:
 
       - name: Upload realtime snapshot
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: ${{ inputs.snapshot_artifact_name }}
           path: .engine/snapshot.json
@@ -128,7 +139,7 @@ jobs:
 
       - name: Save reusable daily-K cache
         if: ${{ inputs.enable_history_cache && success() }}
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: .engine/.reusable-history/history
           key: looklookbigA-${{ runner.os }}-${{ github.repository_id }}-${{ inputs.cache_namespace }}-${{ github.run_id }}
