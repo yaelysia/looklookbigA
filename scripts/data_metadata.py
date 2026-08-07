@@ -5,7 +5,6 @@ from pathlib import Path
 
 
 CST = timezone(timedelta(hours=8))
-QUALITY_SEVERITY = {"PASS": 0, "DEGRADED": 1, "PARTIAL": 2, "FAILED": 3}
 
 
 def _iso_cst_from_runner(snapshot):
@@ -135,11 +134,11 @@ def _metadata(
 
 def _quality_from_status(status):
     status = str(status or "").upper()
-    if status in {"OK", "PASS"}:
+    if status in {"OK", "PASS", "AVAILABLE"}:
         return "PASS"
     if status in {"DEGRADED", "WARNING"}:
         return "DEGRADED"
-    if status in {"PARTIAL", "NO_MINUTE_DATA", "NO_CURRENT_PRICE", "UNKNOWN"}:
+    if status in {"PARTIAL", "NO_MINUTE_DATA", "NO_CURRENT_PRICE", "UNKNOWN", "NO_BASELINE", "NO_EVENT_LAYER"}:
         return "PARTIAL"
     if status in {"ERROR", "FAILED", "VIOLATION"}:
         return "FAILED"
@@ -360,7 +359,11 @@ def _decorate_light_and_indices(snapshot, fetched_at):
         if isinstance(quote, dict):
             quote["metadata"] = meta
         if isinstance(item, dict):
-            item["metadata"] = _derived_metadata(fetched_at, quality=_quality_from_status(item.get("status")), data_time=meta.get("data_time"))
+            item["metadata"] = _derived_metadata(
+                fetched_at,
+                quality=_quality_from_status(item.get("status")),
+                data_time=meta.get("data_time"),
+            )
 
     for name, item in (snapshot.get("indices") or {}).items():
         quote = item.get("quote") if isinstance(item, dict) else None
@@ -368,7 +371,11 @@ def _decorate_light_and_indices(snapshot, fetched_at):
         if isinstance(quote, dict):
             quote["metadata"] = meta
         if isinstance(item, dict):
-            item["metadata"] = _derived_metadata(fetched_at, quality=_quality_from_status(item.get("status")), data_time=meta.get("data_time"))
+            item["metadata"] = _derived_metadata(
+                fetched_at,
+                quality=_quality_from_status(item.get("status")),
+                data_time=meta.get("data_time"),
+            )
             item["provenance"] = {"type": "COMPOSITE", "derived_from": [f"indices.{name}.quote"]}
 
 
@@ -410,7 +417,11 @@ def _decorate_system_nodes(snapshot, fetched_at):
             if quality == "PASS":
                 quality = "DEGRADED"
         guard["metadata"] = _derived_metadata(fetched_at, quality=quality, flags=flags)
-        guard["provenance"] = {"type": "DERIVED", "derived_from": ["detail_stocks.*.quote", "detail_stocks.*.minutes"], "algorithm": "live_price_guard_v1"}
+        guard["provenance"] = {
+            "type": "DERIVED",
+            "derived_from": ["detail_stocks.*.quote", "detail_stocks.*.minutes"],
+            "algorithm": "live_price_guard_v1",
+        }
 
     resilience = snapshot.get("quote_resilience")
     if isinstance(resilience, dict):
@@ -423,11 +434,19 @@ def _decorate_system_nodes(snapshot, fetched_at):
         if resilience.get("unavailable_count"):
             flags.append("UNAVAILABLE_QUOTES_PRESENT")
         resilience["metadata"] = _derived_metadata(fetched_at, quality=quality, flags=flags)
-        resilience["provenance"] = {"type": "DERIVED", "derived_from": ["detail_stocks.*.quote.resilience", "indices.*.quote.resilience", "light_stocks.*.quote.resilience"], "algorithm": "quote_resilience_summary_v1"}
+        resilience["provenance"] = {
+            "type": "DERIVED",
+            "derived_from": [
+                "detail_stocks.*.quote.resilience",
+                "indices.*.quote.resilience",
+                "light_stocks.*.quote.resilience",
+            ],
+            "algorithm": "quote_resilience_summary_v1",
+        }
 
     history = snapshot.get("history")
     if isinstance(history, dict):
-        manifest = history.get("manifest") or {}
+        manifest = history.get("manifest") or history.get("previous_manifest") or {}
         history["metadata"] = _metadata(
             "market-data branch",
             fetched_at,
@@ -464,6 +483,36 @@ def _decorate_system_nodes(snapshot, fetched_at):
             "type": "DERIVED",
             "derived_from": ["indices", "groups", "detail_stocks", "market_environment.breadth"],
             "algorithm": "market_environment_v1",
+        }
+
+    changes = snapshot.get("changes_since_previous")
+    if isinstance(changes, dict):
+        status = changes.get("status")
+        quality = _quality_from_status(status)
+        baseline = changes.get("baseline") or {}
+        flags = list(baseline.get("quality_flags") or [])
+        if status == "NO_BASELINE":
+            flags.append("NO_COMPARISON_BASELINE")
+        changes["metadata"] = _derived_metadata(
+            fetched_at,
+            quality=quality,
+            freshness="DERIVED_CURRENT",
+            flags=flags,
+            data_time=baseline.get("current_snapshot_time"),
+        )
+        changes["provenance"] = {
+            "type": "DERIVED",
+            "derived_from": [
+                "history.previous_snapshot_path",
+                "detail_stocks",
+                "groups",
+                "indices",
+                "market_environment",
+                "detail_stocks.*.events",
+            ],
+            "algorithm": "changes_since_previous_v1",
+            "baseline_snapshot_path": baseline.get("previous_snapshot_path"),
+            "interval_seconds": baseline.get("interval_seconds"),
         }
 
 
