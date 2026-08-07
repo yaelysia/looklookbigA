@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/realtime-quotes.yml"
       - "scripts/realtime_quotes.py"
+      - "scripts/realtime_quotes_fast.py"
 
 permissions:
   contents: read
@@ -20,7 +21,7 @@ jobs:
 
       - name: Fetch realtime A-share quotes
         shell: bash
-        run: python3 scripts/realtime_quotes.py
+        run: python3 scripts/realtime_quotes_fast.py
 
       - name: Upload realtime snapshot
         if: always()
