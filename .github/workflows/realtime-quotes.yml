@@ -21,6 +21,7 @@ on:
       - "scripts/data_metadata.py"
       - "scripts/changes_since_previous.py"
       - "scripts/company_events.py"
+      - "scripts/company_event_facts.py"
       - "scripts/company_event_metadata.py"
       - "scripts/transport_security.py"
       - "scripts/config_security.py"
@@ -32,6 +33,7 @@ on:
       - "scripts/test_data_metadata.py"
       - "scripts/test_changes_since_previous.py"
       - "scripts/test_company_events.py"
+      - "scripts/test_company_event_facts.py"
       - "config/quote_watchlist.json"
 
 permissions:
@@ -107,7 +109,7 @@ jobs:
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git config user.email "41898282+yaelysia@users.noreply.github.com"
           git add history
           if git diff --cached --quiet; then
             echo "HISTORY_PERSIST no changes"
