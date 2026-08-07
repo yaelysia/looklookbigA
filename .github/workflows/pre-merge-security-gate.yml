@@ -30,6 +30,8 @@ jobs:
         run: python3 scripts/test_data_metadata.py
       - name: Run changes-since-previous tests
         run: python3 scripts/test_changes_since_previous.py
+      - name: Run structured company event tests
+        run: python3 scripts/test_company_events.py
       - name: Run public quote abuse-protection tests
         run: node --test tests/worker-abuse-protection.test.mjs
 
@@ -41,7 +43,7 @@ jobs:
       snapshot_artifact_name: pre-merge-security-gate-snapshot
       retention_days: 1
       config_json: >-
-        {"detail_codes":["002558"],"light_codes":["002555","002517"],"groups":{"pre_merge":{"label":"pre-merge security gate","target_code":"002558","member_codes":["002555","002517"]}},"max_total_codes":10}
+        {"detail_codes":["002558"],"light_codes":["002555","002517"],"groups":{"pre_merge":{"label":"pre-merge security gate","target_code":"002558","member_codes":["002555","002517"]}},"max_total_codes":10,"event_lookback_days":7}
 
   pre-merge-security-gate:
     name: pre-merge-security-gate
