@@ -22,6 +22,9 @@ on:
       - "scripts/test_quote_resilience.py"
       - "scripts/test_config_security.py"
       - "scripts/test_workflow_security.py"
+      - "worker/abuse-protection.js"
+      - "worker/stock-quote.js"
+      - "tests/worker-abuse-protection.test.mjs"
 
 permissions:
   contents: read
@@ -39,6 +42,8 @@ jobs:
         run: python3 scripts/test_config_security.py
       - name: Run workflow supply-chain and transport tests
         run: python3 scripts/test_workflow_security.py
+      - name: Run public quote abuse-protection tests
+        run: node --test tests/worker-abuse-protection.test.mjs
 
   reusable-selftest:
     uses: ./.github/workflows/reusable-a-share-quotes.yml
