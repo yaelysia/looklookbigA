@@ -2,6 +2,7 @@ import json
 import tempfile
 from pathlib import Path
 
+import market_breadth_source
 import market_environment
 
 
@@ -150,6 +151,40 @@ def test_market_record_summary_and_limit_diagnostics():
     print("PASS market_record_summary")
 
 
+def test_partial_sorted_market_sample_is_never_used_as_breadth():
+    captured = {}
+
+    class FakeBase:
+        @staticmethod
+        def in_market_window(now):
+            return True
+
+        @staticmethod
+        def http_get(url, timeout=0, attempts=0):
+            captured["url"] = url
+            rows = [
+                {"f12": f"60{i:04d}", "f14": f"上涨{i}", "f3": 5.0, "f6": 100000000, "f2": 10.5, "f15": 10.5, "f18": 10}
+                for i in range(100)
+            ]
+            return json.dumps({"data": {"total": 5892, "diff": rows}}, ensure_ascii=False)
+
+    from datetime import datetime
+
+    result = market_breadth_source.fetch_market_breadth(FakeBase, datetime(2026, 8, 7, 14, 30, 0))
+    assert result["status"] == "PARTIAL"
+    assert result["overall"] is None
+    assert result["boards"] is None
+    assert result["exchanges"] is None
+    assert result["partial_reason"] == "SERVER_PAGE_CAP_BIASES_SORTED_SAMPLE"
+    assert "82.push2.eastmoney.com" in captured["url"]
+    assert "ut=" in captured["url"]
+    env = market_environment.build_market_environment(
+        _snapshot([1.0, 1.1, 1.2, 1.0, 1.1, 1.2]), result
+    )
+    assert env["regime"]["status"] == "UNKNOWN"
+    print("PASS partial_sorted_sample_rejected")
+
+
 def test_finalize_snapshot_updates_schema_and_feature():
     snapshot = _snapshot([0.2, 0.3, 0.4, 0.2, 0.3, 0.4])
     old_breadth = market_environment.LAST_BREADTH
@@ -178,6 +213,7 @@ def main():
         test_idiosyncratic_driver_when_stock_breaks_from_market_and_sector,
         test_stale_indices_are_not_counted_as_usable,
         test_market_record_summary_and_limit_diagnostics,
+        test_partial_sorted_market_sample_is_never_used_as_breadth,
         test_finalize_snapshot_updates_schema_and_feature,
     ]
     for test in tests:
