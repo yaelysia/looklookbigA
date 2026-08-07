@@ -40,16 +40,17 @@ Current mappings include Eastmoney -> `PRIMARY_PROVIDER`, Tencent -> `SECONDARY_
 
 - `PASS`: expected data is present and no important degradation was detected.
 - `DEGRADED`: usable, but fallback/divergence/stale-cache/partial peer coverage or another known degradation is present.
-- `PARTIAL`: important context is incomplete or freshness cannot be fully established.
-- `FAILED`: no valid critical data is available for that node.
+- `PARTIAL`: important context is incomplete, freshness cannot be fully established, or at least one non-critical node has no usable data while critical realtime data is still available.
+- `FAILED`: no valid data is available for that node. If the failed node is critical, top-level `data_quality.overall` is also `FAILED`.
 
-`quality_flags` explain why a node is not a clean `PASS`, for example:
+`quality_flags` explain why a node is not a clean `PASS`, or describe an otherwise valid session-state condition, for example:
 
 ```text
 PRIMARY_SOURCE_FAILED
 FALLBACK_USED
 SOURCE_DIVERGENCE
 STALE_DATA
+NOT_LIVE_NOW
 HISTORY_CACHE_USED
 STALE_CACHE_FALLBACK
 PEER_COVERAGE_INCOMPLETE
@@ -58,12 +59,14 @@ BREADTH_UNAVAILABLE
 NO_VALID_DATA
 ```
 
+`NOT_LIVE_NOW` is informational for valid completed-session data. It does not by itself imply `DEGRADED` or `PARTIAL` quality.
+
 ## Freshness policies
 
 Freshness is interpreted per data type instead of forcing every dataset into one clock rule:
 
 - `REALTIME_QUOTE`: existing quote freshness such as `LIVE`, `CURRENT_SESSION`, `LAST_SESSION`, `STALE`, `UNAVAILABLE`.
-- `MINUTE_SERIES`: minute-series `LIVE`, `STALE`, or `UNAVAILABLE`.
+- `MINUTE_SERIES`: `LIVE`, `CURRENT_SESSION`, and `LAST_SESSION` are valid minute-series states. `CURRENT_SESSION` / `LAST_SESSION` are expected outside an active trading session and remain `PASS` with `NOT_LIVE_NOW`; `STALE` is degraded and `UNAVAILABLE` is failed.
 - `DAILY_K_CONTEXT`: `LATEST_COMPLETED_BAR` / unavailable historical context.
 - `CACHE_HISTORY`: explicitly `HISTORICAL`; never usable as a current quote source.
 - `DERIVED`: inherits/aggregates current input context and is marked as derived.
@@ -106,6 +109,7 @@ Schema v10 adds:
 data_quality
 ├─ overall
 ├─ critical_failures
+├─ noncritical_failures
 ├─ warnings
 ├─ quality_summary
 ├─ source_summary
@@ -120,7 +124,14 @@ llm_data_summary
 └─ warnings
 ```
 
-`critical_data_ready=false` is used when a detail stock has no valid current quote metadata or the live-price guard reports a hard failure. Warnings do not silently become success.
+`critical_data_ready=false` is used when a detail stock has no valid current quote metadata or the live-price guard reports a hard failure.
+
+A `FAILED` node is never silently converted into top-level success:
+
+- critical `FAILED` -> `data_quality.overall=FAILED` and entry in `critical_failures`;
+- non-critical `FAILED` -> top-level quality is at least `PARTIAL`, with the node recorded in both `noncritical_failures` and `warnings`.
+
+Sibling metadata used when a data node is absent, such as `quote_metadata` / `minutes_metadata`, is included in the same quality summary under the logical node path.
 
 `llm_data_summary` is a compact reading aid. Consumers that need to make trust decisions should inspect the detailed node metadata and provenance as well.
 
