@@ -21,6 +21,7 @@ on:
       - "scripts/live_price_guard.py"
       - "scripts/quote_resilience.py"
       - "scripts/market_environment.py"
+      - "scripts/market_breadth_source.py"
       - "scripts/transport_security.py"
       - "scripts/config_security.py"
       - "scripts/prepare_reusable_config.py"
