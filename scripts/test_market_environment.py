@@ -57,7 +57,7 @@ def _snapshot(index_values, group_mean=1.0, group_breadth=50.0, target_pct=1.8):
 
 
 def test_bullish_growth_environment():
-    env = market_environment.build_market_environment(_snapshot([0.8, 1.5, 2.0]))
+    env = market_environment.build_market_environment(_snapshot([0.8, 1.5, 2.0], target_pct=2.2))
     assert env["status"] == "OK"
     assert env["market_bias"] == "STRONG_BULLISH"
     assert env["style"]["status"] == "GROWTH_LEADING"
