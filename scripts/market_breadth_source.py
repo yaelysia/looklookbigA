@@ -44,6 +44,8 @@ def _stats_for_subset(records):
     return {
         "estimated": True,
         "sample_count": stats.get("count"),
+        "sample_change_covered_count": stats.get("change_covered_count"),
+        "sample_unavailable_change_count": stats.get("unavailable_change_count"),
         "sample_up_count": stats.get("up_count"),
         "sample_down_count": stats.get("down_count"),
         "sample_flat_count": stats.get("flat_count"),
@@ -59,40 +61,52 @@ def _stats_for_subset(records):
 def _estimated_overall(records, reported_total):
     stats = env._summarize_market_records(records)
     sample_count = int(stats.get("count") or 0)
-    if sample_count <= 0:
-        raise RuntimeError("systematic market sample contains no records")
+    covered_sample = int(stats.get("change_covered_count") or 0)
+    unavailable_sample = int(stats.get("unavailable_change_count") or 0)
+    if sample_count <= 0 or covered_sample <= 0:
+        raise RuntimeError("systematic market sample contains no usable change records")
 
-    up_ratio = float(stats.get("up_ratio_percent") or 0.0) / 100.0
-    down_ratio = float(stats.get("down_ratio_percent") or 0.0) / 100.0
-    flat_ratio = max(0.0, 1.0 - up_ratio - down_ratio)
-    up_est = int(round(reported_total * up_ratio))
-    down_est = int(round(reported_total * down_ratio))
-    flat_est = max(0, int(reported_total) - up_est - down_est)
+    covered_est = int(round(reported_total * covered_sample / sample_count))
+    covered_est = min(int(reported_total), max(0, covered_est))
+    unavailable_est = max(0, int(reported_total) - covered_est)
 
-    move_up_ratio = (stats.get("move_ge_3pct_count") or 0) / sample_count
-    move_down_ratio = (stats.get("move_le_minus_3pct_count") or 0) / sample_count
+    up_share_covered = (stats.get("up_count") or 0) / covered_sample
+    down_share_covered = (stats.get("down_count") or 0) / covered_sample
+    up_est = int(round(covered_est * up_share_covered))
+    down_est = int(round(covered_est * down_share_covered))
+    flat_est = max(0, covered_est - up_est - down_est)
+
+    move_up_ratio = (stats.get("move_ge_3pct_count") or 0) / covered_sample
+    move_down_ratio = (stats.get("move_le_minus_3pct_count") or 0) / covered_sample
 
     return {
         "estimated": True,
         "count": int(reported_total),
         "sample_count": sample_count,
+        "change_covered_count": covered_est,
+        "unavailable_change_count": unavailable_est,
         "count_semantics": "estimated_from_systematic_code_rank_sample",
         "up_count": up_est,
         "down_count": down_est,
         "flat_count": flat_est,
+        "sample_change_covered_count": covered_sample,
+        "sample_unavailable_change_count": unavailable_sample,
         "sample_up_count": stats.get("up_count"),
         "sample_down_count": stats.get("down_count"),
         "sample_flat_count": stats.get("flat_count"),
         "up_ratio_percent": stats.get("up_ratio_percent"),
         "down_ratio_percent": stats.get("down_ratio_percent"),
         "breadth_score_percent": stats.get("breadth_score_percent"),
+        "up_share_of_universe_percent": env._round(up_est / reported_total * 100.0, 2) if reported_total else None,
+        "down_share_of_universe_percent": env._round(down_est / reported_total * 100.0, 2) if reported_total else None,
+        "unavailable_share_of_universe_percent": env._round(unavailable_est / reported_total * 100.0, 2) if reported_total else None,
         "mean_change_percent": stats.get("mean_change_percent"),
         "median_change_percent": stats.get("median_change_percent"),
         "amount_1e8": None,
         "sample_amount_1e8": stats.get("amount_1e8"),
         "amount_semantics": "sample_only_not_scaled",
-        "move_ge_3pct_count": int(round(reported_total * move_up_ratio)),
-        "move_le_minus_3pct_count": int(round(reported_total * move_down_ratio)),
+        "move_ge_3pct_count": int(round(covered_est * move_up_ratio)),
+        "move_le_minus_3pct_count": int(round(covered_est * move_down_ratio)),
         "limit_up_count_approx": None,
         "limit_down_count_approx": None,
         "broken_limit_up_count_approx": None,
@@ -148,7 +162,6 @@ def _sample_page(base, now, page):
         now,
         page=page,
         page_size=SAMPLE_PAGE_SIZE,
-        # Code order makes the sample independent of the current gain/loss rank.
         sort_field="f12",
     )
     return page, _parse_page(base.http_get(url, timeout=8, attempts=1))
