@@ -2,7 +2,6 @@ import re
 from pathlib import Path
 
 import quote_resilience
-import transport_security
 
 
 WORKFLOW_DIR = Path(".github/workflows")
@@ -36,7 +35,7 @@ def test_reusable_defaults_to_called_workflow_sha():
 
 def test_tencent_transport_never_downgrades_to_http():
     seen = []
-    original = transport_security.urllib.request.urlopen
+    original = quote_resilience.urllib.request.urlopen
 
     def fail_https(request, timeout=None):
         url = request.full_url
@@ -44,8 +43,7 @@ def test_tencent_transport_never_downgrades_to_http():
         raise RuntimeError("synthetic HTTPS failure")
 
     try:
-        transport_security.urllib.request.urlopen = fail_https
-        transport_security.install_quote_resilience(quote_resilience)
+        quote_resilience.urllib.request.urlopen = fail_https
         try:
             quote_resilience._fetch_tencent_text(["sz002558"])
         except RuntimeError as exc:
@@ -53,11 +51,15 @@ def test_tencent_transport_never_downgrades_to_http():
         else:
             raise AssertionError("synthetic HTTPS failure should propagate")
     finally:
-        transport_security.urllib.request.urlopen = original
+        quote_resilience.urllib.request.urlopen = original
 
     assert seen == ["https://qt.gtimg.cn/q=sz002558"], seen
     assert all(url.startswith("https://") for url in seen)
+    assert quote_resilience.TRANSPORT_POLICY["https_only"] is True
     assert quote_resilience.TRANSPORT_POLICY["plaintext_http_fallback"] is False
+
+    module_text = Path("scripts/quote_resilience.py").read_text(encoding="utf-8")
+    assert "http://qt.gtimg.cn" not in module_text
     print("PASS tencent_https_failure_has_no_http_fallback")
 
 
