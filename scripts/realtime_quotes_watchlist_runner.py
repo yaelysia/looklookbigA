@@ -4,11 +4,13 @@ import urllib.request
 from datetime import datetime
 
 import daily_k_context
+import history_store
 import intraday_metrics
 import realtime_quotes_watchlist as base
 
 
-# Install detailed-stock enrichers before the main runner starts fetching data.
+# Install persistent daily-K caching first, then detailed-stock enrichers.
+history_store.install_daily_k_cache(base, daily_k_context)
 intraday_metrics.install(base)
 daily_k_context.install(base)
 
@@ -163,3 +165,4 @@ if __name__ == "__main__":
     base.main()
     intraday_metrics.finalize_snapshot(base.SNAPSHOT_PATH)
     daily_k_context.finalize_snapshot(base.SNAPSHOT_PATH)
+    history_store.finalize_snapshot(base.SNAPSHOT_PATH)

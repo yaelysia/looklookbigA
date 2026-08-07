@@ -9,6 +9,7 @@ on:
       - "scripts/realtime_quotes_watchlist_runner.py"
       - "scripts/intraday_metrics.py"
       - "scripts/daily_k_context.py"
+      - "scripts/history_store.py"
       - "config/quote_watchlist.json"
 
 permissions:
@@ -18,12 +19,24 @@ jobs:
   fetch-quotes:
     runs-on: ubuntu-latest
     timeout-minutes: 3
+    permissions:
+      contents: read
 
     steps:
       - uses: actions/checkout@v4
 
+      - name: Checkout persistent market history
+        uses: actions/checkout@v4
+        with:
+          ref: market-data
+          path: .market-data
+          fetch-depth: 1
+          persist-credentials: false
+
       - name: Fetch realtime A-share watchlist
         shell: bash
+        env:
+          MARKET_HISTORY_DIR: .market-data/history
         run: python3 scripts/realtime_quotes_watchlist_runner.py
 
       - name: Upload realtime snapshot
@@ -34,3 +47,49 @@ jobs:
           path: snapshot.json
           if-no-files-found: error
           retention-days: 1
+
+      - name: Upload market history state
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: market-history-state
+          path: .market-data/history
+          if-no-files-found: error
+          retention-days: 1
+
+  persist-history:
+    if: github.ref_name == 'master' && github.event_name != 'pull_request'
+    needs: fetch-quotes
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      contents: write
+    concurrency:
+      group: market-history-persist
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout market-data branch
+        uses: actions/checkout@v4
+        with:
+          ref: market-data
+          fetch-depth: 1
+
+      - name: Restore generated history state
+        uses: actions/download-artifact@v4
+        with:
+          name: market-history-state
+          path: history
+
+      - name: Persist market history
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add history
+          if git diff --cached --quiet; then
+            echo "HISTORY_PERSIST no changes"
+            exit 0
+          fi
+          git commit -m "Persist market history run ${GITHUB_RUN_ID}"
+          git push origin HEAD:market-data
