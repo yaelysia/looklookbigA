@@ -3,6 +3,7 @@ import daily_k_context
 import history_store
 import intraday_metrics
 import live_price_guard
+import market_environment
 import quote_resilience
 import realtime_quotes_watchlist as base
 import transport_security
@@ -34,3 +35,6 @@ if __name__ == "__main__":
     history_store.finalize_snapshot(base.SNAPSHOT_PATH)
     live_price_guard.finalize_snapshot(base.SNAPSHOT_PATH)
     quote_resilience.finalize_snapshot(base.SNAPSHOT_PATH)
+    # Market environment consumes the already-enriched snapshot and must stay
+    # last so it can include final data-quality/resilience/guard status.
+    market_environment.finalize_snapshot(base.SNAPSHOT_PATH)
