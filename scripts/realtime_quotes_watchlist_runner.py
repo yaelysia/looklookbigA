@@ -1,5 +1,6 @@
 import config_security
 import daily_k_context
+import data_metadata
 import history_store
 import intraday_metrics
 import live_price_guard
@@ -47,6 +48,9 @@ if __name__ == "__main__":
     history_store.finalize_snapshot(base.SNAPSHOT_PATH)
     live_price_guard.finalize_snapshot(base.SNAPSHOT_PATH)
     quote_resilience.finalize_snapshot(base.SNAPSHOT_PATH)
-    # Market environment consumes the already-enriched snapshot and stays last
-    # so driver attribution can include final data-quality/resilience status.
+    # Market environment consumes the already-enriched snapshot so driver
+    # attribution can include final data-quality/resilience status.
     market_environment.finalize_snapshot(base.SNAPSHOT_PATH)
+    # Unified provenance/freshness/quality metadata is always last. It only
+    # describes the final snapshot and never changes quote-selection logic.
+    data_metadata.finalize_snapshot(base.SNAPSHOT_PATH)
