@@ -11,16 +11,25 @@ on:
       - "scripts/daily_k_context.py"
       - "scripts/history_store.py"
       - "scripts/live_price_guard.py"
+      - "scripts/test_live_price_guard.py"
 
 permissions:
   contents: read
 
 jobs:
+  live-price-guard-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run live-price guard fault-injection tests
+        run: python3 scripts/test_live_price_guard.py
+
   reusable-selftest:
     uses: ./.github/workflows/reusable-a-share-quotes.yml
     with:
       source_ref: ${{ github.sha }}
-      enable_history_cache: false
+      enable_history_cache: true
+      cache_namespace: reusable-selftest
       snapshot_artifact_name: reusable-selftest-snapshot
       retention_days: 1
       config_json: >-
