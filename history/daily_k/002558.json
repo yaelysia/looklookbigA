@@ -1,0 +1,1214 @@
+{
+  "schema_version": 1,
+  "code": "002558",
+  "adjustment": "qfq",
+  "source": "Tencent qfq",
+  "validation_key": "2026-08-07:intraday",
+  "validation_mode": "BOOTSTRAP_FULL",
+  "updated_at_cst": "2026-08-07 14:04:03",
+  "bar_count": 120,
+  "latest_bar_date": "2026-08-07",
+  "errors": [],
+  "bars": [
+    {
+      "date": "2026-02-06",
+      "open": 40.611,
+      "close": 41.831,
+      "high": 42.681,
+      "low": 40.071,
+      "volume": 376980.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-02-09",
+      "open": 42.511,
+      "close": 40.841,
+      "high": 42.621,
+      "low": 40.531,
+      "volume": 394262.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-02-10",
+      "open": 40.961,
+      "close": 41.501,
+      "high": 41.901,
+      "low": 40.841,
+      "volume": 410105.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-02-11",
+      "open": 41.131,
+      "close": 41.711,
+      "high": 42.581,
+      "low": 40.331,
+      "volume": 408743.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-02-12",
+      "open": 41.411,
+      "close": 41.091,
+      "high": 42.251,
+      "low": 40.941,
+      "volume": 313540.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-02-13",
+      "open": 40.861,
+      "close": 40.771,
+      "high": 41.661,
+      "low": 40.761,
+      "volume": 199617.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-02-24",
+      "open": 40.751,
+      "close": 39.041,
+      "high": 40.761,
+      "low": 38.121,
+      "volume": 616698.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-02-25",
+      "open": 39.071,
+      "close": 38.461,
+      "high": 39.211,
+      "low": 37.811,
+      "volume": 604821.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-02-26",
+      "open": 38.591,
+      "close": 37.351,
+      "high": 38.781,
+      "low": 36.971,
+      "volume": 553325.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-02-27",
+      "open": 37.511,
+      "close": 36.911,
+      "high": 37.591,
+      "low": 36.281,
+      "volume": 421163.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-03-02",
+      "open": 35.681,
+      "close": 36.781,
+      "high": 36.781,
+      "low": 35.681,
+      "volume": 439150.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-03-03",
+      "open": 36.811,
+      "close": 35.811,
+      "high": 37.411,
+      "low": 35.581,
+      "volume": 476137.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-03-04",
+      "open": 35.411,
+      "close": 35.421,
+      "high": 36.111,
+      "low": 35.161,
+      "volume": 318567.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-03-05",
+      "open": 35.561,
+      "close": 35.291,
+      "high": 36.331,
+      "low": 34.811,
+      "volume": 413054.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-03-06",
+      "open": 35.011,
+      "close": 35.411,
+      "high": 35.561,
+      "low": 34.581,
+      "volume": 284009.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-03-09",
+      "open": 34.841,
+      "close": 34.161,
+      "high": 34.951,
+      "low": 33.131,
+      "volume": 625742.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-03-10",
+      "open": 34.431,
+      "close": 35.721,
+      "high": 36.001,
+      "low": 34.431,
+      "volume": 502991.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-03-11",
+      "open": 36.321,
+      "close": 36.451,
+      "high": 37.591,
+      "low": 35.681,
+      "volume": 717043.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-03-12",
+      "open": 36.461,
+      "close": 35.741,
+      "high": 36.461,
+      "low": 35.091,
+      "volume": 356162.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-03-13",
+      "open": 36.721,
+      "close": 35.241,
+      "high": 37.051,
+      "low": 34.921,
+      "volume": 522492.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-03-16",
+      "open": 34.991,
+      "close": 34.821,
+      "high": 35.901,
+      "low": 34.291,
+      "volume": 361713.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-03-17",
+      "open": 35.001,
+      "close": 34.471,
+      "high": 36.311,
+      "low": 34.391,
+      "volume": 406780.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-03-18",
+      "open": 34.561,
+      "close": 34.661,
+      "high": 35.031,
+      "low": 34.001,
+      "volume": 327802.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-03-19",
+      "open": 33.881,
+      "close": 32.731,
+      "high": 33.881,
+      "low": 32.041,
+      "volume": 584110.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-03-20",
+      "open": 32.791,
+      "close": 31.931,
+      "high": 33.531,
+      "low": 31.841,
+      "volume": 338666.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-03-23",
+      "open": 31.381,
+      "close": 30.881,
+      "high": 31.961,
+      "low": 30.571,
+      "volume": 506054.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-03-24",
+      "open": 31.211,
+      "close": 31.201,
+      "high": 31.311,
+      "low": 30.601,
+      "volume": 288464.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-03-25",
+      "open": 31.301,
+      "close": 32.411,
+      "high": 32.761,
+      "low": 31.271,
+      "volume": 361850.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-03-26",
+      "open": 32.351,
+      "close": 31.641,
+      "high": 32.801,
+      "low": 31.431,
+      "volume": 208271.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-03-27",
+      "open": 31.271,
+      "close": 31.961,
+      "high": 32.161,
+      "low": 31.171,
+      "volume": 234125.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-03-30",
+      "open": 31.391,
+      "close": 31.241,
+      "high": 31.651,
+      "low": 30.711,
+      "volume": 276453.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-03-31",
+      "open": 31.401,
+      "close": 31.351,
+      "high": 32.561,
+      "low": 31.211,
+      "volume": 358326.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-04-01",
+      "open": 32.111,
+      "close": 34.501,
+      "high": 34.501,
+      "low": 31.761,
+      "volume": 559559.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-04-02",
+      "open": 34.831,
+      "close": 33.861,
+      "high": 35.091,
+      "low": 33.321,
+      "volume": 616593.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-04-03",
+      "open": 34.501,
+      "close": 33.011,
+      "high": 34.561,
+      "low": 32.881,
+      "volume": 382607.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-04-07",
+      "open": 33.051,
+      "close": 32.721,
+      "high": 33.521,
+      "low": 32.361,
+      "volume": 420401.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-04-08",
+      "open": 33.891,
+      "close": 34.391,
+      "high": 34.941,
+      "low": 33.511,
+      "volume": 561926.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-04-09",
+      "open": 33.711,
+      "close": 32.781,
+      "high": 33.741,
+      "low": 32.311,
+      "volume": 556455.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-04-10",
+      "open": 32.931,
+      "close": 34.371,
+      "high": 34.991,
+      "low": 32.881,
+      "volume": 676734.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-04-13",
+      "open": 34.971,
+      "close": 31.331,
+      "high": 35.311,
+      "low": 30.921,
+      "volume": 1505568.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-04-14",
+      "open": 31.751,
+      "close": 31.561,
+      "high": 31.861,
+      "low": 30.911,
+      "volume": 698668.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-04-15",
+      "open": 31.691,
+      "close": 31.861,
+      "high": 32.891,
+      "low": 31.611,
+      "volume": 624256.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-04-16",
+      "open": 32.041,
+      "close": 33.081,
+      "high": 33.141,
+      "low": 32.011,
+      "volume": 644172.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-04-17",
+      "open": 32.811,
+      "close": 32.151,
+      "high": 32.811,
+      "low": 31.811,
+      "volume": 464869.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-04-20",
+      "open": 32.121,
+      "close": 32.061,
+      "high": 32.561,
+      "low": 31.851,
+      "volume": 399973.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-04-21",
+      "open": 32.061,
+      "close": 31.861,
+      "high": 32.171,
+      "low": 31.531,
+      "volume": 393149.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-04-22",
+      "open": 31.621,
+      "close": 31.911,
+      "high": 31.931,
+      "low": 31.351,
+      "volume": 288366.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-04-23",
+      "open": 31.911,
+      "close": 31.691,
+      "high": 32.361,
+      "low": 31.121,
+      "volume": 380499.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-04-24",
+      "open": 31.331,
+      "close": 30.971,
+      "high": 31.661,
+      "low": 30.601,
+      "volume": 374162.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-04-27",
+      "open": 31.121,
+      "close": 31.331,
+      "high": 31.691,
+      "low": 31.111,
+      "volume": 329340.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-04-28",
+      "open": 31.811,
+      "close": 31.931,
+      "high": 32.541,
+      "low": 31.221,
+      "volume": 666450.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-04-29",
+      "open": 32.011,
+      "close": 33.321,
+      "high": 33.511,
+      "low": 31.761,
+      "volume": 727044.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-04-30",
+      "open": 33.201,
+      "close": 32.631,
+      "high": 33.391,
+      "low": 32.491,
+      "volume": 517877.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-05-06",
+      "open": 32.741,
+      "close": 32.231,
+      "high": 32.811,
+      "low": 31.651,
+      "volume": 789744.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-05-07",
+      "open": 32.611,
+      "close": 33.211,
+      "high": 33.271,
+      "low": 31.961,
+      "volume": 677078.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-05-08",
+      "open": 32.881,
+      "close": 33.061,
+      "high": 34.101,
+      "low": 32.841,
+      "volume": 850173.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-05-11",
+      "open": 33.581,
+      "close": 32.641,
+      "high": 33.691,
+      "low": 32.121,
+      "volume": 641024.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-05-12",
+      "open": 32.511,
+      "close": 31.441,
+      "high": 32.601,
+      "low": 31.411,
+      "volume": 601822.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-05-13",
+      "open": 31.391,
+      "close": 32.191,
+      "high": 32.611,
+      "low": 30.611,
+      "volume": 647025.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-05-14",
+      "open": 32.371,
+      "close": 30.721,
+      "high": 32.961,
+      "low": 30.711,
+      "volume": 637635.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-05-15",
+      "open": 30.811,
+      "close": 29.931,
+      "high": 31.101,
+      "low": 29.511,
+      "volume": 638710.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-05-18",
+      "open": 28.431,
+      "close": 27.621,
+      "high": 28.431,
+      "low": 27.321,
+      "volume": 958724.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-05-19",
+      "open": 27.701,
+      "close": 27.761,
+      "high": 28.271,
+      "low": 27.421,
+      "volume": 521309.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-05-20",
+      "open": 27.511,
+      "close": 27.781,
+      "high": 27.941,
+      "low": 26.931,
+      "volume": 433144.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-05-21",
+      "open": 27.801,
+      "close": 27.231,
+      "high": 28.291,
+      "low": 27.211,
+      "volume": 387178.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-05-22",
+      "open": 27.461,
+      "close": 27.281,
+      "high": 27.461,
+      "low": 26.971,
+      "volume": 317867.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-05-25",
+      "open": 27.211,
+      "close": 26.311,
+      "high": 27.311,
+      "low": 25.991,
+      "volume": 623511.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-05-26",
+      "open": 26.361,
+      "close": 26.671,
+      "high": 27.061,
+      "low": 26.081,
+      "volume": 440962.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-05-27",
+      "open": 26.621,
+      "close": 26.381,
+      "high": 27.301,
+      "low": 26.251,
+      "volume": 372977.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-05-28",
+      "open": 26.371,
+      "close": 26.191,
+      "high": 26.531,
+      "low": 25.571,
+      "volume": 358855.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-05-29",
+      "open": 26.521,
+      "close": 25.871,
+      "high": 26.701,
+      "low": 25.661,
+      "volume": 412227.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-06-01",
+      "open": 25.9,
+      "close": 26.35,
+      "high": 26.95,
+      "low": 25.89,
+      "volume": 486200.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-06-02",
+      "open": 26.35,
+      "close": 25.63,
+      "high": 26.4,
+      "low": 25.36,
+      "volume": 400295.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-06-03",
+      "open": 25.5,
+      "close": 25.59,
+      "high": 26.16,
+      "low": 25.24,
+      "volume": 359975.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-06-04",
+      "open": 25.37,
+      "close": 25.25,
+      "high": 25.9,
+      "low": 25.07,
+      "volume": 300018.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-06-05",
+      "open": 25.25,
+      "close": 25.79,
+      "high": 26.08,
+      "low": 25.14,
+      "volume": 419723.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-06-08",
+      "open": 25.02,
+      "close": 24.87,
+      "high": 25.6,
+      "low": 24.53,
+      "volume": 377618.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-06-09",
+      "open": 25.2,
+      "close": 24.74,
+      "high": 25.46,
+      "low": 24.51,
+      "volume": 348006.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-06-10",
+      "open": 24.43,
+      "close": 24.2,
+      "high": 24.63,
+      "low": 24.1,
+      "volume": 332805.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-06-11",
+      "open": 24.03,
+      "close": 23.65,
+      "high": 24.2,
+      "low": 23.53,
+      "volume": 351671.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-06-12",
+      "open": 23.96,
+      "close": 23.44,
+      "high": 24.73,
+      "low": 23.44,
+      "volume": 793550.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-06-15",
+      "open": 24.03,
+      "close": 24.31,
+      "high": 24.4,
+      "low": 23.76,
+      "volume": 587951.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-06-16",
+      "open": 24.33,
+      "close": 24.28,
+      "high": 24.73,
+      "low": 23.98,
+      "volume": 411458.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-06-17",
+      "open": 24.04,
+      "close": 24.09,
+      "high": 24.36,
+      "low": 23.67,
+      "volume": 348626.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-06-18",
+      "open": 24.09,
+      "close": 23.9,
+      "high": 24.75,
+      "low": 23.79,
+      "volume": 422892.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-06-22",
+      "open": 23.96,
+      "close": 25.74,
+      "high": 25.95,
+      "low": 23.8,
+      "volume": 825432.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-06-23",
+      "open": 25.57,
+      "close": 25.19,
+      "high": 26.14,
+      "low": 25.06,
+      "volume": 581837.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-06-24",
+      "open": 24.97,
+      "close": 25.21,
+      "high": 26.44,
+      "low": 24.7,
+      "volume": 810189.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-06-25",
+      "open": 25.23,
+      "close": 27.73,
+      "high": 27.73,
+      "low": 25.21,
+      "volume": 919368.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-06-26",
+      "open": 28.29,
+      "close": 27.44,
+      "high": 28.67,
+      "low": 26.27,
+      "volume": 1534090.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-06-29",
+      "open": 27.01,
+      "close": 27.23,
+      "high": 28.5,
+      "low": 26.65,
+      "volume": 1267900.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-06-30",
+      "open": 27.12,
+      "close": 27.56,
+      "high": 27.72,
+      "low": 26.22,
+      "volume": 1003735.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-07-01",
+      "open": 27.4,
+      "close": 28.11,
+      "high": 28.61,
+      "low": 26.28,
+      "volume": 1186563.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-07-02",
+      "open": 28.5,
+      "close": 27.71,
+      "high": 29.0,
+      "low": 27.39,
+      "volume": 1154193.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-07-03",
+      "open": 27.71,
+      "close": 27.15,
+      "high": 28.05,
+      "low": 26.68,
+      "volume": 859247.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-07-06",
+      "open": 26.83,
+      "close": 27.44,
+      "high": 28.12,
+      "low": 26.54,
+      "volume": 720510.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-07-07",
+      "open": 27.4,
+      "close": 29.09,
+      "high": 30.18,
+      "low": 27.3,
+      "volume": 1824878.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-07-08",
+      "open": 29.41,
+      "close": 28.0,
+      "high": 29.74,
+      "low": 27.19,
+      "volume": 1493647.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-07-09",
+      "open": 27.55,
+      "close": 28.32,
+      "high": 29.18,
+      "low": 26.8,
+      "volume": 1280529.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-07-10",
+      "open": 27.9,
+      "close": 29.56,
+      "high": 29.88,
+      "low": 27.4,
+      "volume": 1455411.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-07-13",
+      "open": 29.01,
+      "close": 28.48,
+      "high": 29.35,
+      "low": 27.5,
+      "volume": 1302971.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-07-14",
+      "open": 28.05,
+      "close": 26.87,
+      "high": 28.26,
+      "low": 26.44,
+      "volume": 907915.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-07-15",
+      "open": 26.5,
+      "close": 29.56,
+      "high": 29.56,
+      "low": 25.52,
+      "volume": 1510302.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-07-16",
+      "open": 30.33,
+      "close": 30.28,
+      "high": 31.31,
+      "low": 29.66,
+      "volume": 1991086.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-07-17",
+      "open": 30.28,
+      "close": 29.12,
+      "high": 31.12,
+      "low": 28.9,
+      "volume": 1529295.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-07-20",
+      "open": 29.31,
+      "close": 29.98,
+      "high": 30.09,
+      "low": 28.12,
+      "volume": 1217133.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-07-21",
+      "open": 29.49,
+      "close": 29.87,
+      "high": 30.99,
+      "low": 28.7,
+      "volume": 1473633.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-07-22",
+      "open": 29.3,
+      "close": 28.02,
+      "high": 29.49,
+      "low": 28.01,
+      "volume": 1151227.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-07-23",
+      "open": 27.6,
+      "close": 25.26,
+      "high": 27.71,
+      "low": 25.22,
+      "volume": 1564077.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-07-24",
+      "open": 24.5,
+      "close": 24.18,
+      "high": 25.3,
+      "low": 23.68,
+      "volume": 1109687.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-07-27",
+      "open": 23.99,
+      "close": 24.72,
+      "high": 24.73,
+      "low": 23.61,
+      "volume": 694418.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-07-28",
+      "open": 24.64,
+      "close": 24.53,
+      "high": 25.29,
+      "low": 24.33,
+      "volume": 561281.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-07-29",
+      "open": 24.64,
+      "close": 26.98,
+      "high": 26.98,
+      "low": 24.55,
+      "volume": 1057227.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-07-30",
+      "open": 28.15,
+      "close": 27.68,
+      "high": 29.65,
+      "low": 27.52,
+      "volume": 1771120.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-07-31",
+      "open": 26.62,
+      "close": 29.28,
+      "high": 30.22,
+      "low": 26.62,
+      "volume": 1471458.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-08-03",
+      "open": 28.98,
+      "close": 29.09,
+      "high": 31.2,
+      "low": 28.98,
+      "volume": 1546659.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-08-04",
+      "open": 29.47,
+      "close": 29.94,
+      "high": 30.27,
+      "low": 28.69,
+      "volume": 1256535.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-08-05",
+      "open": 29.6,
+      "close": 30.07,
+      "high": 30.63,
+      "low": 29.59,
+      "volume": 1068343.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-08-06",
+      "open": 29.7,
+      "close": 29.26,
+      "high": 30.81,
+      "low": 29.1,
+      "volume": 1109645.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-08-07",
+      "open": 29.52,
+      "close": 29.1,
+      "high": 29.6,
+      "low": 28.6,
+      "volume": 758572.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    }
+  ]
+}
