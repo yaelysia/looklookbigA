@@ -10,12 +10,14 @@ permissions:
   contents: read
 
 jobs:
-  live-price-guard-tests:
+  safety-tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - name: Run live-price guard fault-injection tests
         run: python3 scripts/test_live_price_guard.py
+      - name: Run quote resilience selection tests
+        run: python3 scripts/test_quote_resilience.py
 
   stable-reusable-smoke:
     uses: ./.github/workflows/reusable-a-share-quotes.yml
