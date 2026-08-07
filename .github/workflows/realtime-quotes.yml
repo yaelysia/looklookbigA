@@ -8,6 +8,7 @@ on:
       - "scripts/realtime_quotes_watchlist.py"
       - "scripts/realtime_quotes_watchlist_runner.py"
       - "scripts/intraday_metrics.py"
+      - "scripts/daily_k_context.py"
       - "config/quote_watchlist.json"
 
 permissions:
