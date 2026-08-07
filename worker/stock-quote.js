@@ -97,7 +97,7 @@ async function fetchQuote(stock) {
     upstreamUrl.searchParams.set("code", stock.code);
 
     // 每次真正访问上游时生成不同URL，避免命中不可控的旧行情缓存。
-    // Worker自身只做2秒短缓存，用于合并突发重复请求。
+    // 当前Worker自身只做2秒best-effort短缓存，用于合并突发重复请求。
     upstreamUrl.searchParams.set("_", Date.now().toString());
 
     const response = await fetch(upstreamUrl.toString(), {
@@ -381,7 +381,7 @@ function renderHtml(quotes) {
 
     <div class="footer">
       页面由Cloudflare Worker服务器端生成，不依赖浏览器执行JavaScript。
-      浏览器端不缓存行情；服务器仅做极短TTL去重并对异常高频访问返回429。
+      浏览器端不缓存行情；公共行情路由由Cloudflare托管限流，服务器仅做极短TTL的best-effort上游去重。
     </div>
   </main>
 </body>
@@ -395,7 +395,6 @@ function rateLimitHeaders(rateLimit) {
 
   return {
     "X-RateLimit-Limit": String(rateLimit.limit),
-    "X-RateLimit-Remaining": String(rateLimit.remaining),
   };
 }
 
@@ -412,6 +411,9 @@ function jsonResponse(data, status = 200, extraHeaders = {}) {
 }
 
 function rateLimitedResponse(requestUrl, rateLimit) {
+  const unavailable = Boolean(rateLimit.unavailable);
+  const status = unavailable ? 503 : 429;
+  const message = unavailable ? "Rate limiter unavailable" : "Rate limit exceeded";
   const headers = {
     ...rateLimitHeaders(rateLimit),
     "Retry-After": String(rateLimit.retryAfterSeconds),
@@ -420,16 +422,16 @@ function rateLimitedResponse(requestUrl, rateLimit) {
   if (requestUrl.pathname === "/quote") {
     return jsonResponse(
       {
-        error: "Rate limit exceeded",
+        error: message,
         retryAfterSeconds: rateLimit.retryAfterSeconds,
       },
-      429,
+      status,
       headers,
     );
   }
 
-  return new Response("Too Many Requests", {
-    status: 429,
+  return new Response(unavailable ? "Service Unavailable" : "Too Many Requests", {
+    status,
     headers: {
       ...NO_CACHE_HEADERS,
       "Content-Type": "text/plain; charset=utf-8",
@@ -439,11 +441,13 @@ function rateLimitedResponse(requestUrl, rateLimit) {
 }
 
 export default {
-  async fetch(request) {
+  async fetch(request, rateLimiter) {
     const requestUrl = new URL(request.url);
     const protectedRoute =
       requestUrl.pathname === "/" || requestUrl.pathname === "/quote";
-    const rateLimit = protectedRoute ? checkRequestLimit(request) : null;
+    const rateLimit = protectedRoute
+      ? await checkRequestLimit(request, rateLimiter)
+      : null;
 
     if (rateLimit && !rateLimit.allowed) {
       return rateLimitedResponse(requestUrl, rateLimit);
@@ -475,6 +479,9 @@ export default {
             fetchedAt: new Date().toISOString(),
             quote,
             abuseProtection: {
+              rateLimitBackend: ABUSE_PROTECTION_POLICY.rateLimitBackend,
+              rateLimitMaxRequests: ABUSE_PROTECTION_POLICY.rateLimitMaxRequests,
+              rateLimitPeriodSeconds: ABUSE_PROTECTION_POLICY.rateLimitPeriodSeconds,
               serverQuoteCacheTtlMs: ABUSE_PROTECTION_POLICY.quoteCacheTtlMs,
             },
           },
