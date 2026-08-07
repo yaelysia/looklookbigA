@@ -18,6 +18,7 @@ on:
       - "scripts/quote_resilience.py"
       - "scripts/market_environment.py"
       - "scripts/market_breadth_source.py"
+      - "scripts/data_metadata.py"
       - "scripts/transport_security.py"
       - "scripts/config_security.py"
       - "scripts/prepare_reusable_config.py"
@@ -25,6 +26,7 @@ on:
       - "scripts/test_workflow_security.py"
       - "scripts/test_quote_resilience.py"
       - "scripts/test_market_environment.py"
+      - "scripts/test_data_metadata.py"
       - "config/quote_watchlist.json"
 
 permissions:
