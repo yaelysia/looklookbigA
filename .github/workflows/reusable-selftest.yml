@@ -5,6 +5,7 @@ on:
     paths:
       - "README.md"
       - "docs/STABLE_V1.md"
+      - "docs/SECURITY_BRANCH_PROTECTION.md"
       - ".github/workflows/reusable-a-share-quotes.yml"
       - ".github/workflows/reusable-selftest.yml"
       - ".github/workflows/realtime-quotes.yml"
