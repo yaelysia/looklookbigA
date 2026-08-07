@@ -1,5 +1,6 @@
 import json
 import tempfile
+import urllib.parse
 from pathlib import Path
 
 import market_breadth_source
@@ -151,8 +152,8 @@ def test_market_record_summary_and_limit_diagnostics():
     print("PASS market_record_summary")
 
 
-def test_partial_sorted_market_sample_is_never_used_as_breadth():
-    captured = {}
+def test_truncated_gainers_page_falls_back_to_systematic_sample():
+    captured = []
 
     class FakeBase:
         @staticmethod
@@ -161,28 +162,53 @@ def test_partial_sorted_market_sample_is_never_used_as_breadth():
 
         @staticmethod
         def http_get(url, timeout=0, attempts=0):
-            captured["url"] = url
-            rows = [
-                {"f12": f"60{i:04d}", "f14": f"上涨{i}", "f3": 5.0, "f6": 100000000, "f2": 10.5, "f15": 10.5, "f18": 10}
-                for i in range(100)
-            ]
-            return json.dumps({"data": {"total": 5892, "diff": rows}}, ensure_ascii=False)
+            captured.append(url)
+            parsed = urllib.parse.urlparse(url)
+            query = urllib.parse.parse_qs(parsed.query)
+            if "82.push2.eastmoney.com" in parsed.netloc:
+                rows = [
+                    {"f13": 1, "f12": f"600{i:03d}", "f14": f"涨幅榜{i}", "f3": 8.0, "f6": 100000000, "f2": 10.8, "f15": 10.8, "f18": 10}
+                    for i in range(100)
+                ]
+                return json.dumps({"data": {"total": 1600, "diff": rows}}, ensure_ascii=False)
+
+            page = int(query.get("pn", ["1"])[0])
+            page_size = int(query.get("pz", ["100"])[0])
+            start = (page - 1) * page_size
+            rows = []
+            for offset in range(page_size):
+                idx = start + offset
+                if idx >= 1600:
+                    break
+                pct = 1.0 if idx % 4 != 3 else -1.0
+                code = str(600000 + idx)
+                rows.append(
+                    {"f13": 1, "f12": code, "f14": f"样本{idx}", "f3": pct, "f6": 100000000, "f2": 10.1, "f15": 10.2, "f18": 10}
+                )
+            return json.dumps({"data": {"total": 1600, "diff": rows}}, ensure_ascii=False)
 
     from datetime import datetime
 
     result = market_breadth_source.fetch_market_breadth(FakeBase, datetime(2026, 8, 7, 14, 30, 0))
     assert result["status"] == "PARTIAL"
-    assert result["overall"] is None
-    assert result["boards"] is None
-    assert result["exchanges"] is None
-    assert result["partial_reason"] == "SERVER_PAGE_CAP_BIASES_SORTED_SAMPLE"
-    assert "82.push2.eastmoney.com" in captured["url"]
-    assert "ut=" in captured["url"]
+    assert result["estimated"] is True
+    assert result["partial_reason"] == "FULL_UNIVERSE_UNAVAILABLE_USING_SYSTEMATIC_SAMPLE"
+    assert result["sampling"]["method"] == "systematic_even_pages_sorted_by_stock_code"
+    assert result["sampling"]["sample_count"] >= 700
+    assert result["overall"]["estimated"] is True
+    assert result["overall"]["up_ratio_percent"] == 75.0
+    assert result["overall"]["down_ratio_percent"] == 25.0
+    assert result["overall"]["amount_1e8"] is None
+    assert result["limit_statistics"]["available"] is False
+    assert any("82.push2.eastmoney.com" in url for url in captured)
+    assert any("push2.eastmoney.com" in url and "fid=f12" in url for url in captured)
+
     env = market_environment.build_market_environment(
         _snapshot([1.0, 1.1, 1.2, 1.0, 1.1, 1.2]), result
     )
-    assert env["regime"]["status"] == "UNKNOWN"
-    print("PASS partial_sorted_sample_rejected")
+    assert env["regime"]["status"] == "BROAD_RISK_ON"
+    assert env["confidence"] == "MEDIUM"
+    print("PASS biased_top_page_replaced_with_systematic_sample")
 
 
 def test_finalize_snapshot_updates_schema_and_feature():
@@ -213,7 +239,7 @@ def main():
         test_idiosyncratic_driver_when_stock_breaks_from_market_and_sector,
         test_stale_indices_are_not_counted_as_usable,
         test_market_record_summary_and_limit_diagnostics,
-        test_partial_sorted_market_sample_is_never_used_as_breadth,
+        test_truncated_gainers_page_falls_back_to_systematic_sample,
         test_finalize_snapshot_updates_schema_and_feature,
     ]
     for test in tests:
