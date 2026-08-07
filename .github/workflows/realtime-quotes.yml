@@ -5,8 +5,8 @@ on:
   push:
     paths:
       - ".github/workflows/realtime-quotes.yml"
-      - "scripts/realtime_quotes.py"
-      - "scripts/realtime_quotes_fast.py"
+      - "scripts/realtime_quotes_watchlist.py"
+      - "config/quote_watchlist.json"
 
 permissions:
   contents: read
@@ -19,9 +19,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Fetch realtime A-share quotes
+      - name: Fetch realtime A-share watchlist
         shell: bash
-        run: python3 scripts/realtime_quotes_fast.py
+        run: python3 scripts/realtime_quotes_watchlist.py
 
       - name: Upload realtime snapshot
         if: always()
