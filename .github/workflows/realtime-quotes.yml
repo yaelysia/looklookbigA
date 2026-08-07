@@ -5,6 +5,8 @@ on:
   push:
     paths:
       - ".github/workflows/realtime-quotes.yml"
+      - ".github/workflows/reusable-a-share-quotes.yml"
+      - ".github/workflows/reusable-selftest.yml"
       - ".github/workflows/v1-smoke.yml"
       - "scripts/realtime_quotes_watchlist.py"
       - "scripts/realtime_quotes_watchlist_runner.py"
@@ -13,6 +15,11 @@ on:
       - "scripts/history_store.py"
       - "scripts/live_price_guard.py"
       - "scripts/quote_resilience.py"
+      - "scripts/transport_security.py"
+      - "scripts/config_security.py"
+      - "scripts/prepare_reusable_config.py"
+      - "scripts/test_config_security.py"
+      - "scripts/test_workflow_security.py"
       - "scripts/test_quote_resilience.py"
       - "config/quote_watchlist.json"
 
@@ -27,10 +34,10 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Checkout persistent market history
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: market-data
           path: .market-data
@@ -45,7 +52,7 @@ jobs:
 
       - name: Upload realtime snapshot
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: realtime-snapshot
           path: snapshot.json
@@ -54,7 +61,7 @@ jobs:
 
       - name: Upload market history state
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: market-history-state
           path: .market-data/history
@@ -74,13 +81,13 @@ jobs:
 
     steps:
       - name: Checkout market-data branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: market-data
           fetch-depth: 1
 
       - name: Restore generated history state
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: market-history-state
           path: history

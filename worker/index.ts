@@ -24,6 +24,7 @@ const SITEMAP_XML = `<?xml version="1.0" encoding="UTF-8"?>
 interface Env {
   ASSETS: Fetcher;
   DB: D1Database;
+  PUBLIC_QUOTE_RATE_LIMITER: RateLimit;
   IMAGES: {
     input(stream: ReadableStream): {
       transform(options: Record<string, unknown>): {
@@ -78,7 +79,7 @@ const worker = {
     }
 
     if (url.pathname === "/" || url.pathname === "/quote") {
-      return stockQuoteWorker.fetch(request);
+      return stockQuoteWorker.fetch(request, env.PUBLIC_QUOTE_RATE_LIMITER);
     }
 
     return handler.fetch(request, env, ctx);

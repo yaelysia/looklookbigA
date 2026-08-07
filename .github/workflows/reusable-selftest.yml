@@ -3,9 +3,16 @@ name: Reusable Workflow Selftest
 on:
   push:
     paths:
+      - "README.md"
+      - "docs/STABLE_V1.md"
+      - "docs/SECURITY_BRANCH_PROTECTION.md"
+      - "vite.config.ts"
       - ".github/workflows/reusable-a-share-quotes.yml"
       - ".github/workflows/reusable-selftest.yml"
+      - ".github/workflows/pre-merge-security-gate.yml"
+      - ".github/workflows/realtime-quotes.yml"
       - ".github/workflows/v1-smoke.yml"
+      - ".github/dependabot.yml"
       - "scripts/realtime_quotes_watchlist.py"
       - "scripts/realtime_quotes_watchlist_runner.py"
       - "scripts/intraday_metrics.py"
@@ -13,8 +20,17 @@ on:
       - "scripts/history_store.py"
       - "scripts/live_price_guard.py"
       - "scripts/quote_resilience.py"
+      - "scripts/transport_security.py"
+      - "scripts/config_security.py"
+      - "scripts/prepare_reusable_config.py"
       - "scripts/test_live_price_guard.py"
       - "scripts/test_quote_resilience.py"
+      - "scripts/test_config_security.py"
+      - "scripts/test_workflow_security.py"
+      - "worker/index.ts"
+      - "worker/abuse-protection.js"
+      - "worker/stock-quote.js"
+      - "tests/worker-abuse-protection.test.mjs"
 
 permissions:
   contents: read
@@ -23,16 +39,21 @@ jobs:
   safety-tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - name: Run live-price guard fault-injection tests
         run: python3 scripts/test_live_price_guard.py
       - name: Run quote resilience selection tests
         run: python3 scripts/test_quote_resilience.py
+      - name: Run watchlist/config boundary tests
+        run: python3 scripts/test_config_security.py
+      - name: Run workflow supply-chain and transport tests
+        run: python3 scripts/test_workflow_security.py
+      - name: Run public quote abuse-protection tests
+        run: node --test tests/worker-abuse-protection.test.mjs
 
   reusable-selftest:
     uses: ./.github/workflows/reusable-a-share-quotes.yml
     with:
-      source_ref: ${{ github.sha }}
       enable_history_cache: true
       cache_namespace: reusable-selftest
       snapshot_artifact_name: reusable-selftest-snapshot

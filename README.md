@@ -10,7 +10,7 @@
 - **`master`**：持续开发分支，新功能先在这里完成 PR 和完整 CI 验证。
 - **`market-data`**：主仓库自动生成的日 K 缓存和轻量盘中历史，不属于发布代码。
 
-`v1` 不会自动跟随 `master`。只有当 `master` 的主行情工作流、reusable selftest 和实时价格保护测试都通过后，才通过 `master → v1` 的发布 PR 晋升。详细规则见 `docs/STABLE_V1.md`。
+`v1` 不会自动跟随 `master`。只有当 `master` 的主行情工作流、reusable selftest 和安全检查都通过后，才通过 `master → v1` 的发布 PR 晋升。详细规则见 `docs/STABLE_V1.md`。
 
 ## 当前能力
 
@@ -22,7 +22,9 @@
 - **支撑 / 压力上下文**：综合均线、昨日 OHLC、近期高低和日线拐点生成可解释的候选价位及共振强度。
 - **历史缓存**：主仓库使用独立 `market-data` 分支持久保存日 K 和轻量盘中快照；同一交易阶段重复分析时日 K 可以做到 0 次网络请求。
 - **实时价格保险**：历史缓存、历史快照和日 K 数据被禁止进入 `quote.latest`。盘中实时 quote 失效时，只允许降级到仍然 LIVE 的当日分钟价；两者都不新鲜时当前价直接标记不可用。
-- **结构化产物**：每次运行生成 `snapshot.json`，当前 schema 会包含实时行情、分时结构、日 K 背景、板块对照、历史缓存状态、行情源容错状态和实时价格保护状态。
+- **Reusable workflow 安全边界**：版本绑定到精确 workflow SHA、调用者配置做路径/大小/数量校验、第三方 Actions 固定 commit SHA、行情传输禁止 HTTP 降级。
+- **公共 Web 接口基础滥用防护**：`/` 和 `/quote` 通过 Cloudflare Rate Limiting binding 做服务端限流；限流 binding 不可用时 fail closed，另有 2 秒 isolate-local 短缓存仅用于合并重复上游行情请求。
+- **结构化产物**：每次运行生成 `snapshot.json`，包含实时行情、分时结构、日 K 背景、板块对照、历史缓存状态、行情源容错状态和实时价格保护状态。
 
 ## 数据源与实时性
 
@@ -32,6 +34,8 @@
 - 腾讯：重点股 / 指数备用 quote、分钟线、批量轻量行情、前复权日 K；
 - 东方财富日 K：腾讯日 K 不可用时的备用源；
 - `market-data` / GitHub Actions cache：**仅用于历史日 K 与历史分析上下文，不作为实时现价来源**。
+
+行情传输只允许 HTTPS。腾讯 quote 模块本身只构造 `https://qt.gtimg.cn` 请求；HTTPS 请求失败会继续走其他已验证的 HTTPS source / error 路径，代码中不存在明文 HTTP fallback。
 
 盘中数据会携带 `market_time_cst`、`lag_seconds` 和 `freshness`。重点标的还会生成 `current_price_guard`，用于明确记录本次当前价来自实时 quote、实时分钟线，还是已经不可用。
 
@@ -86,7 +90,9 @@ config/quote_watchlist.json
 }
 ```
 
-`detail_codes` 会抓实时 quote、分钟线、日 K 和完整分析上下文；`light_codes` / group member 主要用于批量板块对照，适合一次放十几到几十只股票。
+`detail_codes` 会抓实时 quote、分钟线、日 K 和完整分析上下文；`light_codes` / group member 主要用于批量板块对照。
+
+对外 reusable workflow 会把该配置视为不可信输入：配置最大 32 KiB，`max_total_codes` 硬上限为 50，并统一统计 detail/light/group 合并后的唯一股票数量；单 group、member 数量和原始 code entry 也有上限。重复 code、非法路径、目录逃逸和 symlink 逃逸会被直接拒绝。
 
 ## 在本仓库运行
 
@@ -126,13 +132,12 @@ jobs:
   quotes:
     uses: yaelysia/looklookbigA/.github/workflows/reusable-a-share-quotes.yml@v1
     with:
-      source_ref: v1
       enable_history_cache: true
 ```
 
 运行结果会产生 `realtime-snapshot` artifact，其中包含 `snapshot.json`。
 
-这里的两个 `v1` 建议始终保持一致：前一个决定 reusable workflow 定义来自哪个版本，`source_ref` 决定实际执行的 looklookbigA 引擎来自哪个版本。
+不再需要额外传 `source_ref: v1`。reusable workflow 未显式覆盖时，会使用 `job.workflow_sha` 把实际执行的 looklookbigA engine 绑定到定义当前 reusable workflow 的精确 commit，并在 checkout 后再次校验 SHA。
 
 ### 使用最新开发版
 
@@ -142,11 +147,21 @@ jobs:
 jobs:
   quotes:
     uses: yaelysia/looklookbigA/.github/workflows/reusable-a-share-quotes.yml@master
-    with:
-      source_ref: master
 ```
 
-不要在稳定任务中混用 `@v1` + `source_ref: master`。
+`master` 是可变开发入口，不推荐用于需要长期稳定复现的自动化任务。
+
+### 最高不可变性：固定完整 commit SHA
+
+如果调用方希望把 workflow 定义本身也锁定到完全不可变版本，可以直接：
+
+```yaml
+jobs:
+  quotes:
+    uses: yaelysia/looklookbigA/.github/workflows/reusable-a-share-quotes.yml@<40-char-commit-sha>
+```
+
+`source_ref` 仅保留为高级 override；如果显式传入，只接受完整 40 位 commit SHA，不接受 `master`、`v1` 或其他可变 branch/tag。
 
 ### 使用调用者自己的观察列表
 
@@ -165,10 +180,11 @@ jobs:
   quotes:
     uses: yaelysia/looklookbigA/.github/workflows/reusable-a-share-quotes.yml@v1
     with:
-      source_ref: v1
       config_json: >-
         {"detail_codes":["300750"],"light_codes":["002594"],"groups":{},"max_total_codes":20}
 ```
+
+`config_path` 必须是 caller repository 内部的相对路径。绝对路径、`../` 逃逸和指向仓库外的 symlink 都会被拒绝。
 
 ### reusable workflow 历史缓存
 
@@ -181,6 +197,12 @@ with:
 ```
 
 第一次运行会初始化历史，之后同一交易阶段通常可以直接命中缓存。跨交易阶段只校验最近少量 K 线；检测到前复权变化或历史缺口时才会完整刷新。
+
+## GitHub Actions 供应链安全
+
+仓库核心 workflow 中的 `actions/checkout`、`actions/cache`、`actions/upload-artifact`、`actions/download-artifact` 等第三方 Action 均固定到完整 commit SHA，而不是可变 `@v4` tag。
+
+`.github/dependabot.yml` 会继续跟踪 GitHub Actions 上游版本更新；升级时由 Dependabot / 人工 review 更新固定 SHA，再经过现有安全测试验证。
 
 ## `snapshot.json` 主要结构
 
@@ -256,13 +278,15 @@ history/
 .github/workflows/reusable-selftest.yml
 ```
 
-修改 reusable workflow、核心行情脚本、行情源容错或实时价格保护逻辑时，会同时运行：
+安全/回归检查包括：
 
 - live-price guard 故障注入测试；
-- quote resilience 主源失败 / stale / 双源分歧等选择测试；
-- reusable workflow 小型观察列表实跑。
-
-这样可以避免“主仓库能跑，但外部调用或 fallback 已经坏掉”的情况。
+- quote resilience 主源失败 / stale / 双源分歧选择测试；
+- watchlist/config 大小、数量、重复 code、路径和 symlink 逃逸测试；
+- GitHub Action SHA pinning 与 reusable workflow engine revision 测试；
+- 腾讯 quote 模块自身 HTTPS-only、源码不包含明文 HTTP fallback 的回归测试；
+- Web 公共行情接口的 Cloudflare Rate Limiting binding 接线、fail-closed 行为和 2 秒短 TTL 去重缓存测试；
+- reusable workflow 小型观察列表实跑并生成 artifact。
 
 稳定分支还有独立：
 
@@ -270,7 +294,7 @@ history/
 .github/workflows/v1-smoke.yml
 ```
 
-每次 `v1` 晋升后会再次执行两类 safety tests 和 reusable workflow 冒烟测试。稳定版发布/维护规则见：
+每次 `v1` 晋升后会再次执行 safety tests 和 reusable workflow 冒烟测试。稳定版发布/维护规则见：
 
 ```text
 docs/STABLE_V1.md
@@ -278,13 +302,19 @@ docs/STABLE_V1.md
 
 ## Web 行情站
 
-仓库仍保留早期的 Web 行情查询站：
+仓库仍保留 Web 行情查询站：
 
 ```text
 https://uploaded-code-site.zhangjinhao949792.chatgpt.site
 ```
 
 Web 部分基于 Vinext / Cloudflare Worker，与当前 GitHub Actions 行情分析管线可以并存。
+
+公开的 `/` 和 `/quote` 路由使用 `PUBLIC_QUOTE_RATE_LIMITER` Cloudflare Rate Limiting binding。当前配置为每个 `CF-Connecting-IP + route` 在 60 秒窗口内最多 60 次；超过后返回 HTTP 429 和 `Retry-After`。如果 binding 缺失或调用异常，公共行情路由会 fail closed 返回 503，而不是静默退回无保护状态。
+
+Cloudflare Rate Limiting binding 的计数由 Cloudflare 平台管理，不依赖单个 Worker isolate 的内存 Map；但它按 Cloudflare location 生效且是 eventually consistent，因此这是针对异常高频访问的基础滥用防护，不应当作精确计费或全局强一致计数器。
+
+同一股票的上游行情另外在 Worker isolate 内做 2 秒 best-effort 短缓存并合并并发请求。这个 Map **只用于削减重复上游请求，不承担限流安全边界**；浏览器响应仍为 `no-store`，短缓存也不作为历史行情或当前价 fallback 来源。
 
 本地开发 Web 部分需要 Node.js `>=22.13.0`：
 
@@ -302,19 +332,29 @@ npm run build
 ## 主要目录
 
 ```text
-.github/workflows/                    GitHub Actions、reusable workflow、v1 smoke
-config/quote_watchlist.json          默认观察列表 / 板块分组
-docs/STABLE_V1.md                    稳定分支发布与兼容策略
-scripts/realtime_quotes_watchlist.py 基础实时行情与分钟数据
+.github/workflows/                     GitHub Actions、reusable workflow、v1 smoke
+.github/dependabot.yml                 GitHub Actions 安全更新跟踪
+config/quote_watchlist.json           默认观察列表 / 板块分组
+docs/STABLE_V1.md                     稳定分支发布与兼容策略
+scripts/config_security.py            caller/watchlist 输入安全边界
+scripts/prepare_reusable_config.py    reusable 配置解析入口
+scripts/transport_security.py         HTTPS-only 行情传输额外防御层
+scripts/test_config_security.py       配置攻击边界回归测试
+scripts/test_workflow_security.py     Action pin / engine SHA / HTTPS 测试
+scripts/realtime_quotes_watchlist.py  基础实时行情与分钟数据
 scripts/realtime_quotes_watchlist_runner.py 组合运行入口
-scripts/quote_resilience.py          东方财富 / 腾讯 quote 双源容错与一致性检查
-scripts/test_quote_resilience.py     行情源故障与分歧选择测试
-scripts/intraday_metrics.py          分时结构指标
-scripts/daily_k_context.py           日 K 背景与支撑压力
-scripts/history_store.py             历史缓存与盘中快照
-scripts/live_price_guard.py          实时价格来源保险
-app/                                 Web 页面
-worker/                              Cloudflare Worker / Web 行情逻辑
+scripts/quote_resilience.py           东方财富 / 腾讯 quote 双源容错与一致性检查
+scripts/test_quote_resilience.py      行情源故障与分歧选择测试
+scripts/intraday_metrics.py           分时结构指标
+scripts/daily_k_context.py            日 K 背景与支撑压力
+scripts/history_store.py              历史缓存与盘中快照
+scripts/live_price_guard.py           实时价格来源保险
+vite.config.ts                        Cloudflare Worker binding / rate-limit 配置
+worker/index.ts                       Worker 入口及 binding 注入
+worker/abuse-protection.js            Cloudflare 限流调用 / 2 秒上游去重缓存
+worker/stock-quote.js                 Web 行情入口
+tests/worker-abuse-protection.test.mjs Web 滥用防护测试
+app/                                  Web 页面
 ```
 
 ## 说明
