@@ -144,6 +144,17 @@ def install(base):
             source_class = "UNAVAILABLE"
             provider = None
 
+        # Sanitize downstream fallbacks. During market hours, an invalid/stale
+        # provider must not remain available through quote.latest or
+        # minutes.last_price, otherwise daily-context code could accidentally
+        # consume it after the guard selected a safer source.
+        if in_market and not quote_valid and quote:
+            quote["latest"] = None
+            quote["current_price_blocked_by_guard"] = True
+        if in_market and not minute_valid and minutes:
+            minutes["last_price"] = None
+            minutes["current_price_blocked_by_guard"] = True
+
         _recompute_intraday_price_fields(intraday, current_price)
         intraday["price_source"] = price_source
         intraday["current_price_valid"] = current_price is not None
