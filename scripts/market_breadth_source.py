@@ -164,7 +164,7 @@ def _sample_page(base, now, page):
         page_size=SAMPLE_PAGE_SIZE,
         sort_field="f12",
     )
-    return page, _parse_page(base.http_get(url, timeout=8, attempts=1))
+    return page, _parse_page(base.http_get(url, timeout=6, attempts=2))
 
 
 def _sampled_result(base, now, primary_error):
