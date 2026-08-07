@@ -62,17 +62,13 @@ def _adjustment_changed(cached_bars, recent_bars):
         return True, 0
 
     mismatch = 0
-    checked = 0
     for fresh in overlap:
         old = cached[fresh["date"]]
         for key in ("open", "close", "high", "low"):
             if old.get(key) is None or fresh.get(key) is None:
                 continue
-            checked += 1
             if _price_changed(old[key], fresh[key]):
                 mismatch += 1
-    # A single tiny source-rounding difference should not force a full refresh;
-    # an actual qfq factor change moves several OHLC values at once.
     return mismatch >= 2, len(overlap)
 
 
@@ -89,7 +85,6 @@ def _cache_path(code):
 
 
 def _save_cache(code, source, bars, validation_key, validation_mode, now, errors=None):
-    path = _cache_path(code)
     payload = {
         "schema_version": 1,
         "code": code,
@@ -103,7 +98,7 @@ def _save_cache(code, source, bars, validation_key, validation_mode, now, errors
         "errors": list(errors or []),
         "bars": bars,
     }
-    _write_json(path, payload)
+    _write_json(_cache_path(code), payload)
     return payload
 
 
@@ -113,8 +108,7 @@ def install_daily_k_cache(base, daily_k_context):
     def cached_fetch(base_obj, code, limit=90):
         now = datetime.now(base.CST)
         key = _validation_key(now)
-        path = _cache_path(code)
-        cached = _load_json(path)
+        cached = _load_json(_cache_path(code))
         cached_bars = _normalize_bars((cached or {}).get("bars"))
         cached_source = (cached or {}).get("source") or "unknown"
 
@@ -127,7 +121,7 @@ def install_daily_k_cache(base, daily_k_context):
                 "latest_bar_date": cached_bars[-1]["date"],
                 "network_daily_k_requests": 0,
             }
-            return f"History cache ({cached_source})", cached_bars[-max(limit, 60) :], []
+            return f"History cache ({cached_source})", cached_bars[-max(limit, 60):], []
 
         if len(cached_bars) >= 60:
             refresh_errors = []
@@ -141,15 +135,7 @@ def install_daily_k_cache(base, daily_k_context):
                     full_source, full_bars, full_errors = original_fetch(base_obj, code, limit=max(120, limit))
                     refresh_errors.extend(full_errors or [])
                     full_bars = _normalize_bars(full_bars)[-120:]
-                    saved = _save_cache(
-                        code,
-                        full_source,
-                        full_bars,
-                        key,
-                        "FULL_REFRESH_ADJUSTMENT_OR_GAP",
-                        now,
-                        refresh_errors,
-                    )
+                    saved = _save_cache(code, full_source, full_bars, key, "FULL_REFRESH_ADJUSTMENT_OR_GAP", now, refresh_errors)
                     CACHE_META[code] = {
                         "state": "FULL_REFRESH",
                         "validation_key": key,
@@ -159,18 +145,10 @@ def install_daily_k_cache(base, daily_k_context):
                         "overlap_count": overlap_count,
                         "network_daily_k_requests": 2,
                     }
-                    return full_source, full_bars[-max(limit, 60) :], refresh_errors
+                    return full_source, full_bars[-max(limit, 60):], refresh_errors
 
                 merged = _merge_bars(cached_bars, recent_bars, keep=120)
-                saved = _save_cache(
-                    code,
-                    recent_source or cached_source,
-                    merged,
-                    key,
-                    "INCREMENTAL_VALIDATION",
-                    now,
-                    refresh_errors,
-                )
+                saved = _save_cache(code, recent_source or cached_source, merged, key, "INCREMENTAL_VALIDATION", now, refresh_errors)
                 CACHE_META[code] = {
                     "state": "INCREMENTAL_REFRESH",
                     "validation_key": key,
@@ -180,22 +158,11 @@ def install_daily_k_cache(base, daily_k_context):
                     "overlap_count": overlap_count,
                     "network_daily_k_requests": 1,
                 }
-                return f"History cache + {recent_source}", merged[-max(limit, 60) :], refresh_errors
+                return f"History cache + {recent_source}", merged[-max(limit, 60):], refresh_errors
             except Exception as exc:
-                # Historical daily bars change slowly. If the source is temporarily
-                # unavailable, keep using the existing cache and avoid retrying the
-                # same failed validation on every analysis run in this phase.
                 err = f"history validation: {type(exc).__name__}: {exc}"
                 stale_errors = list((cached or {}).get("errors") or []) + [err]
-                saved = _save_cache(
-                    code,
-                    cached_source,
-                    cached_bars,
-                    key,
-                    "STALE_CACHE_FALLBACK",
-                    now,
-                    stale_errors[-10:],
-                )
+                saved = _save_cache(code, cached_source, cached_bars, key, "STALE_CACHE_FALLBACK", now, stale_errors[-10:])
                 CACHE_META[code] = {
                     "state": "STALE_FALLBACK",
                     "validation_key": key,
@@ -205,10 +172,8 @@ def install_daily_k_cache(base, daily_k_context):
                     "network_daily_k_requests": 1,
                     "error": err,
                 }
-                return f"History stale cache ({cached_source})", cached_bars[-max(limit, 60) :], [err]
+                return f"History stale cache ({cached_source})", cached_bars[-max(limit, 60):], [err]
 
-        # No usable cache: bootstrap enough history once. Future runs in the same
-        # phase will be pure cache hits.
         source, bars, errors = original_fetch(base_obj, code, limit=max(120, limit))
         bars = _normalize_bars(bars)[-120:]
         saved = _save_cache(code, source, bars, key, "BOOTSTRAP_FULL", now, errors)
@@ -220,7 +185,7 @@ def install_daily_k_cache(base, daily_k_context):
             "latest_bar_date": saved.get("latest_bar_date"),
             "network_daily_k_requests": 1,
         }
-        return source, bars[-max(limit, 60) :], errors
+        return source, bars[-max(limit, 60):], errors
 
     daily_k_context.fetch_daily_bars = cached_fetch
 
@@ -270,8 +235,7 @@ def _archive_snapshot(data):
     run_id = os.environ.get("GITHUB_RUN_ID", "local")
     attempt = os.environ.get("GITHUB_RUN_ATTEMPT", "1")
     rel = Path("snapshots") / date_part / f"{time_part}_run{run_id}_a{attempt}.json"
-    path = root / rel
-    _write_json(path, _compact_snapshot(data))
+    _write_json(root / rel, _compact_snapshot(data))
     return str(rel).replace("\\", "/")
 
 
@@ -284,7 +248,7 @@ def _update_manifest(data, archive_rel):
         "latest_snapshot": archive_rel,
         "latest_runner_time_cst": data.get("runner_time_cst"),
         "daily_k_codes": codes,
-        "updated_at_cst": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "updated_at_cst": data.get("runner_time_cst"),
     }
     _write_json(root / "manifest.json", manifest)
     return manifest
@@ -314,8 +278,5 @@ def finalize_snapshot(snapshot_path):
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
     states = ",".join(f"{code}:{meta.get('state')}" for code, meta in sorted(CACHE_META.items()))
     requests = sum(int(meta.get("network_daily_k_requests") or 0) for meta in CACHE_META.values())
-    print(
-        f"HISTORY archive={archive_rel} daily_cache=[{states}] daily_k_network_requests={requests}",
-        flush=True,
-    )
+    print(f"HISTORY archive={archive_rel} daily_cache=[{states}] daily_k_network_requests={requests}", flush=True)
     print("SNAPSHOT_SCHEMA_UPGRADED schema_version=6 feature=market_history:v1", flush=True)
