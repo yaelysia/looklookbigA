@@ -18,9 +18,12 @@ def _breadth(up=4200, down=1000, flat=100, amount_1e8=28000.0, status="OK"):
         "reported_total_count": total,
         "covered_count": total,
         "coverage_percent": 100.0,
+        "estimated": status == "PARTIAL",
         "overall": {
+            "estimated": status == "PARTIAL",
             "count": total,
             "change_covered_count": total,
+            "unavailable_change_count": 0,
             "up_count": up,
             "down_count": down,
             "flat_count": flat,
@@ -103,6 +106,17 @@ def test_broad_risk_on_market_driver():
     print("PASS broad_risk_on_market_driver")
 
 
+def test_broad_market_reference_excludes_style_indices():
+    snapshot = _snapshot([1.0, 1.0, 8.0, 1.0, 8.0, 8.0], group_mean=1.0, target_pct=1.1)
+    env = market_environment.build_market_environment(snapshot, _breadth())
+    assert env["indices"]["mean_change_percent"] > 4.0
+    assert env["indices"]["broad_market_reference_percent"] == 1.0
+    target = env["targets"]["002558"]
+    assert target["relative_strength"]["market_reference_percent"] == 1.0
+    assert target["relative_strength"]["relative_to_market"] == "INLINE"
+    print("PASS broad_market_reference_excludes_style_indices")
+
+
 def test_sector_driver_when_sector_diverges_from_market():
     snapshot = _snapshot([1.0, 1.1, 1.2, 1.0, 1.1, 1.2], group_mean=-0.8, group_breadth=-100.0, target_pct=-0.7)
     env = market_environment.build_market_environment(snapshot, _breadth(up=3500, down=1700, flat=100))
@@ -141,15 +155,36 @@ def test_market_record_summary_and_limit_diagnostics():
         {"f12": "688001", "f14": "科创A", "f3": -4.0, "f6": 300000000, "f2": 9.6, "f15": 10.0, "f18": 10},
         {"f12": "430001", "f14": "北证A", "f3": -30.0, "f6": 400000000, "f2": 7.0, "f15": 10.0, "f18": 10},
         {"f12": "000001", "f14": "ST测试", "f3": 4.99, "f6": 500000000, "f2": 10.5, "f15": 10.5, "f18": 10},
+        {"f12": "000002", "f14": "停牌样本", "f3": None, "f6": 0, "f2": None, "f15": None, "f18": 10},
     ]
     summary = market_environment._summarize_market_records(records)
-    assert summary["count"] == 5
+    assert summary["count"] == 6
+    assert summary["change_covered_count"] == 5
+    assert summary["unavailable_change_count"] == 1
     assert summary["up_count"] == 3
     assert summary["down_count"] == 2
+    assert summary["flat_count"] == 0
     assert summary["amount_1e8"] == 15.0
     assert summary["limit_up_count_approx"] == 2
     assert summary["limit_down_count_approx"] == 1
     print("PASS market_record_summary")
+
+
+def test_sample_unavailable_stays_separate_from_flat():
+    records = []
+    pcts = [1, 1, 1, 1, 1, 1, -1, -1, 0, None]
+    for i, pct in enumerate(pcts):
+        records.append(
+            {"f13": 1, "f12": str(600000 + i), "f14": f"样本{i}", "f3": pct, "f6": 100000000, "f2": 10, "f15": 10, "f18": 10}
+        )
+    result = market_breadth_source._estimated_overall(records, 100)
+    assert result["change_covered_count"] == 90
+    assert result["unavailable_change_count"] == 10
+    assert result["up_count"] == 60
+    assert result["down_count"] == 20
+    assert result["flat_count"] == 10
+    assert result["sample_unavailable_change_count"] == 1
+    print("PASS sampled_unavailable_separate")
 
 
 def test_truncated_gainers_page_falls_back_to_systematic_sample():
@@ -198,6 +233,7 @@ def test_truncated_gainers_page_falls_back_to_systematic_sample():
     assert result["overall"]["estimated"] is True
     assert result["overall"]["up_ratio_percent"] == 75.0
     assert result["overall"]["down_ratio_percent"] == 25.0
+    assert result["overall"]["unavailable_change_count"] == 0
     assert result["overall"]["amount_1e8"] is None
     assert result["limit_statistics"]["available"] is False
     assert any("82.push2.eastmoney.com" in url for url in captured)
@@ -206,8 +242,12 @@ def test_truncated_gainers_page_falls_back_to_systematic_sample():
     env = market_environment.build_market_environment(
         _snapshot([1.0, 1.1, 1.2, 1.0, 1.1, 1.2]), result
     )
+    assert env["status"] == "PARTIAL"
     assert env["regime"]["status"] == "BROAD_RISK_ON"
+    assert env["regime"]["breadth_estimated"] is True
     assert env["confidence"] == "MEDIUM"
+    assert "None 亿元" not in env["summary"]
+    assert "总成交额在样本模式下不外推" in env["summary"]
     print("PASS biased_top_page_replaced_with_systematic_sample")
 
 
@@ -235,10 +275,12 @@ def test_finalize_snapshot_updates_schema_and_feature():
 def main():
     tests = [
         test_broad_risk_on_market_driver,
+        test_broad_market_reference_excludes_style_indices,
         test_sector_driver_when_sector_diverges_from_market,
         test_idiosyncratic_driver_when_stock_breaks_from_market_and_sector,
         test_stale_indices_are_not_counted_as_usable,
         test_market_record_summary_and_limit_diagnostics,
+        test_sample_unavailable_stays_separate_from_flat,
         test_truncated_gainers_page_falls_back_to_systematic_sample,
         test_finalize_snapshot_updates_schema_and_feature,
     ]
