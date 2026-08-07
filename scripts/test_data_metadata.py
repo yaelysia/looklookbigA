@@ -181,10 +181,15 @@ def test_fallback_quote_metadata_is_explicit():
 def test_session_minute_series_remains_valid_after_market_close():
     for freshness in ("CURRENT_SESSION", "LAST_SESSION"):
         source = _clean_snapshot()
+        # This reproduces the real pipeline: base.detail_payload can still carry
+        # PARTIAL from its pre-guard freshness interpretation, while the final
+        # quote/minute nodes have already been normalized to a valid session.
+        source["detail_stocks"]["002558"]["status"] = "PARTIAL"
         source["detail_stocks"]["002558"]["quote"]["freshness"] = freshness
         source["detail_stocks"]["002558"]["minutes"]["freshness"] = freshness
         data = data_metadata.decorate_snapshot(source)
 
+        detail_meta = data["detail_stocks"]["002558"]["metadata"]
         minute_meta = data["detail_stocks"]["002558"]["minutes"]["metadata"]
         intraday_meta = data["detail_stocks"]["002558"]["intraday"]["metadata"]
         assert minute_meta["freshness"] == freshness
@@ -193,6 +198,7 @@ def test_session_minute_series_remains_valid_after_market_close():
         assert "NOT_LIVE_NOW" in minute_meta["quality_flags"]
         assert intraday_meta["quality"] == "PASS"
         assert "INPUT_DATA_DEGRADED" not in intraday_meta["quality_flags"]
+        assert detail_meta["quality"] == "PASS"
         assert data["data_quality"]["overall"] == "PASS"
     print("PASS closed_session_minute_quality")
 
