@@ -160,8 +160,20 @@ def _structure_metrics(mins):
     if high_direction == "HIGHER" and low_direction == "HIGHER":
         structure = "HIGHER_HIGH_HIGHER_LOW"
         bias = "UPTREND"
+    elif high_direction == "HIGHER" and low_direction == "FLAT":
+        structure = "HIGHER_HIGH_FLAT_LOW"
+        bias = "UPTREND"
+    elif high_direction == "FLAT" and low_direction == "HIGHER":
+        structure = "FLAT_HIGH_HIGHER_LOW"
+        bias = "UPTREND"
     elif high_direction == "LOWER" and low_direction == "LOWER":
         structure = "LOWER_HIGH_LOWER_LOW"
+        bias = "DOWNTREND"
+    elif high_direction == "LOWER" and low_direction == "FLAT":
+        structure = "LOWER_HIGH_FLAT_LOW"
+        bias = "DOWNTREND"
+    elif high_direction == "FLAT" and low_direction == "LOWER":
+        structure = "FLAT_HIGH_LOWER_LOW"
         bias = "DOWNTREND"
     elif high_direction == "LOWER" and low_direction == "HIGHER":
         structure = "LOWER_HIGH_HIGHER_LOW"
@@ -169,7 +181,7 @@ def _structure_metrics(mins):
     elif high_direction == "HIGHER" and low_direction == "LOWER":
         structure = "HIGHER_HIGH_LOWER_LOW"
         bias = "EXPANDING_RANGE"
-    elif high_direction != "UNKNOWN" and low_direction != "UNKNOWN":
+    elif high_direction == "FLAT" and low_direction == "FLAT":
         structure = "RANGE_OR_FLAT"
         bias = "RANGE"
     else:
@@ -198,6 +210,7 @@ def build_intraday_metrics(quote, mins):
     minute_price = _as_float(mins[-1].get("price"))
     quote_price = _as_float(quote.get("latest"))
     price = quote_price if quote_price is not None else minute_price
+    price_source = "quote" if quote_price is not None else "minute"
 
     vwap = _as_float(quote.get("average"))
     vwap_source = "quote_average" if vwap is not None else None
@@ -208,12 +221,12 @@ def build_intraday_metrics(quote, mins):
             vwap = cum_amount / (cum_volume * 100.0)
             vwap_source = "tencent_cumulative"
 
-    day_high = _as_float(quote.get("high"))
-    day_low = _as_float(quote.get("low"))
-    if day_high is None:
-        day_high = max(float(x["price"]) for x in mins)
-    if day_low is None:
-        day_low = min(float(x["price"]) for x in mins)
+    quote_day_high = _as_float(quote.get("high"))
+    quote_day_low = _as_float(quote.get("low"))
+    has_quote_extrema = quote_day_high is not None and quote_day_low is not None
+    day_high = quote_day_high if quote_day_high is not None else max(float(x["price"]) for x in mins)
+    day_low = quote_day_low if quote_day_low is not None else min(float(x["price"]) for x in mins)
+    day_extrema_source = "quote" if has_quote_extrema else "minute_close_fallback"
 
     range_position = None
     if price is not None and day_high is not None and day_low is not None and day_high > day_low:
@@ -224,12 +237,15 @@ def build_intraday_metrics(quote, mins):
     activity = _activity_metrics(mins)
     structure = _structure_metrics(mins)
 
-    status = "OK" if len(mins) >= 31 and price is not None else "PARTIAL"
+    complete = len(mins) >= 31 and price is not None and has_quote_extrema
+    status = "OK" if complete else "PARTIAL"
     result = {
         "status": status,
         "minute_count": len(mins),
         "minute_last_time": mins[-1].get("time"),
+        "quote_available": bool(quote),
         "price": price,
+        "price_source": price_source,
         "minute_price": minute_price,
         "quote_minute_price_gap_percent": _round(_pct_change(quote_price, minute_price), 4),
         "vwap": _round(vwap, 4),
@@ -238,6 +254,7 @@ def build_intraday_metrics(quote, mins):
         "above_vwap": None if price is None or vwap is None else price >= vwap,
         "day_high": day_high,
         "day_low": day_low,
+        "day_extrema_source": day_extrema_source,
         "from_day_high_percent": _round(_pct_change(price, day_high), 4),
         "from_day_low_percent": _round(_pct_change(price, day_low), 4),
         "day_range_position_percent": _round(range_position, 2),
@@ -315,6 +332,7 @@ def finalize_snapshot(snapshot_path):
             f"trend5/15/30={intraday.get('trend_5m_percent')}/"
             f"{intraday.get('trend_15m_percent')}/{intraday.get('trend_30m_percent')}% "
             f"day_pos={intraday.get('day_range_position_percent')}% "
+            f"extrema_source={intraday.get('day_extrema_source')} "
             f"vol1m={intraday.get('volume_spike_ratio_1m')}x "
             f"vol5m={intraday.get('volume_strength_ratio_5m')}x "
             f"structure={intraday.get('structure')} bias={intraday.get('bias')}",
@@ -325,4 +343,4 @@ def finalize_snapshot(snapshot_path):
         raise RuntimeError("intraday metric validation failed: " + "; ".join(errors))
 
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"SNAPSHOT_SCHEMA_UPGRADED schema_version=4 feature=intraday_structure_metrics:v1", flush=True)
+    print("SNAPSHOT_SCHEMA_UPGRADED schema_version=4 feature=intraday_structure_metrics:v1", flush=True)
