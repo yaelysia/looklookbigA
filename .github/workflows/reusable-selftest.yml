@@ -20,11 +20,14 @@ on:
       - "scripts/history_store.py"
       - "scripts/live_price_guard.py"
       - "scripts/quote_resilience.py"
+      - "scripts/market_environment.py"
+      - "scripts/market_breadth_source.py"
       - "scripts/transport_security.py"
       - "scripts/config_security.py"
       - "scripts/prepare_reusable_config.py"
       - "scripts/test_live_price_guard.py"
       - "scripts/test_quote_resilience.py"
+      - "scripts/test_market_environment.py"
       - "scripts/test_config_security.py"
       - "scripts/test_workflow_security.py"
       - "worker/index.ts"
@@ -48,6 +51,8 @@ jobs:
         run: python3 scripts/test_config_security.py
       - name: Run workflow supply-chain and transport tests
         run: python3 scripts/test_workflow_security.py
+      - name: Run market environment summary tests
+        run: python3 scripts/test_market_environment.py
       - name: Run public quote abuse-protection tests
         run: node --test tests/worker-abuse-protection.test.mjs
 

@@ -7,6 +7,7 @@ on:
       - ".github/workflows/realtime-quotes.yml"
       - ".github/workflows/reusable-a-share-quotes.yml"
       - ".github/workflows/reusable-selftest.yml"
+      - ".github/workflows/pre-merge-security-gate.yml"
       - ".github/workflows/v1-smoke.yml"
       - "scripts/realtime_quotes_watchlist.py"
       - "scripts/realtime_quotes_watchlist_runner.py"
@@ -15,12 +16,15 @@ on:
       - "scripts/history_store.py"
       - "scripts/live_price_guard.py"
       - "scripts/quote_resilience.py"
+      - "scripts/market_environment.py"
+      - "scripts/market_breadth_source.py"
       - "scripts/transport_security.py"
       - "scripts/config_security.py"
       - "scripts/prepare_reusable_config.py"
       - "scripts/test_config_security.py"
       - "scripts/test_workflow_security.py"
       - "scripts/test_quote_resilience.py"
+      - "scripts/test_market_environment.py"
       - "config/quote_watchlist.json"
 
 permissions:
