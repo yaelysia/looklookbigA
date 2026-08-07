@@ -3,6 +3,8 @@ name: Reusable Workflow Selftest
 on:
   push:
     paths:
+      - "README.md"
+      - "docs/STABLE_V1.md"
       - ".github/workflows/reusable-a-share-quotes.yml"
       - ".github/workflows/reusable-selftest.yml"
       - ".github/workflows/realtime-quotes.yml"
