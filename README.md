@@ -4,6 +4,14 @@
 
 当前默认重点跟踪巨人网络（002558）和国电电力（600795），并配置了一组游戏板块对照股；观察列表本身是可配置的，并不限制只能查询这些股票。
 
+## 版本与分支
+
+- **`v1`**：对外复用的稳定分支。推荐其他仓库、长期自动化任务固定使用 `@v1`。
+- **`master`**：持续开发分支，新功能先在这里完成 PR 和完整 CI 验证。
+- **`market-data`**：主仓库自动生成的日 K 缓存和轻量盘中历史，不属于发布代码。
+
+`v1` 不会自动跟随 `master`。只有当 `master` 的主行情工作流、reusable selftest 和实时价格保护测试都通过后，才通过 `master → v1` 的发布 PR 晋升。详细规则见 `docs/STABLE_V1.md`。
+
 ## 当前能力
 
 - **重点标的实时行情**：现价、开高低、均价、涨跌幅、成交额和时间戳。
@@ -77,7 +85,9 @@ realtime-snapshot / snapshot.json
 .github/workflows/reusable-a-share-quotes.yml
 ```
 
-调用者自己的仓库只需要增加一个很小的 workflow，例如：
+### 推荐：固定使用稳定版 v1
+
+调用者自己的仓库只需要增加一个很小的 workflow：
 
 ```yaml
 name: A-share snapshot
@@ -87,13 +97,29 @@ on:
 
 jobs:
   quotes:
-    uses: yaelysia/looklookbigA/.github/workflows/reusable-a-share-quotes.yml@master
+    uses: yaelysia/looklookbigA/.github/workflows/reusable-a-share-quotes.yml@v1
     with:
-      source_ref: master
+      source_ref: v1
       enable_history_cache: true
 ```
 
-运行结果同样会产生 `realtime-snapshot` artifact，其中包含 `snapshot.json`。
+运行结果会产生 `realtime-snapshot` artifact，其中包含 `snapshot.json`。
+
+这里的两个 `v1` 建议始终保持一致：前一个决定 reusable workflow 定义来自哪个版本，`source_ref` 决定实际执行的 looklookbigA 引擎来自哪个版本。
+
+### 使用最新开发版
+
+需要验证尚未晋升到稳定版的新能力时，可以显式使用 `master`：
+
+```yaml
+jobs:
+  quotes:
+    uses: yaelysia/looklookbigA/.github/workflows/reusable-a-share-quotes.yml@master
+    with:
+      source_ref: master
+```
+
+不要在稳定任务中混用 `@v1` + `source_ref: master`。
 
 ### 使用调用者自己的观察列表
 
@@ -103,16 +129,16 @@ jobs:
 config/quote_watchlist.json
 ```
 
-reusable workflow 默认会优先读取这个文件。如果调用者仓库没有该文件，则使用 looklookbigA 自带的默认配置。
+reusable workflow 默认会优先读取这个文件。如果调用者仓库没有该文件，则使用 looklookbigA 对应版本自带的默认配置。
 
 也可以直接传入 JSON：
 
 ```yaml
 jobs:
   quotes:
-    uses: yaelysia/looklookbigA/.github/workflows/reusable-a-share-quotes.yml@master
+    uses: yaelysia/looklookbigA/.github/workflows/reusable-a-share-quotes.yml@v1
     with:
-      source_ref: master
+      source_ref: v1
       config_json: >-
         {"detail_codes":["300750"],"light_codes":["002594"],"groups":{},"max_total_codes":20}
 ```
@@ -195,13 +221,25 @@ history/
 
 ## GitHub Actions 自检
 
-reusable workflow 有独立的冒烟测试：
+开发分支上的 reusable workflow 有独立冒烟测试：
 
 ```text
 .github/workflows/reusable-selftest.yml
 ```
 
 修改 reusable workflow、核心行情脚本或实时价格保护逻辑时，会调用 reusable workflow 本身跑一组小型观察列表，避免出现“主仓库能跑、外部调用方式已经坏掉”的情况。
+
+稳定分支还有独立：
+
+```text
+.github/workflows/v1-smoke.yml
+```
+
+每次 `v1` 晋升后会再次执行 live-price guard 故障注入测试和 reusable workflow 冒烟测试。稳定版发布/维护规则见：
+
+```text
+docs/STABLE_V1.md
+```
 
 ## Web 行情站
 
@@ -229,16 +267,17 @@ npm run build
 ## 主要目录
 
 ```text
-.github/workflows/                 GitHub Actions 与 reusable workflow
-config/quote_watchlist.json       默认观察列表 / 板块分组
-scripts/realtime_quotes_watchlist.py  基础实时行情与分钟数据
-scripts/realtime_quotes_watchlist_runner.py  组合运行入口
-scripts/intraday_metrics.py       分时结构指标
-scripts/daily_k_context.py        日 K 背景与支撑压力
-scripts/history_store.py          历史缓存与盘中快照
-scripts/live_price_guard.py       实时价格来源保险
-app/                              Web 页面
-worker/                           Cloudflare Worker / Web 行情逻辑
+.github/workflows/                    GitHub Actions、reusable workflow、v1 smoke
+config/quote_watchlist.json          默认观察列表 / 板块分组
+docs/STABLE_V1.md                    稳定分支发布与兼容策略
+scripts/realtime_quotes_watchlist.py 基础实时行情与分钟数据
+scripts/realtime_quotes_watchlist_runner.py 组合运行入口
+scripts/intraday_metrics.py          分时结构指标
+scripts/daily_k_context.py           日 K 背景与支撑压力
+scripts/history_store.py             历史缓存与盘中快照
+scripts/live_price_guard.py          实时价格来源保险
+app/                                 Web 页面
+worker/                              Cloudflare Worker / Web 行情逻辑
 ```
 
 ## 说明
