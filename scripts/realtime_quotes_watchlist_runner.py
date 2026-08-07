@@ -3,6 +3,7 @@ import daily_k_context
 import history_store
 import intraday_metrics
 import live_price_guard
+import market_breadth_source
 import market_environment
 import quote_resilience
 import realtime_quotes_watchlist as base
@@ -26,6 +27,9 @@ market_environment.configure_indices(base, quote_resilience)
 # live-price guard still owns the final rule that stale/history data can never
 # become a usable current price.
 quote_resilience.install(base)
+# Keep collection and interpretation separate. The source refuses to turn a
+# truncated, gainers-sorted sample into fake market breadth.
+market_environment.fetch_market_breadth = market_breadth_source.fetch_market_breadth
 # Market breadth wraps the already-resilient index fetch. The breadth request
 # is diagnostic: failure degrades market_environment but does not break quote
 # generation or current-price safety.
