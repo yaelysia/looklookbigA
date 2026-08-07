@@ -1,3 +1,4 @@
+import io
 import json
 import re
 import shutil
@@ -61,10 +62,36 @@ def _download_pdf(url, timeout=10):
     return payload
 
 
-def _pdf_text(pdf_bytes):
+def _normalize_pdf_text(text):
+    text = re.sub(r"\s+", " ", str(text or "")).strip()
+    if not text:
+        raise RuntimeError("PDF parser returned empty text")
+    return text[:MAX_PDF_TEXT_CHARS]
+
+
+def _pypdf_text(pdf_bytes):
+    try:
+        from pypdf import PdfReader
+    except ImportError as exc:
+        raise RuntimeError("pypdf is unavailable") from exc
+
+    reader = PdfReader(io.BytesIO(pdf_bytes), strict=False)
+    parts = []
+    total = 0
+    for page in reader.pages:
+        value = page.extract_text() or ""
+        if value:
+            parts.append(value)
+            total += len(value)
+        if total >= MAX_PDF_TEXT_CHARS:
+            break
+    return _normalize_pdf_text("\n".join(parts))
+
+
+def _pdftotext_text(pdf_bytes):
     tool = shutil.which("pdftotext")
     if not tool:
-        raise RuntimeError("pdftotext is unavailable on the runner")
+        raise RuntimeError("pdftotext is unavailable")
     completed = subprocess.run(
         [tool, "-layout", "-", "-"],
         input=pdf_bytes,
@@ -76,11 +103,22 @@ def _pdf_text(pdf_bytes):
     if completed.returncode != 0:
         error = completed.stderr.decode("utf-8", errors="replace").strip()
         raise RuntimeError(f"pdftotext failed: {error[:300]}")
-    text = completed.stdout.decode("utf-8", errors="replace")
-    text = re.sub(r"\s+", " ", text).strip()
-    if not text:
-        raise RuntimeError("pdftotext returned empty text")
-    return text[:MAX_PDF_TEXT_CHARS]
+    return _normalize_pdf_text(completed.stdout.decode("utf-8", errors="replace"))
+
+
+def _pdf_text(pdf_bytes):
+    errors = []
+    try:
+        return _pypdf_text(pdf_bytes), "pypdf"
+    except Exception as exc:
+        errors.append(f"pypdf={type(exc).__name__}: {exc}")
+
+    try:
+        return _pdftotext_text(pdf_bytes), "pdftotext"
+    except Exception as exc:
+        errors.append(f"pdftotext={type(exc).__name__}: {exc}")
+
+    raise RuntimeError("; ".join(errors))
 
 
 def _num(text):
@@ -157,7 +195,7 @@ def _buyback_facts(text, facts):
         facts["price_cap_yuan_per_share"] = _num(cap.group(1))
 
 
-def _enriched_facts(event, text):
+def _enriched_facts(event, text, parser):
     facts = company_events.extract_facts(
         event.get("event_type"),
         event.get("title"),
@@ -167,7 +205,7 @@ def _enriched_facts(event, text):
     facts["document_extraction"] = {
         "status": "OK",
         "source_url": event.get("source_url"),
-        "parser": "pdftotext",
+        "parser": parser,
     }
     event_type = event.get("event_type")
     if event_type in {"EARNINGS_FORECAST", "EARNINGS_EXPRESS"}:
@@ -183,8 +221,8 @@ def enrich_event(event):
     if event.get("event_type") not in FACT_ENRICH_TYPES or not event.get("source_url"):
         return event, False
     try:
-        text = _pdf_text(_download_pdf(event.get("source_url")))
-        event["facts"] = _enriched_facts(event, text)
+        text, parser = _pdf_text(_download_pdf(event.get("source_url")))
+        event["facts"] = _enriched_facts(event, text, parser)
         return event, True
     except Exception as exc:
         facts = dict(event.get("facts") or {})
@@ -218,6 +256,7 @@ def finalize_snapshot(snapshot_path):
     enriched_count = 0
     failed_count = 0
     selected_count = 0
+    parsers = set()
 
     for code, item in (data.get("detail_stocks") or {}).items():
         container = item.get("events")
@@ -233,6 +272,9 @@ def finalize_snapshot(snapshot_path):
         for event in selected:
             event, ok = enrich_event(event)
             enriched_by_id[event.get("event_id")] = event
+            document = (event.get("facts") or {}).get("document_extraction") or {}
+            if document.get("parser"):
+                parsers.add(document.get("parser"))
             if ok:
                 enriched_count += 1
             else:
@@ -255,13 +297,14 @@ def finalize_snapshot(snapshot_path):
         "selected_event_count": selected_count,
         "enriched_event_count": enriched_count,
         "failed_event_count": failed_count,
-        "parser": "pdftotext_optional_runtime",
+        "parsers_used": sorted(parsers),
+        "preferred_parser": "pypdf==6.14.2",
         "max_events_per_stock": MAX_ENRICH_EVENTS_PER_STOCK,
     }
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
     print(
         "COMPANY_EVENT_FACTS "
         f"status={summary['fact_enrichment']['status']} selected={selected_count} "
-        f"enriched={enriched_count} failed={failed_count}",
+        f"enriched={enriched_count} failed={failed_count} parsers={sorted(parsers)}",
         flush=True,
     )
