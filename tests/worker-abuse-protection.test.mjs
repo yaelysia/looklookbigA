@@ -56,12 +56,23 @@ test("rate limiter fails closed when binding is unavailable", async () => {
   assert.equal(result.retryAfterSeconds, 60);
 });
 
-test("Vite worker config declares the managed rate-limit binding", () => {
-  const text = readFileSync("vite.config.ts", "utf8");
-  assert.match(text, /ratelimits\s*:/);
-  assert.match(text, /name:\s*"PUBLIC_QUOTE_RATE_LIMITER"/);
-  assert.match(text, /limit:\s*60/);
-  assert.match(text, /period:\s*60/);
+test("managed rate-limit binding is configured and wired into public routes", () => {
+  const viteText = readFileSync("vite.config.ts", "utf8");
+  const indexText = readFileSync("worker/index.ts", "utf8");
+  const quoteText = readFileSync("worker/stock-quote.js", "utf8");
+  const protectionText = readFileSync("worker/abuse-protection.js", "utf8");
+
+  assert.match(viteText, /ratelimits\s*:/);
+  assert.match(viteText, /name:\s*"PUBLIC_QUOTE_RATE_LIMITER"/);
+  assert.match(viteText, /limit:\s*60/);
+  assert.match(viteText, /period:\s*60/);
+  assert.match(indexText, /PUBLIC_QUOTE_RATE_LIMITER:\s*RateLimit/);
+  assert.match(
+    indexText,
+    /stockQuoteWorker\.fetch\(request, env\.PUBLIC_QUOTE_RATE_LIMITER\)/,
+  );
+  assert.match(quoteText, /await checkRequestLimit\(request, rateLimiter\)/);
+  assert.doesNotMatch(protectionText, /requestBuckets/);
 });
 
 test("short quote cache coalesces concurrent and immediate duplicate loads", async () => {
