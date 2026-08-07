@@ -1,9 +1,7 @@
 import json
-import math
 import statistics
 import time
 import urllib.parse
-from datetime import datetime
 from pathlib import Path
 
 
@@ -58,7 +56,6 @@ def _fetch_tencent(base, code, limit=90):
         if len(row) < 6:
             continue
         try:
-            # Tencent day rows are date, open, close, high, low, volume.
             bars.append(_normalize_bar(row[:6], "Tencent qfq"))
         except (TypeError, ValueError):
             continue
@@ -89,7 +86,6 @@ def _fetch_eastmoney(base, code, limit=90):
         if len(fields) < 7:
             continue
         try:
-            # Eastmoney: date,open,close,high,low,volume,amount,...
             bars.append(_normalize_bar(fields[:7], "Eastmoney qfq"))
         except (TypeError, ValueError):
             continue
@@ -228,11 +224,32 @@ def _cluster_levels(levels, tolerance):
 
 
 def _level_strength(score):
-    if score >= 4.5:
+    if score >= 4.0:
         return "STRONG"
-    if score >= 2.5:
+    if score >= 2.0:
         return "MEDIUM"
     return "WEAK"
+
+
+def _cluster_entries(levels, current_price, atr14, tolerance, side):
+    entries = []
+    for cluster in _cluster_levels(levels, tolerance):
+        items = cluster["items"]
+        price = cluster["center"]
+        score = sum(_source_weight(x["source"]) for x in items)
+        entries.append(
+            {
+                "price": _round(price, 3),
+                "distance_percent": _round(_pct_change(price, current_price), 3),
+                "distance_atr": _round((price - current_price) / atr14, 3) if atr14 not in (None, 0) else None,
+                "score": _round(score, 2),
+                "strength": _level_strength(score),
+                "confluence_count": len(items),
+                "side": side,
+                "sources": [x["source"] for x in items],
+            }
+        )
+    return entries
 
 
 def _build_key_levels(current_price, atr14, mas, ranges, prev, swings):
@@ -264,26 +281,15 @@ def _build_key_levels(current_price, atr14, mas, ranges, prev, swings):
         raw.append({"price": point["price"], "source": f"SWING_HIGH:{point['date']}"})
 
     tolerance = max(current_price * 0.0035, (atr14 or 0) * 0.12)
-    clusters = _cluster_levels(raw, tolerance)
-    supports = []
-    resistances = []
 
-    for cluster in clusters:
-        items = cluster["items"]
-        price = cluster["center"]
-        score = sum(_source_weight(x["source"]) for x in items)
-        entry = {
-            "price": _round(price, 3),
-            "distance_percent": _round(_pct_change(price, current_price), 3),
-            "distance_atr": _round((price - current_price) / atr14, 3) if atr14 not in (None, 0) else None,
-            "score": _round(score, 2),
-            "strength": _level_strength(score),
-            "sources": [x["source"] for x in items],
-        }
-        if price <= current_price:
-            supports.append(entry)
-        else:
-            resistances.append(entry)
+    # Never cluster through the current market price. A nearby support and a
+    # nearby resistance must remain separate even when their numeric distance
+    # is smaller than the normal confluence tolerance.
+    support_raw = [item for item in raw if item["price"] <= current_price]
+    resistance_raw = [item for item in raw if item["price"] > current_price]
+
+    supports = _cluster_entries(support_raw, current_price, atr14, tolerance, "SUPPORT")
+    resistances = _cluster_entries(resistance_raw, current_price, atr14, tolerance, "RESISTANCE")
 
     supports.sort(key=lambda x: x["price"], reverse=True)
     resistances.sort(key=lambda x: x["price"])
