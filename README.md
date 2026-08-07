@@ -23,7 +23,7 @@
 - **历史缓存**：主仓库使用独立 `market-data` 分支持久保存日 K 和轻量盘中快照；同一交易阶段重复分析时日 K 可以做到 0 次网络请求。
 - **实时价格保险**：历史缓存、历史快照和日 K 数据被禁止进入 `quote.latest`。盘中实时 quote 失效时，只允许降级到仍然 LIVE 的当日分钟价；两者都不新鲜时当前价直接标记不可用。
 - **Reusable workflow 安全边界**：版本绑定到精确 workflow SHA、调用者配置做路径/大小/数量校验、第三方 Actions 固定 commit SHA、行情传输禁止 HTTP 降级。
-- **公共 Web 接口基础滥用防护**：异常高频请求返回 429；极短 TTL 服务端行情去重降低重复上游请求，同时浏览器端仍保持 `no-store`。
+- **公共 Web 接口基础滥用防护**：`/` 和 `/quote` 通过 Cloudflare Rate Limiting binding 做服务端限流；限流 binding 不可用时 fail closed，另有 2 秒 isolate-local 短缓存仅用于合并重复上游行情请求。
 - **结构化产物**：每次运行生成 `snapshot.json`，包含实时行情、分时结构、日 K 背景、板块对照、历史缓存状态、行情源容错状态和实时价格保护状态。
 
 ## 数据源与实时性
@@ -35,7 +35,7 @@
 - 东方财富日 K：腾讯日 K 不可用时的备用源；
 - `market-data` / GitHub Actions cache：**仅用于历史日 K 与历史分析上下文，不作为实时现价来源**。
 
-行情传输只允许 HTTPS。腾讯 quote 的 HTTPS 请求失败时会继续走其他已验证的 HTTPS source / error 路径，不会降级成明文 HTTP。
+行情传输只允许 HTTPS。腾讯 quote 模块本身只构造 `https://qt.gtimg.cn` 请求；HTTPS 请求失败会继续走其他已验证的 HTTPS source / error 路径，代码中不存在明文 HTTP fallback。
 
 盘中数据会携带 `market_time_cst`、`lag_seconds` 和 `freshness`。重点标的还会生成 `current_price_guard`，用于明确记录本次当前价来自实时 quote、实时分钟线，还是已经不可用。
 
@@ -284,8 +284,8 @@ history/
 - quote resilience 主源失败 / stale / 双源分歧选择测试；
 - watchlist/config 大小、数量、重复 code、路径和 symlink 逃逸测试；
 - GitHub Action SHA pinning 与 reusable workflow engine revision 测试；
-- HTTPS transport 不允许 HTTP fallback 的回归测试；
-- Web 公共行情接口限流和短 TTL 去重缓存测试；
+- 腾讯 quote 模块自身 HTTPS-only、源码不包含明文 HTTP fallback 的回归测试；
+- Web 公共行情接口的 Cloudflare Rate Limiting binding 接线、fail-closed 行为和 2 秒短 TTL 去重缓存测试；
 - reusable workflow 小型观察列表实跑并生成 artifact。
 
 稳定分支还有独立：
@@ -310,9 +310,11 @@ https://uploaded-code-site.zhangjinhao949792.chatgpt.site
 
 Web 部分基于 Vinext / Cloudflare Worker，与当前 GitHub Actions 行情分析管线可以并存。
 
-公开的 `/` 和 `/quote` 路由具有基础滥用防护：同一客户端、同一路由在 60 秒窗口内最多接受 60 次请求，超过后返回 HTTP 429 和 `Retry-After`；同一股票的上游行情会在 Worker 进程内做 2 秒短缓存并合并并发请求。浏览器响应仍为 `no-store`，因此该短缓存只用于降低重复上游压力，不作为历史行情源。
+公开的 `/` 和 `/quote` 路由使用 `PUBLIC_QUOTE_RATE_LIMITER` Cloudflare Rate Limiting binding。当前配置为每个 `CF-Connecting-IP + route` 在 60 秒窗口内最多 60 次；超过后返回 HTTP 429 和 `Retry-After`。如果 binding 缺失或调用异常，公共行情路由会 fail closed 返回 503，而不是静默退回无保护状态。
 
-这是一层不增加 KV / Durable Objects 等部署依赖的基础应用层防护。如果以后公开流量明显增大，可进一步在部署层接 Cloudflare 原生 Rate Limiting / WAF。
+Cloudflare Rate Limiting binding 的计数由 Cloudflare 平台管理，不依赖单个 Worker isolate 的内存 Map；但它按 Cloudflare location 生效且是 eventually consistent，因此这是针对异常高频访问的基础滥用防护，不应当作精确计费或全局强一致计数器。
+
+同一股票的上游行情另外在 Worker isolate 内做 2 秒 best-effort 短缓存并合并并发请求。这个 Map **只用于削减重复上游请求，不承担限流安全边界**；浏览器响应仍为 `no-store`，短缓存也不作为历史行情或当前价 fallback 来源。
 
 本地开发 Web 部分需要 Node.js `>=22.13.0`：
 
@@ -336,7 +338,7 @@ config/quote_watchlist.json           默认观察列表 / 板块分组
 docs/STABLE_V1.md                     稳定分支发布与兼容策略
 scripts/config_security.py            caller/watchlist 输入安全边界
 scripts/prepare_reusable_config.py    reusable 配置解析入口
-scripts/transport_security.py         HTTPS-only 行情传输策略
+scripts/transport_security.py         HTTPS-only 行情传输额外防御层
 scripts/test_config_security.py       配置攻击边界回归测试
 scripts/test_workflow_security.py     Action pin / engine SHA / HTTPS 测试
 scripts/realtime_quotes_watchlist.py  基础实时行情与分钟数据
@@ -347,7 +349,9 @@ scripts/intraday_metrics.py           分时结构指标
 scripts/daily_k_context.py            日 K 背景与支撑压力
 scripts/history_store.py              历史缓存与盘中快照
 scripts/live_price_guard.py           实时价格来源保险
-worker/abuse-protection.js            Web 接口限流 / 短 TTL 请求去重
+vite.config.ts                        Cloudflare Worker binding / rate-limit 配置
+worker/index.ts                       Worker 入口及 binding 注入
+worker/abuse-protection.js            Cloudflare 限流调用 / 2 秒上游去重缓存
 worker/stock-quote.js                 Web 行情入口
 tests/worker-abuse-protection.test.mjs Web 滥用防护测试
 app/                                  Web 页面
