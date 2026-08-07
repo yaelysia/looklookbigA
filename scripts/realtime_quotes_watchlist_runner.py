@@ -1,4 +1,5 @@
 import changes_since_previous
+import company_event_facts
 import company_event_metadata
 import company_events
 import config_security
@@ -47,6 +48,10 @@ if __name__ == "__main__":
     # Official company events are collected before delta analysis so stable
     # event IDs participate in new/updated/closed changes_since_previous.
     company_events.finalize_snapshot(base.SNAPSHOT_PATH, runtime_config)
+    # Important structured event types may use their official CNINFO PDF for
+    # deterministic fact extraction. Failure only degrades fact enrichment;
+    # the official event record itself remains available.
+    company_event_facts.finalize_snapshot(base.SNAPSHOT_PATH)
     company_event_metadata.finalize_snapshot(base.SNAPSHOT_PATH)
     changes_since_previous.finalize_snapshot(base.SNAPSHOT_PATH)
     data_metadata.finalize_snapshot(base.SNAPSHOT_PATH)
