@@ -1,10 +1,10 @@
 {
-  "schema_version": 1,
-  "latest_snapshot": "snapshots/2026-08-08/002347_run31197334768_a1.json",
-  "latest_runner_time_cst": "2026-08-08 00:23:47.886",
+  "schema_version": 2,
+  "latest_snapshot": "snapshots/2026-08-08/112141_run31237015882_a1.json",
+  "latest_runner_time_cst": "2026-08-08 11:21:41.279",
   "daily_k_codes": [
     "002558",
     "600795"
   ],
-  "updated_at_cst": "2026-08-08 00:23:47.886"
+  "updated_at_cst": "2026-08-08 11:21:41.279"
 }
