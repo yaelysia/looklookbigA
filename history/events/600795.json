@@ -1,0 +1,81 @@
+{
+  "schema_version": 2,
+  "code": "600795",
+  "org_id": "gssh0600795",
+  "source": "CNINFO",
+  "source_tier": "OFFICIAL",
+  "covered_start_date": "2026-07-09",
+  "updated_at_cst": "2026-08-08T12:06:09+08:00",
+  "query_status": "OK",
+  "event_count": 2,
+  "events": [
+    {
+      "event_id": "cninfo:1225436704",
+      "code": "600795",
+      "event_type": "OTHER",
+      "title": "国电电力2026年上半年电量情况公告",
+      "published_at": "2026-07-23T00:00:00+08:00",
+      "effective_date": null,
+      "source": "CNINFO",
+      "source_tier": "OFFICIAL",
+      "source_url": "https://static.cninfo.com.cn/finalpage/2026-07-23/1225436704.PDF",
+      "source_document_id": "1225436704",
+      "importance": "LOW",
+      "facts": {
+        "extraction_scope": "TITLE_ONLY",
+        "amounts": [],
+        "percentages": [],
+        "dates": []
+      },
+      "freshness": "RECENT_30D",
+      "fetched_at": "2026-08-08T12:06:09+08:00",
+      "status": "OPEN",
+      "related_event_id": null,
+      "supersedes_event_id": null
+    },
+    {
+      "event_id": "cninfo:1225431545",
+      "code": "600795",
+      "event_type": "OTHER",
+      "title": "临2026-16 国电电力关于公司经营情况等相关事项的公告",
+      "published_at": "2026-07-20T00:00:00+08:00",
+      "effective_date": null,
+      "source": "CNINFO",
+      "source_tier": "OFFICIAL",
+      "source_url": "https://static.cninfo.com.cn/finalpage/2026-07-20/1225431545.PDF",
+      "source_document_id": "1225431545",
+      "importance": "LOW",
+      "facts": {
+        "extraction_scope": "TITLE_ONLY",
+        "amounts": [],
+        "percentages": [],
+        "dates": []
+      },
+      "freshness": "RECENT_30D",
+      "fetched_at": "2026-08-08T12:06:09+08:00",
+      "status": "OPEN",
+      "related_event_id": null,
+      "supersedes_event_id": null
+    }
+  ],
+  "requested_start_date": "2026-07-09",
+  "coverage_complete": true,
+  "incomplete_ranges": [],
+  "query_diagnostics": {
+    "complete": true,
+    "split_used": false,
+    "pages_total": 1,
+    "pages_requested": 1,
+    "rows_received": 2,
+    "errors": [],
+    "segments": [
+      {
+        "start_date": "2026-07-09",
+        "end_date": "2026-08-08",
+        "pages_total": 1,
+        "pages_requested": 1,
+        "complete": true
+      }
+    ]
+  }
+}

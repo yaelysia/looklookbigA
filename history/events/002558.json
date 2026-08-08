@@ -1,0 +1,59 @@
+{
+  "schema_version": 2,
+  "code": "002558",
+  "org_id": "9900018280",
+  "source": "CNINFO",
+  "source_tier": "OFFICIAL",
+  "covered_start_date": "2026-07-09",
+  "updated_at_cst": "2026-08-08T12:06:09+08:00",
+  "query_status": "OK",
+  "event_count": 1,
+  "events": [
+    {
+      "event_id": "cninfo:1225464064",
+      "code": "002558",
+      "event_type": "OTHER",
+      "title": "关于控股股东及其一致行动人权益变动比例触及1%整数倍的公告",
+      "published_at": "2026-08-08T00:00:00+08:00",
+      "effective_date": null,
+      "source": "CNINFO",
+      "source_tier": "OFFICIAL",
+      "source_url": "https://static.cninfo.com.cn/finalpage/2026-08-08/1225464064.PDF",
+      "source_document_id": "1225464064",
+      "importance": "LOW",
+      "facts": {
+        "extraction_scope": "TITLE_ONLY",
+        "amounts": [],
+        "percentages": [
+          1.0
+        ],
+        "dates": []
+      },
+      "freshness": "CURRENT",
+      "fetched_at": "2026-08-08T12:06:09+08:00",
+      "status": "OPEN",
+      "related_event_id": null,
+      "supersedes_event_id": null
+    }
+  ],
+  "requested_start_date": "2026-07-09",
+  "coverage_complete": true,
+  "incomplete_ranges": [],
+  "query_diagnostics": {
+    "complete": true,
+    "split_used": false,
+    "pages_total": 1,
+    "pages_requested": 1,
+    "rows_received": 1,
+    "errors": [],
+    "segments": [
+      {
+        "start_date": "2026-07-09",
+        "end_date": "2026-08-08",
+        "pages_total": 1,
+        "pages_requested": 1,
+        "complete": true
+      }
+    ]
+  }
+}
