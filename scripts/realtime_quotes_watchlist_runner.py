@@ -1,3 +1,4 @@
+import changes_metadata_bridge
 import changes_since_previous
 import config_security
 import daily_k_context
@@ -11,6 +12,10 @@ import quote_resilience
 import realtime_quotes_watchlist as base
 import transport_security
 
+
+# Keep #34 integration additive: extend the already-reviewed #35 metadata layer
+# instead of carrying an older copy of data_metadata.py on this stacked branch.
+changes_metadata_bridge.install(data_metadata)
 
 # Treat the watchlist as untrusted input before any network work starts.
 # This applies equally to the repository default config and reusable-workflow
