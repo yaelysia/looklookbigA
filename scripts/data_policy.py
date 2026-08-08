@@ -232,6 +232,9 @@ def evaluate_freshness_sla(
     data_time=None,
     fetched_at=None,
     first_seen_at=None,
+    session_verified=None,
+    completed_session_age=None,
+    session_validation_state=None,
 ):
     policy = FRESHNESS_POLICIES.get(data_class)
     if not policy:
@@ -307,14 +310,46 @@ def evaluate_freshness_sla(
 
     if measurement == "SESSION_COMPLETENESS":
         required = policy.get("required_state")
-        if freshness == required:
-            result["status"] = "MET"
-        elif freshness in {None, "", "UNKNOWN", "UNAVAILABLE"}:
+        result["observed_data_time"] = data_time
+        result["evaluated_at"] = fetched_at
+        result["session_verified"] = bool(session_verified) if session_verified is not None else None
+        result["observed_completed_session_age"] = completed_session_age
+        result["session_validation_state"] = session_validation_state
+
+        if not _parse_dt(data_time):
             result["status"] = "UNMEASURED"
-            result["reason"] = "SESSION_STATE_MISSING"
-        else:
+            result["reason"] = "DATA_TIME_MISSING_OR_INVALID"
+            return result
+        if session_verified is not True:
+            result["status"] = "UNMEASURED"
+            result["reason"] = "SESSION_COMPLETENESS_UNVERIFIED"
+            return result
+        if freshness != required:
             result["status"] = "VIOLATED"
             result["reason"] = f"EXPECTED_{required}"
+            return result
+        if completed_session_age is None:
+            result["status"] = "UNMEASURED"
+            result["reason"] = "COMPLETED_SESSION_AGE_MISSING"
+            return result
+        try:
+            age = int(completed_session_age)
+        except (TypeError, ValueError):
+            result["status"] = "UNMEASURED"
+            result["reason"] = "COMPLETED_SESSION_AGE_INVALID"
+            return result
+        if age < 0:
+            result["status"] = "UNMEASURED"
+            result["reason"] = "COMPLETED_SESSION_AGE_INVALID"
+            return result
+        result["observed_completed_session_age"] = age
+        max_age = int(policy.get("max_completed_session_age", 0))
+        if age > max_age:
+            result["status"] = "VIOLATED"
+            result["reason"] = "COMPLETED_SESSION_TOO_OLD"
+            return result
+        result["status"] = "MET"
+        result["reason"] = "SESSION_COMPLETENESS_VERIFIED"
         return result
 
     result["reason"] = "UNSUPPORTED_MEASUREMENT"
