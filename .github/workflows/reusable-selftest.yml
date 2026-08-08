@@ -7,6 +7,8 @@ on:
       - "docs/STABLE_V1.md"
       - "docs/SECURITY_BRANCH_PROTECTION.md"
       - "docs/DATA_PROVENANCE.md"
+      - "docs/SOURCE_TRUST_MODEL.md"
+      - "docs/FRESHNESS_SLA.md"
       - "docs/CHANGES_SINCE_PREVIOUS.md"
       - "docs/COMPANY_EVENTS.md"
       - "requirements-event-facts.txt"
@@ -28,6 +30,8 @@ on:
       - "scripts/market_environment.py"
       - "scripts/market_breadth_source.py"
       - "scripts/data_metadata.py"
+      - "scripts/data_policy.py"
+      - "scripts/data_policy_bridge.py"
       - "scripts/changes_metadata_bridge.py"
       - "scripts/changes_since_previous.py"
       - "scripts/changes_comparability.py"
@@ -42,6 +46,7 @@ on:
       - "scripts/test_quote_resilience.py"
       - "scripts/test_market_environment.py"
       - "scripts/test_data_metadata.py"
+      - "scripts/test_data_policy.py"
       - "scripts/test_changes_since_previous.py"
       - "scripts/test_changes_comparability.py"
       - "scripts/test_company_events.py"
@@ -75,6 +80,8 @@ jobs:
         run: python3 scripts/test_market_environment.py
       - name: Run provenance/freshness/quality metadata tests
         run: python3 scripts/test_data_metadata.py
+      - name: Run source trust and freshness SLA tests
+        run: python3 scripts/test_data_policy.py
       - name: Run changes-since-previous tests
         run: python3 scripts/test_changes_since_previous.py
       - name: Run changes comparability regression tests
