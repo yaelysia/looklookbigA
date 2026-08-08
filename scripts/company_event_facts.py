@@ -3,6 +3,7 @@ import json
 import re
 import shutil
 import subprocess
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -12,6 +13,7 @@ import company_events
 MAX_PDF_BYTES = 8 * 1024 * 1024
 MAX_PDF_TEXT_CHARS = 300_000
 MAX_ENRICH_EVENTS_PER_STOCK = 3
+CNINFO_PDF_HOST = "static.cninfo.com.cn"
 FACT_ENRICH_TYPES = {
     "EARNINGS_FORECAST",
     "EARNINGS_EXPRESS",
@@ -34,9 +36,36 @@ _NUMBER = r"([0-9][0-9,]*(?:\.[0-9]+)?)"
 _RANGE = r"\s*(?:～|~|—|–|-|至|到)\s*"
 
 
+def _validate_cninfo_pdf_url(url, stage="request"):
+    text = str(url or "")
+    try:
+        parsed = urllib.parse.urlsplit(text)
+        port = parsed.port
+    except ValueError as exc:
+        raise ValueError(f"invalid {stage} CNINFO PDF URL") from exc
+
+    if parsed.scheme.lower() != "https":
+        raise ValueError(f"{stage} CNINFO PDF URL must use HTTPS")
+    if (parsed.hostname or "").lower() != CNINFO_PDF_HOST:
+        raise ValueError(f"{stage} CNINFO PDF host is not allowed")
+    if parsed.username is not None or parsed.password is not None:
+        raise ValueError(f"{stage} CNINFO PDF URL must not contain userinfo")
+    if port not in (None, 443):
+        raise ValueError(f"{stage} CNINFO PDF URL uses a non-standard HTTPS port")
+    return text
+
+
+class _CninfoPdfRedirectHandler(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        # Validate every redirect before urllib follows it. This keeps the
+        # OFFICIAL provenance boundary on static.cninfo.com.cn rather than
+        # trusting only the initial URL supplied by CNINFO's API response.
+        _validate_cninfo_pdf_url(newurl, stage="redirect")
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
+
 def _download_pdf(url, timeout=10):
-    if not str(url or "").startswith("https://static.cninfo.com.cn/"):
-        raise ValueError("only official CNINFO static PDF URLs are allowed")
+    url = _validate_cninfo_pdf_url(url, stage="request")
     req = urllib.request.Request(
         url,
         headers={
@@ -45,7 +74,11 @@ def _download_pdf(url, timeout=10):
             "Accept": "application/pdf,*/*",
         },
     )
-    with urllib.request.urlopen(req, timeout=timeout) as resp:
+    opener = urllib.request.build_opener(_CninfoPdfRedirectHandler())
+    with opener.open(req, timeout=timeout) as resp:
+        # Defense in depth: even if redirect handling changes in the future,
+        # the effective response URL must remain on the exact official host.
+        _validate_cninfo_pdf_url(resp.geturl(), stage="final")
         length = resp.headers.get("Content-Length")
         if length:
             try:
