@@ -123,12 +123,19 @@ def install(events):
 
     def resolve_query_start(cache, desired_start, now):
         cache = cache or {}
+        query_status = str(cache.get("query_status") or "").upper()
+        has_coverage_state = any(
+            key in cache
+            for key in ("coverage_complete", "covered_start_date", "requested_start_date", "query_status")
+        )
+        if not has_coverage_state and not (cache.get("events") or cache.get("org_id")):
+            return desired_start, "FULL_WINDOW"
+
         explicit_complete = cache.get("coverage_complete")
         if explicit_complete is None:
             # Legacy cache compatibility: old PARTIAL caches must be treated as
             # incomplete even if they contain a covered_start_date.
-            explicit_complete = str(cache.get("query_status") or "").upper() == "OK"
-        query_status = str(cache.get("query_status") or "").upper()
+            explicit_complete = query_status == "OK"
         if not explicit_complete or query_status not in {"", "OK"}:
             return desired_start, "BACKFILL_INCOMPLETE"
         return original_resolve_query_start(cache, desired_start, now)
