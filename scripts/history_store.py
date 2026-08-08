@@ -213,6 +213,10 @@ def _compact_snapshot(data):
             "minutes": _compact_minutes(item.get("minutes")),
             "intraday": item.get("intraday"),
             "daily_context": _compact_daily_context(item.get("daily_context")),
+            "events": item.get("events"),
+            "event_context": item.get("event_context"),
+            "metadata": item.get("metadata"),
+            "provenance": item.get("provenance"),
             "errors": item.get("errors"),
         }
     return {
@@ -224,37 +228,66 @@ def _compact_snapshot(data):
         "detail_stocks": detail,
         "groups": data.get("groups"),
         "indices": data.get("indices"),
+        "market_environment": data.get("market_environment"),
+        "live_price_guard": data.get("live_price_guard"),
+        "quote_resilience": data.get("quote_resilience"),
+        "data_quality": data.get("data_quality"),
+        "llm_data_summary": data.get("llm_data_summary"),
     }
 
 
-def _archive_snapshot(data):
-    root = _history_root()
+def _archive_rel(data):
     stamp = str(data.get("runner_time_cst") or datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
     date_part = stamp[:10]
     time_part = stamp[11:19].replace(":", "") if len(stamp) >= 19 else datetime.now().strftime("%H%M%S")
     run_id = os.environ.get("GITHUB_RUN_ID", "local")
     attempt = os.environ.get("GITHUB_RUN_ATTEMPT", "1")
-    rel = Path("snapshots") / date_part / f"{time_part}_run{run_id}_a{attempt}.json"
-    _write_json(root / rel, _compact_snapshot(data))
-    return str(rel).replace("\\", "/")
+    return Path("snapshots") / date_part / f"{time_part}_run{run_id}_a{attempt}.json"
 
 
-def _update_manifest(data, archive_rel):
+def _load_manifest():
+    return _load_json(_history_root() / "manifest.json") or {}
+
+
+def _build_manifest(data, archive_rel):
     root = _history_root()
     daily_dir = root / "daily_k"
     codes = sorted(p.stem for p in daily_dir.glob("*.json")) if daily_dir.exists() else []
-    manifest = {
-        "schema_version": 1,
-        "latest_snapshot": archive_rel,
+    return {
+        "schema_version": 2,
+        "latest_snapshot": str(archive_rel).replace("\\", "/"),
         "latest_runner_time_cst": data.get("runner_time_cst"),
         "daily_k_codes": codes,
         "updated_at_cst": data.get("runner_time_cst"),
     }
-    _write_json(root / "manifest.json", manifest)
-    return manifest
+
+
+def _safe_history_path(rel):
+    root = _history_root().resolve()
+    candidate = (root / str(rel)).resolve()
+    try:
+        candidate.relative_to(root)
+    except ValueError as exc:
+        raise ValueError("history snapshot path escapes history root") from exc
+    return candidate
+
+
+def load_previous_snapshot(data):
+    history = data.get("history") or {}
+    rel = history.get("previous_snapshot_path")
+    if not rel:
+        return None, None
+    try:
+        previous = _load_json(_safe_history_path(rel))
+    except Exception:
+        return None, None
+    if isinstance(previous, dict):
+        return previous, str(rel)
+    return None, None
 
 
 def finalize_snapshot(snapshot_path):
+    """Prepare history context but do not archive the current run yet."""
     path = Path(snapshot_path)
     data = json.loads(path.read_text(encoding="utf-8"))
 
@@ -264,19 +297,45 @@ def finalize_snapshot(snapshot_path):
             daily["cache"] = CACHE_META.get(code, {"state": "UNKNOWN"})
 
     data["schema_version"] = max(int(data.get("schema_version") or 0), 6)
-    data.setdefault("features", {})["market_history"] = "v1"
+    data.setdefault("features", {})["market_history"] = "v2"
 
-    archive_rel = _archive_snapshot(data)
-    manifest = _update_manifest(data, archive_rel)
+    previous_manifest = _load_manifest()
+    previous_path = previous_manifest.get("latest_snapshot")
     data["history"] = {
-        "storage": "market-data branch",
-        "archive_path": archive_rel,
-        "manifest": manifest,
+        "storage": "market-data branch / reusable history cache",
+        "archive_path": None,
+        "previous_snapshot_path": previous_path,
+        "previous_manifest": previous_manifest or None,
+        "manifest": None,
         "daily_k_cache": dict(CACHE_META),
     }
 
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
     states = ",".join(f"{code}:{meta.get('state')}" for code, meta in sorted(CACHE_META.items()))
     requests = sum(int(meta.get("network_daily_k_requests") or 0) for meta in CACHE_META.values())
-    print(f"HISTORY archive={archive_rel} daily_cache=[{states}] daily_k_network_requests={requests}", flush=True)
-    print("SNAPSHOT_SCHEMA_UPGRADED schema_version=6 feature=market_history:v1", flush=True)
+    print(
+        f"HISTORY_PREPARED previous={previous_path} daily_cache=[{states}] "
+        f"daily_k_network_requests={requests}",
+        flush=True,
+    )
+    print("SNAPSHOT_SCHEMA_UPGRADED schema_version=6 feature=market_history:v2", flush=True)
+
+
+def archive_final_snapshot(snapshot_path):
+    """Archive the fully enriched snapshot, then advance the baseline pointer."""
+    path = Path(snapshot_path)
+    data = json.loads(path.read_text(encoding="utf-8"))
+    rel = _archive_rel(data)
+    rel_text = str(rel).replace("\\", "/")
+    manifest = _build_manifest(data, rel)
+
+    history = data.setdefault("history", {})
+    history["archive_path"] = rel_text
+    history["manifest"] = manifest
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    # Commit order matters: a baseline pointer must never advance before the
+    # archive it points to exists.
+    _write_json(_history_root() / rel, _compact_snapshot(data))
+    _write_json(_history_root() / "manifest.json", manifest)
+    print(f"HISTORY_ARCHIVED archive={rel_text} schema={data.get('schema_version')}", flush=True)

@@ -1,3 +1,6 @@
+import changes_comparability
+import changes_metadata_bridge
+import changes_since_previous
 import config_security
 import daily_k_context
 import data_metadata
@@ -10,6 +13,14 @@ import quote_resilience
 import realtime_quotes_watchlist as base
 import transport_security
 
+
+# Keep #34 integration additive: extend the already-reviewed #35 metadata layer
+# instead of carrying an older copy of data_metadata.py on this stacked branch.
+changes_metadata_bridge.install(data_metadata)
+# Tighten delta comparability without modifying the already-reviewed #37
+# provenance implementation. Cumulative turnover and peer-relative metrics are
+# only allowed to produce deltas when their comparison universes are confirmed.
+changes_comparability.install(changes_since_previous)
 
 # Treat the watchlist as untrusted input before any network work starts.
 # This applies equally to the repository default config and reusable-workflow
@@ -45,12 +56,20 @@ if __name__ == "__main__":
     base.main()
     intraday_metrics.finalize_snapshot(base.SNAPSHOT_PATH)
     daily_k_context.finalize_snapshot(base.SNAPSHOT_PATH)
+
+    # Prepare the previous-snapshot pointer, but do not advance the manifest
+    # until the current run has all enrichment layers.
     history_store.finalize_snapshot(base.SNAPSHOT_PATH)
     live_price_guard.finalize_snapshot(base.SNAPSHOT_PATH)
     quote_resilience.finalize_snapshot(base.SNAPSHOT_PATH)
-    # Market environment consumes the already-enriched snapshot so driver
-    # attribution can include final data-quality/resilience status.
     market_environment.finalize_snapshot(base.SNAPSHOT_PATH)
-    # Unified provenance/freshness/quality metadata is always last. It only
-    # describes the final snapshot and never changes quote-selection logic.
+
+    # Compare against the last fully archived snapshot. This stays before the
+    # metadata pass so the new changes node receives the same provenance and
+    # quality contract as the rest of snapshot.json.
+    changes_since_previous.finalize_snapshot(base.SNAPSHOT_PATH)
     data_metadata.finalize_snapshot(base.SNAPSHOT_PATH)
+
+    # Only now is the current snapshot complete enough to become the next
+    # comparison baseline. Archive first, then advance manifest atomically.
+    history_store.archive_final_snapshot(base.SNAPSHOT_PATH)
