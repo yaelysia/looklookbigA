@@ -1,40 +1,83 @@
 # Data provenance / freshness / quality schema
 
-`snapshot.json` schema v10 adds a unified metadata contract for LLM and programmatic consumers without removing existing fields.
+`snapshot.json` schema v13 extends the unified metadata contract for LLM and programmatic consumers without removing existing fields.
+
+The contract now treats three questions as separate dimensions:
+
+```text
+quality        → did this node collect/compute successfully?
+trust          → how authoritative is the source for this claim?
+freshness_sla  → is the datum timely enough for its declared data class?
+```
+
+A high-trust datum can still be stale. A fresh datum can still come from a weak source. A clean calculation can still inherit weak inputs.
 
 ## Metadata contract
 
-Important raw and derived nodes expose a `metadata` object with the same keys:
+Important raw and derived nodes expose a `metadata` object with the same core keys:
 
 ```json
 {
   "source": "Eastmoney",
   "source_type": "API",
   "source_tier": "PRIMARY_PROVIDER",
-  "fetched_at": "2026-08-07T14:30:00+08:00",
-  "data_time": "2026-08-07T14:29:58+08:00",
-  "lag_seconds": 2,
+  "fetched_at": "2026-08-08T10:00:45+08:00",
+  "data_time": "2026-08-08T10:00:00+08:00",
+  "lag_seconds": 45,
   "freshness": "LIVE",
   "freshness_policy": "REALTIME_QUOTE",
   "confidence": "HIGH",
   "quality": "PASS",
   "fallback_used": false,
-  "quality_flags": []
+  "quality_flags": [],
+  "trust": {
+    "model": "source_trust_v1",
+    "tier": "B",
+    "class": "MARKET_DATA_PROVIDER",
+    "mode": "DIRECT",
+    "fact_policy": "VERIFIED_MARKET_DATA"
+  },
+  "freshness_sla": {
+    "model": "freshness_sla_v1",
+    "data_class": "REALTIME_QUOTE",
+    "measurement": "DATA_LAG",
+    "status": "MET",
+    "target_seconds": 60,
+    "hard_limit_seconds": 180,
+    "observed_lag_seconds": 45
+  }
 }
 ```
 
 `fetched_at` is the snapshot collection time. `data_time` is the timestamp/date represented by the source data. They must not be interpreted as the same timestamp.
 
-## Source tiers
+## Existing source tiers vs source trust
 
-- `OFFICIAL`: statutory/exchange/official disclosure source.
-- `PRIMARY_PROVIDER`: preferred market-data provider for the node.
-- `SECONDARY_PROVIDER`: fallback/secondary provider.
-- `DERIVED`: locally calculated result.
-- `CACHE`: persisted historical/cache data.
+Existing `source_tier` remains a runtime/provider role:
+
+- `OFFICIAL`: statutory/exchange/official disclosure source;
+- `PRIMARY_PROVIDER`: preferred market-data provider;
+- `SECONDARY_PROVIDER`: fallback/secondary market-data provider;
+- `DERIVED`: locally calculated result;
+- `CACHE`: persisted historical/cache data;
 - `UNKNOWN`: provenance cannot be established reliably.
 
-Current mappings include Eastmoney -> `PRIMARY_PROVIDER`, Tencent -> `SECONDARY_PROVIDER`, history/market-data cache -> `CACHE`, and locally calculated context -> `DERIVED`.
+Source trust is a separate authority model defined in `docs/SOURCE_TRUST_MODEL.md`.
+
+For example:
+
+```text
+Eastmoney source_tier = PRIMARY_PROVIDER
+Tencent   source_tier = SECONDARY_PROVIDER
+
+but both:
+trust.tier = B
+trust.class = MARKET_DATA_PROVIDER
+```
+
+Provider selection order must not be mistaken for factual authority rank.
+
+Derived/cache nodes use `trust.tier=INHERITED`: they inherit trust from declared provenance rather than becoming trustworthy merely because they were calculated or stored locally.
 
 ## Quality states
 
@@ -61,17 +104,39 @@ NO_VALID_DATA
 
 `NOT_LIVE_NOW` is informational for valid completed-session data. It does not by itself imply `DEGRADED` or `PARTIAL` quality.
 
-## Freshness policies
+## Freshness state vs Freshness SLA
 
-Freshness is interpreted per data type instead of forcing every dataset into one clock rule:
+The existing `freshness` field describes the data state, for example:
 
-- `REALTIME_QUOTE`: existing quote freshness such as `LIVE`, `CURRENT_SESSION`, `LAST_SESSION`, `STALE`, `UNAVAILABLE`.
-- `MINUTE_SERIES`: `LIVE`, `CURRENT_SESSION`, and `LAST_SESSION` are valid minute-series states. `CURRENT_SESSION` / `LAST_SESSION` are expected outside an active trading session and remain `PASS` with `NOT_LIVE_NOW`; `STALE` is degraded and `UNAVAILABLE` is failed.
-- `DAILY_K_CONTEXT`: `LATEST_COMPLETED_BAR` / unavailable historical context.
-- `CACHE_HISTORY`: explicitly `HISTORICAL`; never usable as a current quote source.
-- `DERIVED`: inherits/aggregates current input context and is marked as derived.
+- `REALTIME_QUOTE`: `LIVE`, `CURRENT_SESSION`, `LAST_SESSION`, `STALE`, `UNAVAILABLE`;
+- `MINUTE_SERIES`: `LIVE`, `CURRENT_SESSION`, `LAST_SESSION`, `STALE`;
+- `DAILY_K_CONTEXT`: `LATEST_COMPLETED_BAR`;
+- cache/history: `HISTORICAL`;
+- derived data: `DERIVED_CURRENT`.
 
-Future event/financial datasets can add dataset-specific freshness values while preserving the same metadata field names.
+`freshness_sla` evaluates whether that state is timely enough for the declared data class. Full policy is in `docs/FRESHNESS_SLA.md`.
+
+The SLA model uses three measurement modes:
+
+```text
+DATA_LAG              realtime/minute/market-state data
+DISCOVERY_LAG         announcements/news/regulatory/industry events
+SESSION_COMPLETENESS  daily/periodic datasets
+```
+
+Possible SLA statuses:
+
+```text
+MET
+DEGRADED
+VIOLATED
+UNMEASURED
+NOT_APPLICABLE
+```
+
+Example: a valid Friday close queried on Saturday can remain `quality=PASS` with `freshness=LAST_SESSION`, while its live-only quote SLA is `NOT_APPLICABLE`. It is valid session context, not a live price.
+
+Company-event discovery currently reports `UNMEASURED` until the system stores a stable `first_seen_at`. The policy explicitly refuses to substitute each run's `fetched_at` for discovery time.
 
 ## Provenance for derived data
 
@@ -101,9 +166,20 @@ Example daily context:
 
 Group summaries keep the peer codes and coverage used by the calculation. Intraday metrics, market environment, live-price guard and quote-resilience summaries identify their upstream nodes and algorithm version.
 
-## Top-level quality summary
+## Top-level policy and quality summary
 
-Schema v10 adds:
+Schema v13 adds a machine-readable top-level policy manifest:
+
+```text
+data_policy
+├─ source_trust_model
+├─ freshness_sla
+└─ current_capabilities
+```
+
+`current_capabilities` explicitly records the architectural limit that realtime collection is currently on-demand and a continuous event/news watcher is not implemented.
+
+Top-level quality reporting now includes policy summaries:
 
 ```text
 data_quality
@@ -113,7 +189,15 @@ data_quality
 ├─ warnings
 ├─ quality_summary
 ├─ source_summary
-└─ freshness_summary
+│  ├─ source_tiers
+│  ├─ sources
+│  ├─ trust_tiers
+│  └─ trust_classes
+├─ freshness_summary
+├─ policy_versions
+├─ freshness_sla_summary
+├─ freshness_sla_violations
+└─ freshness_sla_unmeasured
 
 llm_data_summary
 ├─ critical_data_ready
@@ -121,6 +205,10 @@ llm_data_summary
 ├─ market_context_quality
 ├─ historical_context_quality
 ├─ overall_data_quality
+├─ source_trust_model
+├─ freshness_sla_model
+├─ freshness_sla_violation_count
+├─ freshness_sla_unmeasured_count
 └─ warnings
 ```
 
@@ -131,12 +219,19 @@ A `FAILED` node is never silently converted into top-level success:
 - critical `FAILED` -> `data_quality.overall=FAILED` and entry in `critical_failures`;
 - non-critical `FAILED` -> top-level quality is at least `PARTIAL`, with the node recorded in both `noncritical_failures` and `warnings`.
 
-Sibling metadata used when a data node is absent, such as `quote_metadata` / `minutes_metadata`, is included in the same quality summary under the logical node path.
+SLA violations are intentionally reported separately from `quality`. v1 does not silently rewrite every legacy quality state based on the new SLA policy; this avoids changing previously reviewed collection semantics while still exposing timeliness violations to consumers.
 
-`llm_data_summary` is a compact reading aid. Consumers that need to make trust decisions should inspect the detailed node metadata and provenance as well.
+Sibling metadata used when a data node is absent, such as `quote_metadata` / `minutes_metadata`, is included in the same quality summary under the logical node path.
 
 ## Compatibility and safety
 
-The metadata finalizer runs after existing quote, intraday, daily-K, history, live-price-guard, resilience and market-environment finalizers. It does not select prices or mutate the existing calculation values.
+The policy bridge is installed before downstream metadata adapters, so company events, changes analysis, quotes, minute data, history and derived nodes all use the same trust/SLA contract.
 
-History/cache nodes are explicitly tiered as `CACHE`/`HISTORICAL`; this metadata layer does not weaken the existing rule that historical/cache data cannot become `quote.latest`.
+The metadata/policy finalizer still does not select prices or alter existing calculation values.
+
+History/cache nodes remain explicitly `CACHE`/`HISTORICAL` and `trust.tier=INHERITED`; this policy layer does not weaken the existing rule that historical/cache data cannot become `quote.latest`.
+
+For adding new sources, use both:
+
+- `docs/SOURCE_TRUST_MODEL.md` — why the source is authoritative;
+- `docs/FRESHNESS_SLA.md` — how quickly its data must be observed or refreshed.
