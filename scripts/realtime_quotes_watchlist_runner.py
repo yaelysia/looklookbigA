@@ -1,3 +1,4 @@
+import changes_comparability
 import changes_metadata_bridge
 import changes_since_previous
 import config_security
@@ -16,6 +17,10 @@ import transport_security
 # Keep #34 integration additive: extend the already-reviewed #35 metadata layer
 # instead of carrying an older copy of data_metadata.py on this stacked branch.
 changes_metadata_bridge.install(data_metadata)
+# Tighten delta comparability without modifying the already-reviewed #37
+# provenance implementation. Cumulative turnover and peer-relative metrics are
+# only allowed to produce deltas when their comparison universes are confirmed.
+changes_comparability.install(changes_since_previous)
 
 # Treat the watchlist as untrusted input before any network work starts.
 # This applies equally to the repository default config and reusable-workflow
