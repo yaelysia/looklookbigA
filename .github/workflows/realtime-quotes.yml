@@ -9,7 +9,6 @@ on:
       - ".github/workflows/reusable-selftest.yml"
       - ".github/workflows/pre-merge-security-gate.yml"
       - ".github/workflows/v1-smoke.yml"
-      - "requirements-event-facts.txt"
       - "scripts/realtime_quotes_watchlist.py"
       - "scripts/realtime_quotes_watchlist_runner.py"
       - "scripts/intraday_metrics.py"
@@ -20,10 +19,9 @@ on:
       - "scripts/market_environment.py"
       - "scripts/market_breadth_source.py"
       - "scripts/data_metadata.py"
+      - "scripts/changes_metadata_bridge.py"
       - "scripts/changes_since_previous.py"
-      - "scripts/company_events.py"
-      - "scripts/company_event_facts.py"
-      - "scripts/company_event_metadata.py"
+      - "scripts/changes_comparability.py"
       - "scripts/transport_security.py"
       - "scripts/config_security.py"
       - "scripts/prepare_reusable_config.py"
@@ -33,8 +31,7 @@ on:
       - "scripts/test_market_environment.py"
       - "scripts/test_data_metadata.py"
       - "scripts/test_changes_since_previous.py"
-      - "scripts/test_company_events.py"
-      - "scripts/test_company_event_facts.py"
+      - "scripts/test_changes_comparability.py"
       - "config/quote_watchlist.json"
 
 permissions:
@@ -49,9 +46,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
-
-      - name: Install pinned event-fact parser
-        run: python3 -m pip install --disable-pip-version-check --no-deps --require-hashes -r requirements-event-facts.txt
 
       - name: Checkout persistent market history
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4

@@ -5,6 +5,7 @@ from pathlib import Path
 
 
 CST = timezone(timedelta(hours=8))
+QUALITY_SEVERITY = {"PASS": 0, "DEGRADED": 1, "PARTIAL": 2, "FAILED": 3}
 
 
 def _iso_cst_from_runner(snapshot):
@@ -134,15 +135,28 @@ def _metadata(
 
 def _quality_from_status(status):
     status = str(status or "").upper()
-    if status in {"OK", "PASS", "AVAILABLE"}:
+    if status in {"OK", "PASS"}:
         return "PASS"
     if status in {"DEGRADED", "WARNING"}:
         return "DEGRADED"
-    if status in {"PARTIAL", "NO_MINUTE_DATA", "NO_CURRENT_PRICE", "UNKNOWN", "NO_BASELINE", "NO_EVENT_LAYER"}:
+    if status in {"PARTIAL", "NO_MINUTE_DATA", "NO_CURRENT_PRICE", "UNKNOWN"}:
         return "PARTIAL"
     if status in {"ERROR", "FAILED", "VIOLATION"}:
         return "FAILED"
     return "PARTIAL"
+
+
+def _composite_quality(qualities):
+    values = [q for q in qualities if q]
+    if not values:
+        return "PARTIAL"
+    # A composite detail node can remain partially usable when one auxiliary
+    # component fails. Criticality is handled separately by _quality_summary.
+    if "FAILED" in values or "PARTIAL" in values:
+        return "PARTIAL"
+    if "DEGRADED" in values:
+        return "DEGRADED"
+    return "PASS"
 
 
 def _quote_metadata(quote, fetched_at):
@@ -209,11 +223,21 @@ def _minutes_metadata(minutes, fetched_at):
             quality_flags=["NO_MINUTE_DATA"],
             source_tier="SECONDARY_PROVIDER",
         )
+
     freshness = minutes.get("freshness") or "UNKNOWN"
     flags = []
-    if freshness == "STALE":
+    if freshness in {"CURRENT_SESSION", "LAST_SESSION"}:
+        flags.append("NOT_LIVE_NOW")
+    elif freshness == "STALE":
         flags.append("STALE_MINUTE_SERIES")
-    quality = "PASS" if freshness == "LIVE" else "DEGRADED" if freshness == "STALE" else "PARTIAL"
+
+    if freshness in {"LIVE", "CURRENT_SESSION", "LAST_SESSION"}:
+        quality = "PASS"
+    elif freshness == "STALE":
+        quality = "DEGRADED"
+    else:
+        quality = "PARTIAL"
+
     return _metadata(
         minutes.get("source") or "Tencent",
         fetched_at,
@@ -292,6 +316,7 @@ def _decorate_detail(snapshot, fetched_at):
             item["minutes_metadata"] = minute_meta
 
         intraday = item.get("intraday")
+        intraday_meta = None
         if isinstance(intraday, dict):
             intraday_quality = _quality_from_status(intraday.get("status"))
             input_qualities = {quote_meta["quality"], minute_meta["quality"]}
@@ -304,12 +329,13 @@ def _decorate_detail(snapshot, fetched_at):
                 flags.append("INPUT_DATA_DEGRADED")
                 if intraday_quality == "PASS":
                     intraday_quality = "DEGRADED"
-            intraday["metadata"] = _derived_metadata(
+            intraday_meta = _derived_metadata(
                 fetched_at,
                 quality=intraday_quality,
                 data_time=minute_meta.get("data_time") or quote_meta.get("data_time"),
                 flags=flags,
             )
+            intraday["metadata"] = intraday_meta
             intraday["provenance"] = {
                 "type": "DERIVED",
                 "derived_from": [
@@ -320,8 +346,10 @@ def _decorate_detail(snapshot, fetched_at):
             }
 
         daily = item.get("daily_context")
+        daily_meta = None
         if isinstance(daily, dict):
-            daily["metadata"] = _daily_metadata(daily, fetched_at)
+            daily_meta = _daily_metadata(daily, fetched_at)
+            daily["metadata"] = daily_meta
             daily["provenance"] = {
                 "type": "DERIVED",
                 "derived_from": [f"detail_stocks.{code}.daily_context.bars_last_60"],
@@ -336,10 +364,22 @@ def _decorate_detail(snapshot, fetched_at):
                 },
             }
 
+        component_qualities = [quote_meta["quality"], minute_meta["quality"]]
+        if intraday_meta:
+            component_qualities.append(intraday_meta["quality"])
+        if daily_meta:
+            component_qualities.append(daily_meta["quality"])
+        detail_quality = _composite_quality(component_qualities)
+        detail_flags = []
+        legacy_quality = _quality_from_status(item.get("status"))
+        if legacy_quality in {"PARTIAL", "FAILED"} and QUALITY_SEVERITY[detail_quality] < QUALITY_SEVERITY[legacy_quality]:
+            detail_flags.append("FINAL_COMPONENT_QUALITY_OVERRIDES_LEGACY_STATUS")
+
         item["metadata"] = _derived_metadata(
             fetched_at,
-            quality=_quality_from_status(item.get("status")),
+            quality=detail_quality,
             data_time=quote_meta.get("data_time") or minute_meta.get("data_time"),
+            flags=detail_flags,
         )
         item["provenance"] = {
             "type": "COMPOSITE",
@@ -376,7 +416,10 @@ def _decorate_light_and_indices(snapshot, fetched_at):
                 quality=_quality_from_status(item.get("status")),
                 data_time=meta.get("data_time"),
             )
-            item["provenance"] = {"type": "COMPOSITE", "derived_from": [f"indices.{name}.quote"]}
+            item["provenance"] = {
+                "type": "COMPOSITE",
+                "derived_from": [f"indices.{name}.quote"],
+            }
 
 
 def _decorate_groups(snapshot, fetched_at):
@@ -392,7 +435,11 @@ def _decorate_groups(snapshot, fetched_at):
             flags.append("PEER_COVERAGE_INCOMPLETE")
             if quality == "PASS":
                 quality = "DEGRADED"
-        members = [m.get("code") for m in (group.get("members") or []) if isinstance(m, dict) and m.get("available")]
+        members = [
+            member.get("code")
+            for member in (group.get("members") or [])
+            if isinstance(member, dict) and member.get("available")
+        ]
         group["metadata"] = _derived_metadata(fetched_at, quality=quality, flags=flags)
         group["provenance"] = {
             "type": "DERIVED",
@@ -446,7 +493,7 @@ def _decorate_system_nodes(snapshot, fetched_at):
 
     history = snapshot.get("history")
     if isinstance(history, dict):
-        manifest = history.get("manifest") or history.get("previous_manifest") or {}
+        manifest = history.get("manifest") or {}
         history["metadata"] = _metadata(
             "market-data branch",
             fetched_at,
@@ -481,50 +528,39 @@ def _decorate_system_nodes(snapshot, fetched_at):
         )
         market_env["provenance"] = {
             "type": "DERIVED",
-            "derived_from": ["indices", "groups", "detail_stocks", "market_environment.breadth"],
+            "derived_from": [
+                "indices",
+                "groups",
+                "detail_stocks",
+                "market_environment.breadth",
+            ],
             "algorithm": "market_environment_v1",
         }
 
-    changes = snapshot.get("changes_since_previous")
-    if isinstance(changes, dict):
-        status = changes.get("status")
-        quality = _quality_from_status(status)
-        baseline = changes.get("baseline") or {}
-        flags = list(baseline.get("quality_flags") or [])
-        if status == "NO_BASELINE":
-            flags.append("NO_COMPARISON_BASELINE")
-        changes["metadata"] = _derived_metadata(
-            fetched_at,
-            quality=quality,
-            freshness="DERIVED_CURRENT",
-            flags=flags,
-            data_time=baseline.get("current_snapshot_time"),
-        )
-        changes["provenance"] = {
-            "type": "DERIVED",
-            "derived_from": [
-                "history.previous_snapshot_path",
-                "detail_stocks",
-                "groups",
-                "indices",
-                "market_environment",
-                "detail_stocks.*.events",
-            ],
-            "algorithm": "changes_since_previous_v1",
-            "baseline_snapshot_path": baseline.get("previous_snapshot_path"),
-            "interval_seconds": baseline.get("interval_seconds"),
-        }
+
+def _is_metadata_contract(value):
+    return (
+        isinstance(value, dict)
+        and "quality" in value
+        and "freshness_policy" in value
+        and "source_tier" in value
+    )
 
 
 def _iter_metadata(node, path=""):
     if isinstance(node, dict):
         meta = node.get("metadata")
-        if isinstance(meta, dict):
+        if _is_metadata_contract(meta):
             yield path or "$", meta
         for key, value in node.items():
             if key in {"metadata", "provenance", "data_quality", "llm_data_summary"}:
                 continue
             child = f"{path}.{key}" if path else str(key)
+            if key.endswith("_metadata") and _is_metadata_contract(value):
+                logical_key = key[: -len("_metadata")]
+                logical_path = f"{path}.{logical_key}" if path else logical_key
+                yield logical_path, value
+                continue
             yield from _iter_metadata(value, child)
     elif isinstance(node, list):
         for idx, value in enumerate(node):
@@ -536,7 +572,7 @@ def _quality_summary(snapshot):
     tiers = Counter()
     sources = Counter()
     freshness = Counter()
-    warnings = []
+    metadata_rows = []
     critical = []
 
     for path, meta in _iter_metadata(snapshot):
@@ -545,22 +581,42 @@ def _quality_summary(snapshot):
         tiers[meta.get("source_tier") or "UNKNOWN"] += 1
         sources[meta.get("source") or "UNKNOWN"] += 1
         freshness[meta.get("freshness") or "UNKNOWN"] += 1
-        if q in {"DEGRADED", "PARTIAL"}:
-            warnings.append({"path": path, "quality": q, "flags": meta.get("quality_flags") or []})
+        metadata_rows.append((path, q, meta))
 
     for code, item in (snapshot.get("detail_stocks") or {}).items():
         quote = item.get("quote") or {}
         meta = quote.get("metadata") or item.get("quote_metadata") or {}
         if meta.get("quality") == "FAILED":
-            critical.append({"path": f"detail_stocks.{code}.quote", "reason": "NO_VALID_REALTIME_QUOTE"})
+            critical.append(
+                {
+                    "path": f"detail_stocks.{code}.quote",
+                    "reason": "NO_VALID_REALTIME_QUOTE",
+                }
+            )
 
     guard = snapshot.get("live_price_guard") or {}
     if (guard.get("metadata") or {}).get("quality") == "FAILED":
-        critical.append({"path": "live_price_guard", "reason": "LIVE_PRICE_GUARD_FAILED"})
+        critical.append(
+            {"path": "live_price_guard", "reason": "LIVE_PRICE_GUARD_FAILED"}
+        )
+
+    critical_paths = {entry["path"] for entry in critical}
+    warnings = []
+    noncritical_failures = []
+    for path, quality, meta in metadata_rows:
+        if quality in {"DEGRADED", "PARTIAL", "FAILED"}:
+            warning = {
+                "path": path,
+                "quality": quality,
+                "flags": meta.get("quality_flags") or [],
+            }
+            warnings.append(warning)
+            if quality == "FAILED" and path not in critical_paths:
+                noncritical_failures.append(warning)
 
     if critical:
         overall = "FAILED"
-    elif qualities.get("PARTIAL"):
+    elif qualities.get("FAILED") or qualities.get("PARTIAL"):
         overall = "PARTIAL"
     elif qualities.get("DEGRADED"):
         overall = "DEGRADED"
@@ -572,6 +628,7 @@ def _quality_summary(snapshot):
         "metadata_contract": "provenance_freshness_quality_v1",
         "overall": overall,
         "critical_failures": critical,
+        "noncritical_failures": noncritical_failures[:50],
         "warnings": warnings[:50],
         "quality_summary": dict(sorted(qualities.items())),
         "source_summary": {
@@ -597,7 +654,7 @@ def _llm_summary(snapshot, quality):
     else:
         realtime_quality = "HIGH"
 
-    market_meta = ((snapshot.get("market_environment") or {}).get("metadata") or {})
+    market_meta = (snapshot.get("market_environment") or {}).get("metadata") or {}
     market_quality = {
         "PASS": "HIGH",
         "DEGRADED": "MEDIUM",
@@ -607,7 +664,10 @@ def _llm_summary(snapshot, quality):
 
     daily_qualities = []
     for item in detail.values():
-        daily_qualities.append((((item.get("daily_context") or {}).get("metadata") or {}).get("quality") or "FAILED"))
+        daily_qualities.append(
+            ((item.get("daily_context") or {}).get("metadata") or {}).get("quality")
+            or "FAILED"
+        )
     if daily_qualities and all(q == "PASS" for q in daily_qualities):
         history_quality = "HIGH"
     elif daily_qualities and all(q != "FAILED" for q in daily_qualities):
@@ -619,7 +679,9 @@ def _llm_summary(snapshot, quality):
     for warning in quality.get("warnings", [])[:12]:
         flags = warning.get("flags") or []
         suffix = ":" + ",".join(flags) if flags else ""
-        warning_text.append(f"{warning.get('path')}={warning.get('quality')}{suffix}")
+        warning_text.append(
+            f"{warning.get('path')}={warning.get('quality')}{suffix}"
+        )
 
     return {
         "critical_data_ready": not bool(quality.get("critical_failures")),
@@ -655,8 +717,12 @@ def finalize_snapshot(snapshot_path):
         "DATA_METADATA "
         f"overall={data['data_quality']['overall']} "
         f"critical={len(data['data_quality']['critical_failures'])} "
+        f"noncritical_failed={len(data['data_quality']['noncritical_failures'])} "
         f"warnings={len(data['data_quality']['warnings'])} "
         f"critical_ready={data['llm_data_summary']['critical_data_ready']}",
         flush=True,
     )
-    print("SNAPSHOT_SCHEMA_UPGRADED schema_version=10 feature=data_provenance:v1", flush=True)
+    print(
+        "SNAPSHOT_SCHEMA_UPGRADED schema_version=10 feature=data_provenance:v1",
+        flush=True,
+    )

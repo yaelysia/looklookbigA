@@ -11,8 +11,6 @@ MAX_RAW_CODE_ENTRIES = 200
 MAX_GROUP_ID_CHARS = 64
 MAX_GROUP_LABEL_CHARS = 120
 MAX_CONFIG_PATH_CHARS = 256
-ALLOWED_EVENT_LOOKBACK_DAYS = (7, 30, 90)
-DEFAULT_EVENT_LOOKBACK_DAYS = 30
 
 _GROUP_ID_RE = re.compile(r"^[A-Za-z0-9_.-]+$")
 
@@ -52,27 +50,12 @@ def _parse_max_total(raw):
     return value
 
 
-def _parse_event_lookback_days(raw):
-    value = raw.get("event_lookback_days", DEFAULT_EVENT_LOOKBACK_DAYS)
-    if isinstance(value, bool):
-        raise ValueError("event_lookback_days must be one of 7, 30, 90")
-    try:
-        value = int(value)
-    except (TypeError, ValueError):
-        raise ValueError("event_lookback_days must be one of 7, 30, 90") from None
-    if value not in ALLOWED_EVENT_LOOKBACK_DAYS:
-        allowed = ", ".join(str(x) for x in ALLOWED_EVENT_LOOKBACK_DAYS)
-        raise ValueError(f"event_lookback_days must be one of {allowed}")
-    return value
-
-
 def validate_raw_config(base, raw):
     """Validate an untrusted watchlist object and return the normalized runtime config."""
     if not isinstance(raw, dict):
         raise ValueError("watchlist config must be a JSON object")
 
     max_total = _parse_max_total(raw)
-    event_lookback_days = _parse_event_lookback_days(raw)
     raw_detail = _require_list(raw.get("detail_codes", []), "detail_codes")
     raw_light = _require_list(raw.get("light_codes", []), "light_codes")
     raw_groups = raw.get("groups", {}) or {}
@@ -169,7 +152,6 @@ def validate_raw_config(base, raw):
         "light_codes": light,
         "groups": groups,
         "max_total_codes": max_total,
-        "event_lookback_days": event_lookback_days,
         "truncated": False,
         "security_limits": {
             "hard_max_total_codes": HARD_MAX_TOTAL_CODES,
@@ -177,7 +159,6 @@ def validate_raw_config(base, raw):
             "max_members_per_group": MAX_MEMBERS_PER_GROUP,
             "max_raw_code_entries": MAX_RAW_CODE_ENTRIES,
             "max_config_bytes": MAX_CONFIG_BYTES,
-            "allowed_event_lookback_days": list(ALLOWED_EVENT_LOOKBACK_DAYS),
         },
     }
 
@@ -214,6 +195,7 @@ def read_config_file(base, path):
 
 
 def resolve_caller_config_path(caller_root, config_path):
+    """Resolve a caller-owned relative config path without allowing path/symlink escape."""
     raw = str(config_path or "config/quote_watchlist.json")
     if not raw or len(raw) > MAX_CONFIG_PATH_CHARS or "\x00" in raw:
         raise ValueError("config_path is empty, contains NUL, or is too long")
@@ -229,6 +211,7 @@ def resolve_caller_config_path(caller_root, config_path):
     except ValueError:
         raise ValueError("config_path escapes the caller repository") from None
 
+    # If it exists, resolve(strict=True) again so a symlink cannot escape the root.
     if candidate.exists():
         resolved_existing = candidate.resolve(strict=True)
         try:
@@ -253,5 +236,4 @@ def install(base):
         "max_groups": MAX_GROUPS,
         "max_members_per_group": MAX_MEMBERS_PER_GROUP,
         "max_raw_code_entries": MAX_RAW_CODE_ENTRIES,
-        "allowed_event_lookback_days": list(ALLOWED_EVENT_LOOKBACK_DAYS),
     }

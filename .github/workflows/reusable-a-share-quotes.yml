@@ -101,10 +101,6 @@ jobs:
           fi
           echo "ENGINE_REVISION_VERIFIED sha=$actual"
 
-      - name: Install pinned event-fact parser
-        shell: bash
-        run: python3 -m pip install --disable-pip-version-check --no-deps --require-hashes -r .engine/requirements-event-facts.txt
-
       - name: Restore reusable daily-K cache
         if: ${{ inputs.enable_history_cache }}
         id: history-cache
