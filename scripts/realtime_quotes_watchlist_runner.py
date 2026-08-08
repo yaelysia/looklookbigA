@@ -1,6 +1,7 @@
 import changes_comparability
 import changes_metadata_bridge
 import changes_since_previous
+import company_event_coverage
 import company_event_facts
 import company_event_metadata
 import company_events
@@ -24,6 +25,9 @@ changes_metadata_bridge.install(data_metadata)
 # provenance implementation. Cumulative turnover and peer-relative metrics are
 # only allowed to produce deltas when their comparison universes are confirmed.
 changes_comparability.install(changes_since_previous)
+# Historical announcement coverage must be complete before the event cache is
+# allowed to switch to ordinary recent-overlap incremental refresh.
+company_event_coverage.install(company_events)
 
 # Treat the watchlist as untrusted input before any network work starts.
 # This applies equally to the repository default config and reusable-workflow
