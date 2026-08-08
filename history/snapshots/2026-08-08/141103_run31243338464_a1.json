@@ -1,0 +1,2764 @@
+{
+  "schema_version": 12,
+  "runner_time_cst": "2026-08-08 14:11:03.148",
+  "runner_time_utc": "2026-08-08T06:11:03.148481+00:00",
+  "market_window": false,
+  "features": {
+    "intraday_structure_metrics": "v1",
+    "daily_k_context": "v1",
+    "market_history": "v2",
+    "live_price_guard": "v1",
+    "quote_resilience": "v1",
+    "market_environment": "v1",
+    "company_events": "v1",
+    "changes_since_previous": "v1",
+    "data_provenance": "v1"
+  },
+  "detail_stocks": {
+    "002558": {
+      "code": "002558",
+      "market": "SZ",
+      "status": "PARTIAL",
+      "quote": {
+        "code": "002558",
+        "name": "巨人网络",
+        "market": "SZ",
+        "source": "Eastmoney",
+        "latest": 29.34,
+        "open": 29.52,
+        "high": 29.6,
+        "low": 28.6,
+        "average": 29.02,
+        "previous_close": 29.26,
+        "change": 0.08,
+        "change_percent": 0.27,
+        "amplitude_percent": 3.42,
+        "volume_raw": 906604,
+        "amount_raw": 2630718127.41,
+        "amount_1e8": 26.3072,
+        "market_time_cst": "2026-08-07 15:34:06",
+        "lag_seconds": 81417,
+        "freshness": "LAST_SESSION",
+        "resilience": {
+          "primary_source": "Eastmoney",
+          "fallback_source": "Tencent",
+          "selected_source": "Eastmoney",
+          "fallback_used": false,
+          "selection_reason": "PRIMARY_USABLE",
+          "consensus": {
+            "status": "CONSISTENT",
+            "price_gap": 0.0,
+            "price_gap_percent": 0.0
+          },
+          "providers": {
+            "Eastmoney": {
+              "status": "OK",
+              "usable": true,
+              "latest": 29.34,
+              "market_time_cst": "2026-08-07 15:34:06",
+              "lag_seconds": 81417,
+              "freshness": "LAST_SESSION",
+              "error": null
+            },
+            "Tencent": {
+              "status": "OK",
+              "usable": true,
+              "latest": 29.34,
+              "market_time_cst": "2026-08-07 16:14:06",
+              "lag_seconds": 79017,
+              "freshness": "LAST_SESSION",
+              "error": null
+            }
+          }
+        },
+        "metadata": {
+          "source": "Eastmoney",
+          "source_type": "API",
+          "source_tier": "PRIMARY_PROVIDER",
+          "fetched_at": "2026-08-08T14:11:03+08:00",
+          "data_time": "2026-08-07T15:34:06+08:00",
+          "lag_seconds": 81417,
+          "freshness": "LAST_SESSION",
+          "freshness_policy": "REALTIME_QUOTE",
+          "confidence": "HIGH",
+          "quality": "PASS",
+          "fallback_used": false,
+          "quality_flags": [
+            "NOT_LIVE_NOW"
+          ]
+        }
+      },
+      "minutes": {
+        "source": "Tencent",
+        "date": "20260807",
+        "freshness": "LAST_SESSION",
+        "count": 267,
+        "last_time": "1530",
+        "last_price": 29.34,
+        "trend_5m_percent": 0.0,
+        "trend_15m_percent": 0.0,
+        "market_time_cst": "2026-08-07 15:30:00",
+        "lag_seconds": 81663,
+        "metadata": {
+          "source": "Tencent",
+          "source_type": "API",
+          "source_tier": "SECONDARY_PROVIDER",
+          "fetched_at": "2026-08-08T14:11:03+08:00",
+          "data_time": "2026-08-07T15:30:00+08:00",
+          "lag_seconds": null,
+          "freshness": "LAST_SESSION",
+          "freshness_policy": "MINUTE_SERIES",
+          "confidence": "HIGH",
+          "quality": "PASS",
+          "fallback_used": false,
+          "quality_flags": [
+            "NOT_LIVE_NOW"
+          ]
+        }
+      },
+      "intraday": {
+        "status": "OK",
+        "minute_count": 267,
+        "minute_last_time": "1530",
+        "quote_available": true,
+        "price": 29.34,
+        "price_source": "quote",
+        "minute_price": 29.34,
+        "quote_minute_price_gap_percent": 0.0,
+        "vwap": 29.02,
+        "vwap_source": "quote_average",
+        "price_vs_vwap_percent": 1.1027,
+        "above_vwap": true,
+        "day_high": 29.6,
+        "day_low": 28.6,
+        "day_extrema_source": "quote",
+        "from_day_high_percent": -0.8784,
+        "from_day_low_percent": 2.5874,
+        "day_range_position_percent": 74.0,
+        "trend_5m_percent": 0.0,
+        "trend_15m_percent": 0.0,
+        "trend_30m_percent": 0.1707,
+        "recent_15m_high": 29.34,
+        "recent_15m_low": 29.34,
+        "distance_to_recent_15m_high_percent": 0.0,
+        "from_recent_15m_low_percent": 0.0,
+        "recent_30m_high": 29.35,
+        "recent_30m_low": 29.3,
+        "distance_to_recent_30m_high_percent": -0.0341,
+        "from_recent_30m_low_percent": 0.1365,
+        "reference_time": "1529",
+        "volume_spike_ratio_1m": 0.286,
+        "amount_spike_ratio_1m": 0.286,
+        "volume_strength_ratio_5m": 0.017,
+        "amount_strength_ratio_5m": 0.017,
+        "baseline_minutes": 20,
+        "structure_window_minutes": 60,
+        "structure": "HIGHER_HIGH_HIGHER_LOW",
+        "bias": "UPTREND",
+        "swing_high_direction": "HIGHER",
+        "swing_low_direction": "HIGHER",
+        "last_swing_highs": [
+          {
+            "time": "1454",
+            "price": 29.3
+          },
+          {
+            "time": "1457",
+            "price": 29.35
+          }
+        ],
+        "last_swing_lows": [
+          {
+            "time": "1440",
+            "price": 29.22
+          },
+          {
+            "time": "1450",
+            "price": 29.26
+          }
+        ],
+        "current_price_valid": true,
+        "current_price_source_class": "SESSION_QUOTE",
+        "current_price_provider": "Eastmoney",
+        "current_price_guard": {
+          "status": "OK",
+          "market_window": false,
+          "quote_freshness": "LAST_SESSION",
+          "minute_freshness": "LAST_SESSION",
+          "minute_lag_seconds": 81663,
+          "hard_violations": []
+        },
+        "metadata": {
+          "source": "DERIVED",
+          "source_type": "DERIVED",
+          "source_tier": "DERIVED",
+          "fetched_at": "2026-08-08T14:11:03+08:00",
+          "data_time": "2026-08-07T15:30:00+08:00",
+          "lag_seconds": null,
+          "freshness": "DERIVED_CURRENT",
+          "freshness_policy": "DERIVED",
+          "confidence": "HIGH",
+          "quality": "PASS",
+          "fallback_used": false,
+          "quality_flags": []
+        },
+        "provenance": {
+          "type": "DERIVED",
+          "derived_from": [
+            "detail_stocks.002558.quote",
+            "detail_stocks.002558.minutes"
+          ],
+          "algorithm": "intraday_structure_metrics_v1"
+        }
+      },
+      "daily_context": {
+        "status": "OK",
+        "source": "History cache (Tencent qfq)",
+        "errors": [],
+        "history_count": 90,
+        "completed_bar_count": 60,
+        "latest_completed_date": "2026-08-07",
+        "current_partial_bar": null,
+        "current_price": 29.34,
+        "previous_day": {
+          "date": "2026-08-07",
+          "open": 29.52,
+          "close": 29.34,
+          "high": 29.6,
+          "low": 28.6,
+          "volume": 906604.0,
+          "amount": null,
+          "source": "Tencent qfq"
+        },
+        "moving_averages": {
+          "ma5": 29.54,
+          "ma10": 28.089,
+          "ma20": 28.1255,
+          "ma60": 26.9852
+        },
+        "ma_alignment": "MIXED",
+        "atr14": 1.9229,
+        "atr14_percent_of_price": 6.554,
+        "range_5d": {
+          "window": 5,
+          "high": 31.2,
+          "high_date": "2026-08-03",
+          "low": 28.6,
+          "low_date": "2026-08-07"
+        },
+        "range_10d": {
+          "window": 10,
+          "high": 31.2,
+          "high_date": "2026-08-03",
+          "low": 23.61,
+          "low_date": "2026-07-27"
+        },
+        "range_20d": {
+          "window": 20,
+          "high": 31.31,
+          "high_date": "2026-07-16",
+          "low": 23.61,
+          "low_date": "2026-07-27"
+        },
+        "return_20d_percent": -0.7442,
+        "previous_volume_vs_20d_mean": 0.72,
+        "current_vs_context": {
+          "ma5_percent": -0.677,
+          "ma10_percent": 4.4537,
+          "ma20_percent": 4.3181,
+          "ma60_percent": 8.7263,
+          "prev_close_percent": 0.0,
+          "20d_high_percent": -6.2919,
+          "20d_low_percent": 24.2694
+        },
+        "daily_swings": {
+          "last_swing_highs": [
+            {
+              "date": "2026-07-07",
+              "price": 30.18
+            },
+            {
+              "date": "2026-07-10",
+              "price": 29.88
+            },
+            {
+              "date": "2026-07-16",
+              "price": 31.31
+            },
+            {
+              "date": "2026-08-03",
+              "price": 31.2
+            }
+          ],
+          "last_swing_lows": [
+            {
+              "date": "2026-07-06",
+              "price": 26.54
+            },
+            {
+              "date": "2026-07-09",
+              "price": 26.8
+            },
+            {
+              "date": "2026-07-15",
+              "price": 25.52
+            },
+            {
+              "date": "2026-07-27",
+              "price": 23.61
+            }
+          ]
+        },
+        "key_levels": {
+          "status": "OK",
+          "cluster_tolerance": 0.2307,
+          "supports": [
+            {
+              "price": 29.34,
+              "distance_percent": 0.0,
+              "distance_atr": 0.0,
+              "score": 0.7,
+              "strength": "WEAK",
+              "confluence_count": 1,
+              "side": "SUPPORT",
+              "sources": [
+                "PREV_CLOSE"
+              ]
+            },
+            {
+              "price": 28.6,
+              "distance_percent": -2.522,
+              "distance_atr": -0.385,
+              "score": 2.1,
+              "strength": "MEDIUM",
+              "confluence_count": 2,
+              "side": "SUPPORT",
+              "sources": [
+                "5D_LOW",
+                "PREV_LOW"
+              ]
+            },
+            {
+              "price": 28.109,
+              "distance_percent": -4.196,
+              "distance_atr": -0.64,
+              "score": 2.4,
+              "strength": "MEDIUM",
+              "confluence_count": 2,
+              "side": "SUPPORT",
+              "sources": [
+                "MA10",
+                "MA20"
+              ]
+            },
+            {
+              "price": 26.87,
+              "distance_percent": -8.418,
+              "distance_atr": -1.284,
+              "score": 2.9,
+              "strength": "MEDIUM",
+              "confluence_count": 2,
+              "side": "SUPPORT",
+              "sources": [
+                "SWING_LOW:2026-07-09",
+                "MA60"
+              ]
+            },
+            {
+              "price": 25.52,
+              "distance_percent": -13.02,
+              "distance_atr": -1.987,
+              "score": 1.8,
+              "strength": "WEAK",
+              "confluence_count": 1,
+              "side": "SUPPORT",
+              "sources": [
+                "SWING_LOW:2026-07-15"
+              ]
+            }
+          ],
+          "resistances": [
+            {
+              "price": 29.572,
+              "distance_percent": 0.789,
+              "distance_atr": 0.12,
+              "score": 1.9,
+              "strength": "WEAK",
+              "confluence_count": 2,
+              "side": "RESISTANCE",
+              "sources": [
+                "MA5",
+                "PREV_HIGH"
+              ]
+            },
+            {
+              "price": 29.88,
+              "distance_percent": 1.84,
+              "distance_atr": 0.281,
+              "score": 1.8,
+              "strength": "WEAK",
+              "confluence_count": 1,
+              "side": "RESISTANCE",
+              "sources": [
+                "SWING_HIGH:2026-07-10"
+              ]
+            },
+            {
+              "price": 31.249,
+              "distance_percent": 6.507,
+              "distance_atr": 0.993,
+              "score": 7.6,
+              "strength": "STRONG",
+              "confluence_count": 5,
+              "side": "RESISTANCE",
+              "sources": [
+                "5D_HIGH",
+                "10D_HIGH",
+                "SWING_HIGH:2026-08-03",
+                "20D_HIGH",
+                "SWING_HIGH:2026-07-16"
+              ]
+            }
+          ]
+        },
+        "cache": {
+          "state": "HIT",
+          "validation_key": "2026-08-08:intraday",
+          "source": "Tencent qfq",
+          "bar_count": 120,
+          "latest_bar_date": "2026-08-07",
+          "network_daily_k_requests": 0
+        },
+        "metadata": {
+          "source": "History cache (Tencent qfq)",
+          "source_type": "CACHE",
+          "source_tier": "CACHE",
+          "fetched_at": "2026-08-08T14:11:03+08:00",
+          "data_time": "2026-08-07",
+          "lag_seconds": null,
+          "freshness": "LATEST_COMPLETED_BAR",
+          "freshness_policy": "DAILY_K_CONTEXT",
+          "confidence": "HIGH",
+          "quality": "PASS",
+          "fallback_used": false,
+          "quality_flags": [
+            "HISTORY_CACHE_USED"
+          ]
+        },
+        "provenance": {
+          "type": "DERIVED",
+          "derived_from": [
+            "detail_stocks.002558.daily_context.bars_last_60"
+          ],
+          "algorithm": "daily_k_context_v1",
+          "field_provenance": {
+            "moving_averages.ma5": {
+              "algorithm": "SMA",
+              "period": 5,
+              "derived_from": [
+                "daily_k.close"
+              ]
+            },
+            "moving_averages.ma10": {
+              "algorithm": "SMA",
+              "period": 10,
+              "derived_from": [
+                "daily_k.close"
+              ]
+            },
+            "moving_averages.ma20": {
+              "algorithm": "SMA",
+              "period": 20,
+              "derived_from": [
+                "daily_k.close"
+              ]
+            },
+            "moving_averages.ma60": {
+              "algorithm": "SMA",
+              "period": 60,
+              "derived_from": [
+                "daily_k.close"
+              ]
+            },
+            "atr14": {
+              "algorithm": "ATR",
+              "period": 14,
+              "derived_from": [
+                "daily_k.high",
+                "daily_k.low",
+                "daily_k.close"
+              ]
+            },
+            "key_levels": {
+              "algorithm": "confluence_clustering_v1",
+              "derived_from": [
+                "daily_k",
+                "moving_averages",
+                "previous_day"
+              ]
+            }
+          }
+        }
+      },
+      "events": {
+        "status": "OK",
+        "source": "CNINFO",
+        "source_tier": "OFFICIAL",
+        "source_url": "https://www.cninfo.com.cn/",
+        "lookback_days": 30,
+        "window_start_date": "2026-07-09",
+        "window_end_date": "2026-08-08",
+        "fetched_at": "2026-08-08T14:11:03+08:00",
+        "latest": {
+          "event_id": "cninfo:1225464064",
+          "code": "002558",
+          "event_type": "OTHER",
+          "title": "关于控股股东及其一致行动人权益变动比例触及1%整数倍的公告",
+          "published_at": "2026-08-08T00:00:00+08:00",
+          "effective_date": null,
+          "source": "CNINFO",
+          "source_tier": "OFFICIAL",
+          "source_url": "https://static.cninfo.com.cn/finalpage/2026-08-08/1225464064.PDF",
+          "source_document_id": "1225464064",
+          "importance": "LOW",
+          "facts": {
+            "extraction_scope": "TITLE_ONLY",
+            "amounts": [],
+            "percentages": [
+              1.0
+            ],
+            "dates": []
+          },
+          "freshness": "CURRENT",
+          "fetched_at": "2026-08-08T14:11:03+08:00",
+          "status": "OPEN",
+          "related_event_id": null,
+          "supersedes_event_id": null,
+          "metadata": {
+            "source": "CNINFO",
+            "source_type": "API",
+            "source_tier": "OFFICIAL",
+            "fetched_at": "2026-08-08T14:11:03+08:00",
+            "data_time": "2026-08-08T00:00:00+08:00",
+            "lag_seconds": null,
+            "freshness": "CURRENT",
+            "freshness_policy": "OFFICIAL_DISCLOSURE",
+            "confidence": "HIGH",
+            "quality": "PASS",
+            "fallback_used": false,
+            "quality_flags": []
+          },
+          "provenance": {
+            "type": "OFFICIAL_DISCLOSURE",
+            "provider": "CNINFO",
+            "document_id": "1225464064",
+            "document_url": "https://static.cninfo.com.cn/finalpage/2026-08-08/1225464064.PDF",
+            "fact_extraction": "TITLE_ONLY",
+            "classification": "deterministic_title_rules_v1"
+          }
+        },
+        "recent": [
+          {
+            "event_id": "cninfo:1225464064",
+            "code": "002558",
+            "event_type": "OTHER",
+            "title": "关于控股股东及其一致行动人权益变动比例触及1%整数倍的公告",
+            "published_at": "2026-08-08T00:00:00+08:00",
+            "effective_date": null,
+            "source": "CNINFO",
+            "source_tier": "OFFICIAL",
+            "source_url": "https://static.cninfo.com.cn/finalpage/2026-08-08/1225464064.PDF",
+            "source_document_id": "1225464064",
+            "importance": "LOW",
+            "facts": {
+              "extraction_scope": "TITLE_ONLY",
+              "amounts": [],
+              "percentages": [
+                1.0
+              ],
+              "dates": []
+            },
+            "freshness": "CURRENT",
+            "fetched_at": "2026-08-08T14:11:03+08:00",
+            "status": "OPEN",
+            "related_event_id": null,
+            "supersedes_event_id": null,
+            "metadata": {
+              "source": "CNINFO",
+              "source_type": "API",
+              "source_tier": "OFFICIAL",
+              "fetched_at": "2026-08-08T14:11:03+08:00",
+              "data_time": "2026-08-08T00:00:00+08:00",
+              "lag_seconds": null,
+              "freshness": "CURRENT",
+              "freshness_policy": "OFFICIAL_DISCLOSURE",
+              "confidence": "HIGH",
+              "quality": "PASS",
+              "fallback_used": false,
+              "quality_flags": []
+            },
+            "provenance": {
+              "type": "OFFICIAL_DISCLOSURE",
+              "provider": "CNINFO",
+              "document_id": "1225464064",
+              "document_url": "https://static.cninfo.com.cn/finalpage/2026-08-08/1225464064.PDF",
+              "fact_extraction": "TITLE_ONLY",
+              "classification": "deterministic_title_rules_v1"
+            }
+          }
+        ],
+        "upcoming": [],
+        "event_context": {
+          "count": 1,
+          "by_type": {
+            "OTHER": 1
+          },
+          "high_importance_event_ids": [],
+          "latest_high_importance_event_id": null
+        },
+        "cache": {
+          "state": "REFRESHED",
+          "path": ".market-data/history/events/002558.json",
+          "refresh_mode": "INCREMENTAL_OVERLAP",
+          "cached_event_count_before": 1,
+          "merged_event_count": 1,
+          "org_id_from_cache": true,
+          "stock_map": null,
+          "query_status": "OK",
+          "coverage_complete": true,
+          "covered_start_date": "2026-07-09",
+          "requested_start_date": "2026-07-09",
+          "incomplete_ranges": []
+        },
+        "provider_health": {
+          "status": "OK",
+          "query": {
+            "total_record_num": 1,
+            "pages_total": 1,
+            "pages_requested": 1,
+            "rows_received": 1,
+            "complete": true,
+            "errors": [],
+            "missing_ranges": [],
+            "split_used": false,
+            "segments": [
+              {
+                "start_date": "2026-08-01",
+                "end_date": "2026-08-08",
+                "pages_total": 1,
+                "pages_requested": 1,
+                "complete": true
+              }
+            ]
+          },
+          "error": null
+        },
+        "no_events_reason": null,
+        "error": null,
+        "metadata": {
+          "source": "CNINFO",
+          "source_type": "API",
+          "source_tier": "OFFICIAL",
+          "fetched_at": "2026-08-08T14:11:03+08:00",
+          "data_time": "2026-08-08T00:00:00+08:00",
+          "lag_seconds": null,
+          "freshness": "CURRENT_QUERY",
+          "freshness_policy": "OFFICIAL_DISCLOSURE_SET",
+          "confidence": "HIGH",
+          "quality": "PASS",
+          "fallback_used": false,
+          "quality_flags": []
+        },
+        "provenance": {
+          "type": "OFFICIAL_DISCLOSURE_SET",
+          "provider": "CNINFO",
+          "source_tier": "OFFICIAL",
+          "cache_path": ".market-data/history/events/002558.json",
+          "lookback_days": 30
+        }
+      },
+      "event_context": {
+        "count": 1,
+        "by_type": {
+          "OTHER": 1
+        },
+        "high_importance_event_ids": [],
+        "latest_high_importance_event_id": null
+      },
+      "metadata": {
+        "source": "DERIVED",
+        "source_type": "DERIVED",
+        "source_tier": "DERIVED",
+        "fetched_at": "2026-08-08T14:11:03+08:00",
+        "data_time": "2026-08-07T15:34:06+08:00",
+        "lag_seconds": null,
+        "freshness": "DERIVED_CURRENT",
+        "freshness_policy": "DERIVED",
+        "confidence": "HIGH",
+        "quality": "PASS",
+        "fallback_used": false,
+        "quality_flags": [
+          "FINAL_COMPONENT_QUALITY_OVERRIDES_LEGACY_STATUS"
+        ]
+      },
+      "provenance": {
+        "type": "COMPOSITE",
+        "derived_from": [
+          "detail_stocks.002558.quote",
+          "detail_stocks.002558.minutes",
+          "detail_stocks.002558.intraday",
+          "detail_stocks.002558.daily_context"
+        ]
+      },
+      "errors": []
+    },
+    "600795": {
+      "code": "600795",
+      "market": "SH",
+      "status": "PARTIAL",
+      "quote": {
+        "code": "600795",
+        "name": "国电电力",
+        "market": "SH",
+        "source": "Eastmoney",
+        "latest": 4.98,
+        "open": 5.0,
+        "high": 5.02,
+        "low": 4.96,
+        "average": 4.99,
+        "previous_close": 5.02,
+        "change": -0.04,
+        "change_percent": -0.8,
+        "amplitude_percent": 1.2,
+        "volume_raw": 968584,
+        "amount_raw": 483102087.0,
+        "amount_1e8": 4.831,
+        "market_time_cst": "2026-08-07 16:11:53",
+        "lag_seconds": 79150,
+        "freshness": "LAST_SESSION",
+        "resilience": {
+          "primary_source": "Eastmoney",
+          "fallback_source": "Tencent",
+          "selected_source": "Eastmoney",
+          "fallback_used": false,
+          "selection_reason": "PRIMARY_USABLE",
+          "consensus": {
+            "status": "CONSISTENT",
+            "price_gap": 0.0,
+            "price_gap_percent": 0.0
+          },
+          "providers": {
+            "Eastmoney": {
+              "status": "OK",
+              "usable": true,
+              "latest": 4.98,
+              "market_time_cst": "2026-08-07 16:11:53",
+              "lag_seconds": 79150,
+              "freshness": "LAST_SESSION",
+              "error": null
+            },
+            "Tencent": {
+              "status": "OK",
+              "usable": true,
+              "latest": 4.98,
+              "market_time_cst": "2026-08-07 16:14:53",
+              "lag_seconds": 78970,
+              "freshness": "LAST_SESSION",
+              "error": null
+            }
+          }
+        },
+        "metadata": {
+          "source": "Eastmoney",
+          "source_type": "API",
+          "source_tier": "PRIMARY_PROVIDER",
+          "fetched_at": "2026-08-08T14:11:03+08:00",
+          "data_time": "2026-08-07T16:11:53+08:00",
+          "lag_seconds": 79150,
+          "freshness": "LAST_SESSION",
+          "freshness_policy": "REALTIME_QUOTE",
+          "confidence": "HIGH",
+          "quality": "PASS",
+          "fallback_used": false,
+          "quality_flags": [
+            "NOT_LIVE_NOW"
+          ]
+        }
+      },
+      "minutes": {
+        "source": "Tencent",
+        "date": "20260807",
+        "freshness": "LAST_SESSION",
+        "count": 267,
+        "last_time": "1530",
+        "last_price": 4.98,
+        "trend_5m_percent": 0.0,
+        "trend_15m_percent": 0.0,
+        "market_time_cst": "2026-08-07 15:30:00",
+        "lag_seconds": 81663,
+        "metadata": {
+          "source": "Tencent",
+          "source_type": "API",
+          "source_tier": "SECONDARY_PROVIDER",
+          "fetched_at": "2026-08-08T14:11:03+08:00",
+          "data_time": "2026-08-07T15:30:00+08:00",
+          "lag_seconds": null,
+          "freshness": "LAST_SESSION",
+          "freshness_policy": "MINUTE_SERIES",
+          "confidence": "HIGH",
+          "quality": "PASS",
+          "fallback_used": false,
+          "quality_flags": [
+            "NOT_LIVE_NOW"
+          ]
+        }
+      },
+      "intraday": {
+        "status": "OK",
+        "minute_count": 267,
+        "minute_last_time": "1530",
+        "quote_available": true,
+        "price": 4.98,
+        "price_source": "quote",
+        "minute_price": 4.98,
+        "quote_minute_price_gap_percent": 0.0,
+        "vwap": 4.99,
+        "vwap_source": "quote_average",
+        "price_vs_vwap_percent": -0.2004,
+        "above_vwap": false,
+        "day_high": 5.02,
+        "day_low": 4.96,
+        "day_extrema_source": "quote",
+        "from_day_high_percent": -0.7968,
+        "from_day_low_percent": 0.4032,
+        "day_range_position_percent": 33.33,
+        "trend_5m_percent": 0.0,
+        "trend_15m_percent": 0.0,
+        "trend_30m_percent": -0.2004,
+        "recent_15m_high": 4.98,
+        "recent_15m_low": 4.98,
+        "distance_to_recent_15m_high_percent": 0.0,
+        "from_recent_15m_low_percent": 0.0,
+        "recent_30m_high": 4.99,
+        "recent_30m_low": 4.98,
+        "distance_to_recent_30m_high_percent": -0.2004,
+        "from_recent_30m_low_percent": 0.0,
+        "reference_time": "1529",
+        "volume_spike_ratio_1m": 0.0,
+        "amount_spike_ratio_1m": 0.0,
+        "volume_strength_ratio_5m": 0.001,
+        "amount_strength_ratio_5m": 0.001,
+        "baseline_minutes": 20,
+        "structure_window_minutes": 60,
+        "structure": "LOWER_HIGH_FLAT_LOW",
+        "bias": "DOWNTREND",
+        "swing_high_direction": "LOWER",
+        "swing_low_direction": "FLAT",
+        "last_swing_highs": [
+          {
+            "time": "1448",
+            "price": 5.0
+          },
+          {
+            "time": "1455",
+            "price": 4.99
+          }
+        ],
+        "last_swing_lows": [
+          {
+            "time": "1452",
+            "price": 4.98
+          },
+          {
+            "time": "1457",
+            "price": 4.98
+          }
+        ],
+        "current_price_valid": true,
+        "current_price_source_class": "SESSION_QUOTE",
+        "current_price_provider": "Eastmoney",
+        "current_price_guard": {
+          "status": "OK",
+          "market_window": false,
+          "quote_freshness": "LAST_SESSION",
+          "minute_freshness": "LAST_SESSION",
+          "minute_lag_seconds": 81663,
+          "hard_violations": []
+        },
+        "metadata": {
+          "source": "DERIVED",
+          "source_type": "DERIVED",
+          "source_tier": "DERIVED",
+          "fetched_at": "2026-08-08T14:11:03+08:00",
+          "data_time": "2026-08-07T15:30:00+08:00",
+          "lag_seconds": null,
+          "freshness": "DERIVED_CURRENT",
+          "freshness_policy": "DERIVED",
+          "confidence": "HIGH",
+          "quality": "PASS",
+          "fallback_used": false,
+          "quality_flags": []
+        },
+        "provenance": {
+          "type": "DERIVED",
+          "derived_from": [
+            "detail_stocks.600795.quote",
+            "detail_stocks.600795.minutes"
+          ],
+          "algorithm": "intraday_structure_metrics_v1"
+        }
+      },
+      "daily_context": {
+        "status": "OK",
+        "source": "History cache (Tencent qfq)",
+        "errors": [],
+        "history_count": 90,
+        "completed_bar_count": 60,
+        "latest_completed_date": "2026-08-07",
+        "current_partial_bar": null,
+        "current_price": 4.98,
+        "previous_day": {
+          "date": "2026-08-07",
+          "open": 5.0,
+          "close": 4.98,
+          "high": 5.02,
+          "low": 4.96,
+          "volume": 968584.0,
+          "amount": null,
+          "source": "Tencent qfq"
+        },
+        "moving_averages": {
+          "ma5": 5.032,
+          "ma10": 4.997,
+          "ma20": 4.908,
+          "ma60": 4.8108
+        },
+        "ma_alignment": "BULLISH_STACK",
+        "atr14": 0.1043,
+        "atr14_percent_of_price": 2.094,
+        "range_5d": {
+          "window": 5,
+          "high": 5.15,
+          "high_date": "2026-08-04",
+          "low": 4.95,
+          "low_date": "2026-08-06"
+        },
+        "range_10d": {
+          "window": 10,
+          "high": 5.15,
+          "high_date": "2026-08-04",
+          "low": 4.81,
+          "low_date": "2026-07-28"
+        },
+        "range_20d": {
+          "window": 20,
+          "high": 5.15,
+          "high_date": "2026-08-04",
+          "low": 4.62,
+          "low_date": "2026-07-13"
+        },
+        "return_20d_percent": 7.8155,
+        "previous_volume_vs_20d_mean": 0.662,
+        "current_vs_context": {
+          "ma5_percent": -1.0334,
+          "ma10_percent": -0.3402,
+          "ma20_percent": 1.467,
+          "ma60_percent": 3.5171,
+          "prev_close_percent": 0.0,
+          "20d_high_percent": -3.301,
+          "20d_low_percent": 7.7922
+        },
+        "daily_swings": {
+          "last_swing_highs": [
+            {
+              "date": "2026-07-03",
+              "price": 4.639
+            },
+            {
+              "date": "2026-07-14",
+              "price": 4.76
+            },
+            {
+              "date": "2026-07-23",
+              "price": 5.05
+            },
+            {
+              "date": "2026-08-04",
+              "price": 5.15
+            }
+          ],
+          "last_swing_lows": [
+            {
+              "date": "2026-06-22",
+              "price": 4.479
+            },
+            {
+              "date": "2026-06-29",
+              "price": 4.449
+            },
+            {
+              "date": "2026-07-07",
+              "price": 4.509
+            },
+            {
+              "date": "2026-07-28",
+              "price": 4.81
+            }
+          ]
+        },
+        "key_levels": {
+          "status": "OK",
+          "cluster_tolerance": 0.0174,
+          "supports": [
+            {
+              "price": 4.98,
+              "distance_percent": 0.0,
+              "distance_atr": 0.0,
+              "score": 0.7,
+              "strength": "WEAK",
+              "confluence_count": 1,
+              "side": "SUPPORT",
+              "sources": [
+                "PREV_CLOSE"
+              ]
+            },
+            {
+              "price": 4.955,
+              "distance_percent": -0.507,
+              "distance_atr": -0.242,
+              "score": 2.1,
+              "strength": "MEDIUM",
+              "confluence_count": 2,
+              "side": "SUPPORT",
+              "sources": [
+                "5D_LOW",
+                "PREV_LOW"
+              ]
+            },
+            {
+              "price": 4.908,
+              "distance_percent": -1.446,
+              "distance_atr": -0.69,
+              "score": 1.3,
+              "strength": "WEAK",
+              "confluence_count": 1,
+              "side": "SUPPORT",
+              "sources": [
+                "MA20"
+              ]
+            },
+            {
+              "price": 4.81,
+              "distance_percent": -3.409,
+              "distance_atr": -1.628,
+              "score": 4.2,
+              "strength": "STRONG",
+              "confluence_count": 3,
+              "side": "SUPPORT",
+              "sources": [
+                "10D_LOW",
+                "SWING_LOW:2026-07-28",
+                "MA60"
+              ]
+            },
+            {
+              "price": 4.76,
+              "distance_percent": -4.418,
+              "distance_atr": -2.11,
+              "score": 1.8,
+              "strength": "WEAK",
+              "confluence_count": 1,
+              "side": "SUPPORT",
+              "sources": [
+                "SWING_HIGH:2026-07-14"
+              ]
+            }
+          ],
+          "resistances": [
+            {
+              "price": 4.997,
+              "distance_percent": 0.341,
+              "distance_atr": 0.163,
+              "score": 1.1,
+              "strength": "WEAK",
+              "confluence_count": 1,
+              "side": "RESISTANCE",
+              "sources": [
+                "MA10"
+              ]
+            },
+            {
+              "price": 5.026,
+              "distance_percent": 0.917,
+              "distance_atr": 0.438,
+              "score": 1.9,
+              "strength": "WEAK",
+              "confluence_count": 2,
+              "side": "RESISTANCE",
+              "sources": [
+                "PREV_HIGH",
+                "MA5"
+              ]
+            },
+            {
+              "price": 5.05,
+              "distance_percent": 1.406,
+              "distance_atr": 0.671,
+              "score": 1.8,
+              "strength": "WEAK",
+              "confluence_count": 1,
+              "side": "RESISTANCE",
+              "sources": [
+                "SWING_HIGH:2026-07-23"
+              ]
+            },
+            {
+              "price": 5.15,
+              "distance_percent": 3.414,
+              "distance_atr": 1.63,
+              "score": 5.8,
+              "strength": "STRONG",
+              "confluence_count": 4,
+              "side": "RESISTANCE",
+              "sources": [
+                "5D_HIGH",
+                "10D_HIGH",
+                "20D_HIGH",
+                "SWING_HIGH:2026-08-04"
+              ]
+            }
+          ]
+        },
+        "cache": {
+          "state": "HIT",
+          "validation_key": "2026-08-08:intraday",
+          "source": "Tencent qfq",
+          "bar_count": 120,
+          "latest_bar_date": "2026-08-07",
+          "network_daily_k_requests": 0
+        },
+        "metadata": {
+          "source": "History cache (Tencent qfq)",
+          "source_type": "CACHE",
+          "source_tier": "CACHE",
+          "fetched_at": "2026-08-08T14:11:03+08:00",
+          "data_time": "2026-08-07",
+          "lag_seconds": null,
+          "freshness": "LATEST_COMPLETED_BAR",
+          "freshness_policy": "DAILY_K_CONTEXT",
+          "confidence": "HIGH",
+          "quality": "PASS",
+          "fallback_used": false,
+          "quality_flags": [
+            "HISTORY_CACHE_USED"
+          ]
+        },
+        "provenance": {
+          "type": "DERIVED",
+          "derived_from": [
+            "detail_stocks.600795.daily_context.bars_last_60"
+          ],
+          "algorithm": "daily_k_context_v1",
+          "field_provenance": {
+            "moving_averages.ma5": {
+              "algorithm": "SMA",
+              "period": 5,
+              "derived_from": [
+                "daily_k.close"
+              ]
+            },
+            "moving_averages.ma10": {
+              "algorithm": "SMA",
+              "period": 10,
+              "derived_from": [
+                "daily_k.close"
+              ]
+            },
+            "moving_averages.ma20": {
+              "algorithm": "SMA",
+              "period": 20,
+              "derived_from": [
+                "daily_k.close"
+              ]
+            },
+            "moving_averages.ma60": {
+              "algorithm": "SMA",
+              "period": 60,
+              "derived_from": [
+                "daily_k.close"
+              ]
+            },
+            "atr14": {
+              "algorithm": "ATR",
+              "period": 14,
+              "derived_from": [
+                "daily_k.high",
+                "daily_k.low",
+                "daily_k.close"
+              ]
+            },
+            "key_levels": {
+              "algorithm": "confluence_clustering_v1",
+              "derived_from": [
+                "daily_k",
+                "moving_averages",
+                "previous_day"
+              ]
+            }
+          }
+        }
+      },
+      "events": {
+        "status": "OK",
+        "source": "CNINFO",
+        "source_tier": "OFFICIAL",
+        "source_url": "https://www.cninfo.com.cn/",
+        "lookback_days": 30,
+        "window_start_date": "2026-07-09",
+        "window_end_date": "2026-08-08",
+        "fetched_at": "2026-08-08T14:11:03+08:00",
+        "latest": {
+          "event_id": "cninfo:1225436704",
+          "code": "600795",
+          "event_type": "OTHER",
+          "title": "国电电力2026年上半年电量情况公告",
+          "published_at": "2026-07-23T00:00:00+08:00",
+          "effective_date": null,
+          "source": "CNINFO",
+          "source_tier": "OFFICIAL",
+          "source_url": "https://static.cninfo.com.cn/finalpage/2026-07-23/1225436704.PDF",
+          "source_document_id": "1225436704",
+          "importance": "LOW",
+          "facts": {
+            "extraction_scope": "TITLE_ONLY",
+            "amounts": [],
+            "percentages": [],
+            "dates": []
+          },
+          "freshness": "RECENT_30D",
+          "fetched_at": "2026-08-08T14:11:03+08:00",
+          "status": "OPEN",
+          "related_event_id": null,
+          "supersedes_event_id": null,
+          "metadata": {
+            "source": "CNINFO",
+            "source_type": "API",
+            "source_tier": "OFFICIAL",
+            "fetched_at": "2026-08-08T14:11:03+08:00",
+            "data_time": "2026-07-23T00:00:00+08:00",
+            "lag_seconds": null,
+            "freshness": "RECENT_30D",
+            "freshness_policy": "OFFICIAL_DISCLOSURE",
+            "confidence": "HIGH",
+            "quality": "PASS",
+            "fallback_used": false,
+            "quality_flags": []
+          },
+          "provenance": {
+            "type": "OFFICIAL_DISCLOSURE",
+            "provider": "CNINFO",
+            "document_id": "1225436704",
+            "document_url": "https://static.cninfo.com.cn/finalpage/2026-07-23/1225436704.PDF",
+            "fact_extraction": "TITLE_ONLY",
+            "classification": "deterministic_title_rules_v1"
+          }
+        },
+        "recent": [
+          {
+            "event_id": "cninfo:1225436704",
+            "code": "600795",
+            "event_type": "OTHER",
+            "title": "国电电力2026年上半年电量情况公告",
+            "published_at": "2026-07-23T00:00:00+08:00",
+            "effective_date": null,
+            "source": "CNINFO",
+            "source_tier": "OFFICIAL",
+            "source_url": "https://static.cninfo.com.cn/finalpage/2026-07-23/1225436704.PDF",
+            "source_document_id": "1225436704",
+            "importance": "LOW",
+            "facts": {
+              "extraction_scope": "TITLE_ONLY",
+              "amounts": [],
+              "percentages": [],
+              "dates": []
+            },
+            "freshness": "RECENT_30D",
+            "fetched_at": "2026-08-08T14:11:03+08:00",
+            "status": "OPEN",
+            "related_event_id": null,
+            "supersedes_event_id": null,
+            "metadata": {
+              "source": "CNINFO",
+              "source_type": "API",
+              "source_tier": "OFFICIAL",
+              "fetched_at": "2026-08-08T14:11:03+08:00",
+              "data_time": "2026-07-23T00:00:00+08:00",
+              "lag_seconds": null,
+              "freshness": "RECENT_30D",
+              "freshness_policy": "OFFICIAL_DISCLOSURE",
+              "confidence": "HIGH",
+              "quality": "PASS",
+              "fallback_used": false,
+              "quality_flags": []
+            },
+            "provenance": {
+              "type": "OFFICIAL_DISCLOSURE",
+              "provider": "CNINFO",
+              "document_id": "1225436704",
+              "document_url": "https://static.cninfo.com.cn/finalpage/2026-07-23/1225436704.PDF",
+              "fact_extraction": "TITLE_ONLY",
+              "classification": "deterministic_title_rules_v1"
+            }
+          },
+          {
+            "event_id": "cninfo:1225431545",
+            "code": "600795",
+            "event_type": "OTHER",
+            "title": "临2026-16 国电电力关于公司经营情况等相关事项的公告",
+            "published_at": "2026-07-20T00:00:00+08:00",
+            "effective_date": null,
+            "source": "CNINFO",
+            "source_tier": "OFFICIAL",
+            "source_url": "https://static.cninfo.com.cn/finalpage/2026-07-20/1225431545.PDF",
+            "source_document_id": "1225431545",
+            "importance": "LOW",
+            "facts": {
+              "extraction_scope": "TITLE_ONLY",
+              "amounts": [],
+              "percentages": [],
+              "dates": []
+            },
+            "freshness": "RECENT_30D",
+            "fetched_at": "2026-08-08T14:11:03+08:00",
+            "status": "OPEN",
+            "related_event_id": null,
+            "supersedes_event_id": null,
+            "metadata": {
+              "source": "CNINFO",
+              "source_type": "API",
+              "source_tier": "OFFICIAL",
+              "fetched_at": "2026-08-08T14:11:03+08:00",
+              "data_time": "2026-07-20T00:00:00+08:00",
+              "lag_seconds": null,
+              "freshness": "RECENT_30D",
+              "freshness_policy": "OFFICIAL_DISCLOSURE",
+              "confidence": "HIGH",
+              "quality": "PASS",
+              "fallback_used": false,
+              "quality_flags": []
+            },
+            "provenance": {
+              "type": "OFFICIAL_DISCLOSURE",
+              "provider": "CNINFO",
+              "document_id": "1225431545",
+              "document_url": "https://static.cninfo.com.cn/finalpage/2026-07-20/1225431545.PDF",
+              "fact_extraction": "TITLE_ONLY",
+              "classification": "deterministic_title_rules_v1"
+            }
+          }
+        ],
+        "upcoming": [],
+        "event_context": {
+          "count": 2,
+          "by_type": {
+            "OTHER": 2
+          },
+          "high_importance_event_ids": [],
+          "latest_high_importance_event_id": null
+        },
+        "cache": {
+          "state": "REFRESHED",
+          "path": ".market-data/history/events/600795.json",
+          "refresh_mode": "INCREMENTAL_OVERLAP",
+          "cached_event_count_before": 2,
+          "merged_event_count": 2,
+          "org_id_from_cache": true,
+          "stock_map": null,
+          "query_status": "OK",
+          "coverage_complete": true,
+          "covered_start_date": "2026-07-09",
+          "requested_start_date": "2026-07-09",
+          "incomplete_ranges": []
+        },
+        "provider_health": {
+          "status": "OK",
+          "query": {
+            "total_record_num": 2,
+            "pages_total": 1,
+            "pages_requested": 1,
+            "rows_received": 2,
+            "complete": true,
+            "errors": [],
+            "missing_ranges": [],
+            "split_used": false,
+            "segments": [
+              {
+                "start_date": "2026-07-16",
+                "end_date": "2026-08-08",
+                "pages_total": 1,
+                "pages_requested": 1,
+                "complete": true
+              }
+            ]
+          },
+          "error": null
+        },
+        "no_events_reason": null,
+        "error": null,
+        "metadata": {
+          "source": "CNINFO",
+          "source_type": "API",
+          "source_tier": "OFFICIAL",
+          "fetched_at": "2026-08-08T14:11:03+08:00",
+          "data_time": "2026-07-23T00:00:00+08:00",
+          "lag_seconds": null,
+          "freshness": "CURRENT_QUERY",
+          "freshness_policy": "OFFICIAL_DISCLOSURE_SET",
+          "confidence": "HIGH",
+          "quality": "PASS",
+          "fallback_used": false,
+          "quality_flags": []
+        },
+        "provenance": {
+          "type": "OFFICIAL_DISCLOSURE_SET",
+          "provider": "CNINFO",
+          "source_tier": "OFFICIAL",
+          "cache_path": ".market-data/history/events/600795.json",
+          "lookback_days": 30
+        }
+      },
+      "event_context": {
+        "count": 2,
+        "by_type": {
+          "OTHER": 2
+        },
+        "high_importance_event_ids": [],
+        "latest_high_importance_event_id": null
+      },
+      "metadata": {
+        "source": "DERIVED",
+        "source_type": "DERIVED",
+        "source_tier": "DERIVED",
+        "fetched_at": "2026-08-08T14:11:03+08:00",
+        "data_time": "2026-08-07T16:11:53+08:00",
+        "lag_seconds": null,
+        "freshness": "DERIVED_CURRENT",
+        "freshness_policy": "DERIVED",
+        "confidence": "HIGH",
+        "quality": "PASS",
+        "fallback_used": false,
+        "quality_flags": [
+          "FINAL_COMPONENT_QUALITY_OVERRIDES_LEGACY_STATUS"
+        ]
+      },
+      "provenance": {
+        "type": "COMPOSITE",
+        "derived_from": [
+          "detail_stocks.600795.quote",
+          "detail_stocks.600795.minutes",
+          "detail_stocks.600795.intraday",
+          "detail_stocks.600795.daily_context"
+        ]
+      },
+      "errors": []
+    }
+  },
+  "groups": {
+    "game_sector": {
+      "group_id": "game_sector",
+      "label": "A股游戏板块对照组",
+      "status": "OK",
+      "target": {
+        "code": "002558",
+        "name": "巨人网络",
+        "change_percent": 0.27
+      },
+      "requested_member_count": 12,
+      "active_member_count": 12,
+      "covered_member_count": 12,
+      "coverage_percent": 100.0,
+      "mean_change_percent": -0.5425,
+      "median_change_percent": -0.275,
+      "up_count": 4,
+      "down_count": 8,
+      "flat_count": 0,
+      "breadth_score_percent": -33.33,
+      "target_vs_peer_mean_percent": 0.8125,
+      "target_vs_peer_median_percent": 0.545,
+      "leaders": [
+        {
+          "code": "002624",
+          "name": "完美世界",
+          "latest": 11.49,
+          "change_percent": 1.95,
+          "amount_1e8": 5.8631,
+          "freshness": "LAST_SESSION",
+          "available": true
+        },
+        {
+          "code": "002517",
+          "name": "恺英网络",
+          "latest": 17.93,
+          "change_percent": 0.17,
+          "amount_1e8": 12.6739,
+          "freshness": "LAST_SESSION",
+          "available": true
+        },
+        {
+          "code": "002174",
+          "name": "游族网络",
+          "latest": 11.8,
+          "change_percent": 0.17,
+          "amount_1e8": 3.265,
+          "freshness": "LAST_SESSION",
+          "available": true
+        }
+      ],
+      "laggards": [
+        {
+          "code": "300494",
+          "name": "盛天网络",
+          "latest": 8.92,
+          "change_percent": -4.9,
+          "amount_1e8": 2.5057,
+          "freshness": "LAST_SESSION",
+          "available": true
+        },
+        {
+          "code": "300315",
+          "name": "掌趣科技",
+          "latest": 4.28,
+          "change_percent": -1.15,
+          "amount_1e8": 3.5818,
+          "freshness": "LAST_SESSION",
+          "available": true
+        },
+        {
+          "code": "300002",
+          "name": "神州泰岳",
+          "latest": 8.52,
+          "change_percent": -0.81,
+          "amount_1e8": 4.6177,
+          "freshness": "LAST_SESSION",
+          "available": true
+        }
+      ],
+      "members": [
+        {
+          "code": "002602",
+          "name": "世纪华通",
+          "latest": 13.77,
+          "change_percent": -0.65,
+          "amount_1e8": 12.6242,
+          "freshness": "LAST_SESSION",
+          "available": true
+        },
+        {
+          "code": "002555",
+          "name": "三七互娱",
+          "latest": 19.79,
+          "change_percent": -0.05,
+          "amount_1e8": 7.7434,
+          "freshness": "LAST_SESSION",
+          "available": true
+        },
+        {
+          "code": "002517",
+          "name": "恺英网络",
+          "latest": 17.93,
+          "change_percent": 0.17,
+          "amount_1e8": 12.6739,
+          "freshness": "LAST_SESSION",
+          "available": true
+        },
+        {
+          "code": "002624",
+          "name": "完美世界",
+          "latest": 11.49,
+          "change_percent": 1.95,
+          "amount_1e8": 5.8631,
+          "freshness": "LAST_SESSION",
+          "available": true
+        },
+        {
+          "code": "603444",
+          "name": "吉比特",
+          "latest": 382.67,
+          "change_percent": -0.22,
+          "amount_1e8": 6.3433,
+          "freshness": "LAST_SESSION",
+          "available": true
+        },
+        {
+          "code": "300002",
+          "name": "神州泰岳",
+          "latest": 8.52,
+          "change_percent": -0.81,
+          "amount_1e8": 4.6177,
+          "freshness": "LAST_SESSION",
+          "available": true
+        },
+        {
+          "code": "002174",
+          "name": "游族网络",
+          "latest": 11.8,
+          "change_percent": 0.17,
+          "amount_1e8": 3.265,
+          "freshness": "LAST_SESSION",
+          "available": true
+        },
+        {
+          "code": "300315",
+          "name": "掌趣科技",
+          "latest": 4.28,
+          "change_percent": -1.15,
+          "amount_1e8": 3.5818,
+          "freshness": "LAST_SESSION",
+          "available": true
+        },
+        {
+          "code": "300113",
+          "name": "顺网科技",
+          "latest": 18.51,
+          "change_percent": -0.8,
+          "amount_1e8": 5.5955,
+          "freshness": "LAST_SESSION",
+          "available": true
+        },
+        {
+          "code": "002605",
+          "name": "姚记科技",
+          "latest": 18.42,
+          "change_percent": 0.11,
+          "amount_1e8": 1.3993,
+          "freshness": "LAST_SESSION",
+          "available": true
+        },
+        {
+          "code": "300494",
+          "name": "盛天网络",
+          "latest": 8.92,
+          "change_percent": -4.9,
+          "amount_1e8": 2.5057,
+          "freshness": "LAST_SESSION",
+          "available": true
+        },
+        {
+          "code": "300533",
+          "name": "冰川网络",
+          "latest": 15.24,
+          "change_percent": -0.33,
+          "amount_1e8": 1.2771,
+          "freshness": "LAST_SESSION",
+          "available": true
+        }
+      ],
+      "metadata": {
+        "source": "DERIVED",
+        "source_type": "DERIVED",
+        "source_tier": "DERIVED",
+        "fetched_at": "2026-08-08T14:11:03+08:00",
+        "data_time": null,
+        "lag_seconds": null,
+        "freshness": "DERIVED_CURRENT",
+        "freshness_policy": "DERIVED",
+        "confidence": "HIGH",
+        "quality": "PASS",
+        "fallback_used": false,
+        "quality_flags": []
+      },
+      "provenance": {
+        "type": "DERIVED",
+        "derived_from": [
+          "quotes.002602.change_percent",
+          "quotes.002555.change_percent",
+          "quotes.002517.change_percent",
+          "quotes.002624.change_percent",
+          "quotes.603444.change_percent",
+          "quotes.300002.change_percent",
+          "quotes.002174.change_percent",
+          "quotes.300315.change_percent",
+          "quotes.300113.change_percent",
+          "quotes.002605.change_percent",
+          "quotes.300494.change_percent",
+          "quotes.300533.change_percent"
+        ],
+        "algorithm": "peer_group_summary_v1",
+        "requested_member_count": 12,
+        "covered_member_count": 12,
+        "coverage_percent": 100.0
+      }
+    }
+  },
+  "indices": {
+    "上证指数": {
+      "status": "OK",
+      "quote": {
+        "source": "Tencent",
+        "latest": 3940.04,
+        "change_percent": 1.02,
+        "open": 3896.49,
+        "high": 3940.93,
+        "low": 3885.62,
+        "market_time_cst": "2026-08-07 16:14:02",
+        "lag_seconds": 79021,
+        "freshness": "LAST_SESSION",
+        "resilience": {
+          "primary_source": "Eastmoney",
+          "fallback_source": "Tencent",
+          "selected_source": "Tencent",
+          "fallback_used": true,
+          "selection_reason": "PRIMARY_UNUSABLE_FALLBACK_USABLE",
+          "consensus": {
+            "status": "SINGLE_SOURCE",
+            "price_gap": null,
+            "price_gap_percent": null
+          },
+          "providers": {
+            "Eastmoney": {
+              "status": "ERROR",
+              "usable": false,
+              "latest": null,
+              "market_time_cst": null,
+              "lag_seconds": null,
+              "freshness": null,
+              "error": "HTTPError: HTTP Error 502: Bad Gateway"
+            },
+            "Tencent": {
+              "status": "OK",
+              "usable": true,
+              "latest": 3940.04,
+              "market_time_cst": "2026-08-07 16:14:02",
+              "lag_seconds": 79021,
+              "freshness": "LAST_SESSION",
+              "error": null
+            }
+          }
+        },
+        "metadata": {
+          "source": "Tencent",
+          "source_type": "API",
+          "source_tier": "SECONDARY_PROVIDER",
+          "fetched_at": "2026-08-08T14:11:03+08:00",
+          "data_time": "2026-08-07T16:14:02+08:00",
+          "lag_seconds": 79021,
+          "freshness": "LAST_SESSION",
+          "freshness_policy": "REALTIME_QUOTE",
+          "confidence": "MEDIUM",
+          "quality": "DEGRADED",
+          "fallback_used": true,
+          "quality_flags": [
+            "PRIMARY_SOURCE_FAILED",
+            "FALLBACK_USED",
+            "NOT_LIVE_NOW"
+          ]
+        }
+      },
+      "error": null,
+      "metadata": {
+        "source": "DERIVED",
+        "source_type": "DERIVED",
+        "source_tier": "DERIVED",
+        "fetched_at": "2026-08-08T14:11:03+08:00",
+        "data_time": "2026-08-07T16:14:02+08:00",
+        "lag_seconds": null,
+        "freshness": "DERIVED_CURRENT",
+        "freshness_policy": "DERIVED",
+        "confidence": "HIGH",
+        "quality": "PASS",
+        "fallback_used": false,
+        "quality_flags": []
+      },
+      "provenance": {
+        "type": "COMPOSITE",
+        "derived_from": [
+          "indices.上证指数.quote"
+        ]
+      }
+    },
+    "深证成指": {
+      "status": "OK",
+      "quote": {
+        "source": "Tencent",
+        "latest": 14311.01,
+        "change_percent": 1.42,
+        "open": 14152.78,
+        "high": 14396.07,
+        "low": 14049.34,
+        "market_time_cst": "2026-08-07 16:14:36",
+        "lag_seconds": 78987,
+        "freshness": "LAST_SESSION",
+        "resilience": {
+          "primary_source": "Eastmoney",
+          "fallback_source": "Tencent",
+          "selected_source": "Tencent",
+          "fallback_used": true,
+          "selection_reason": "PRIMARY_UNUSABLE_FALLBACK_USABLE",
+          "consensus": {
+            "status": "SINGLE_SOURCE",
+            "price_gap": null,
+            "price_gap_percent": null
+          },
+          "providers": {
+            "Eastmoney": {
+              "status": "ERROR",
+              "usable": false,
+              "latest": null,
+              "market_time_cst": null,
+              "lag_seconds": null,
+              "freshness": null,
+              "error": "HTTPError: HTTP Error 502: Bad Gateway"
+            },
+            "Tencent": {
+              "status": "OK",
+              "usable": true,
+              "latest": 14311.01,
+              "market_time_cst": "2026-08-07 16:14:36",
+              "lag_seconds": 78987,
+              "freshness": "LAST_SESSION",
+              "error": null
+            }
+          }
+        },
+        "metadata": {
+          "source": "Tencent",
+          "source_type": "API",
+          "source_tier": "SECONDARY_PROVIDER",
+          "fetched_at": "2026-08-08T14:11:03+08:00",
+          "data_time": "2026-08-07T16:14:36+08:00",
+          "lag_seconds": 78987,
+          "freshness": "LAST_SESSION",
+          "freshness_policy": "REALTIME_QUOTE",
+          "confidence": "MEDIUM",
+          "quality": "DEGRADED",
+          "fallback_used": true,
+          "quality_flags": [
+            "PRIMARY_SOURCE_FAILED",
+            "FALLBACK_USED",
+            "NOT_LIVE_NOW"
+          ]
+        }
+      },
+      "error": null,
+      "metadata": {
+        "source": "DERIVED",
+        "source_type": "DERIVED",
+        "source_tier": "DERIVED",
+        "fetched_at": "2026-08-08T14:11:03+08:00",
+        "data_time": "2026-08-07T16:14:36+08:00",
+        "lag_seconds": null,
+        "freshness": "DERIVED_CURRENT",
+        "freshness_policy": "DERIVED",
+        "confidence": "HIGH",
+        "quality": "PASS",
+        "fallback_used": false,
+        "quality_flags": []
+      },
+      "provenance": {
+        "type": "COMPOSITE",
+        "derived_from": [
+          "indices.深证成指.quote"
+        ]
+      }
+    },
+    "创业板指": {
+      "status": "OK",
+      "quote": {
+        "source": "Eastmoney",
+        "latest": 3563.12,
+        "change_percent": 1.35,
+        "open": 3537.44,
+        "high": 3613.87,
+        "low": 3507.62,
+        "market_time_cst": "2026-08-07 16:11:42",
+        "lag_seconds": 79161,
+        "freshness": "LAST_SESSION",
+        "resilience": {
+          "primary_source": "Eastmoney",
+          "fallback_source": "Tencent",
+          "selected_source": "Eastmoney",
+          "fallback_used": false,
+          "selection_reason": "PRIMARY_USABLE",
+          "consensus": {
+            "status": "CONSISTENT",
+            "price_gap": 0.0,
+            "price_gap_percent": 0.0
+          },
+          "providers": {
+            "Eastmoney": {
+              "status": "OK",
+              "usable": true,
+              "latest": 3563.12,
+              "market_time_cst": "2026-08-07 16:11:42",
+              "lag_seconds": 79161,
+              "freshness": "LAST_SESSION",
+              "error": null
+            },
+            "Tencent": {
+              "status": "OK",
+              "usable": true,
+              "latest": 3563.12,
+              "market_time_cst": "2026-08-07 16:14:51",
+              "lag_seconds": 78972,
+              "freshness": "LAST_SESSION",
+              "error": null
+            }
+          }
+        },
+        "metadata": {
+          "source": "Eastmoney",
+          "source_type": "API",
+          "source_tier": "PRIMARY_PROVIDER",
+          "fetched_at": "2026-08-08T14:11:03+08:00",
+          "data_time": "2026-08-07T16:11:42+08:00",
+          "lag_seconds": 79161,
+          "freshness": "LAST_SESSION",
+          "freshness_policy": "REALTIME_QUOTE",
+          "confidence": "HIGH",
+          "quality": "PASS",
+          "fallback_used": false,
+          "quality_flags": [
+            "NOT_LIVE_NOW"
+          ]
+        }
+      },
+      "error": null,
+      "metadata": {
+        "source": "DERIVED",
+        "source_type": "DERIVED",
+        "source_tier": "DERIVED",
+        "fetched_at": "2026-08-08T14:11:03+08:00",
+        "data_time": "2026-08-07T16:11:42+08:00",
+        "lag_seconds": null,
+        "freshness": "DERIVED_CURRENT",
+        "freshness_policy": "DERIVED",
+        "confidence": "HIGH",
+        "quality": "PASS",
+        "fallback_used": false,
+        "quality_flags": []
+      },
+      "provenance": {
+        "type": "COMPOSITE",
+        "derived_from": [
+          "indices.创业板指.quote"
+        ]
+      }
+    },
+    "沪深300": {
+      "status": "OK",
+      "quote": {
+        "source": "Tencent",
+        "latest": 4694.44,
+        "change_percent": 0.93,
+        "open": 4656.1,
+        "high": 4706.73,
+        "low": 4649.58,
+        "market_time_cst": "2026-08-07 16:14:14",
+        "lag_seconds": 79009,
+        "freshness": "LAST_SESSION",
+        "resilience": {
+          "primary_source": "Eastmoney",
+          "fallback_source": "Tencent",
+          "selected_source": "Tencent",
+          "fallback_used": true,
+          "selection_reason": "PRIMARY_UNUSABLE_FALLBACK_USABLE",
+          "consensus": {
+            "status": "SINGLE_SOURCE",
+            "price_gap": null,
+            "price_gap_percent": null
+          },
+          "providers": {
+            "Eastmoney": {
+              "status": "ERROR",
+              "usable": false,
+              "latest": null,
+              "market_time_cst": null,
+              "lag_seconds": null,
+              "freshness": null,
+              "error": "HTTPError: HTTP Error 502: Bad Gateway"
+            },
+            "Tencent": {
+              "status": "OK",
+              "usable": true,
+              "latest": 4694.44,
+              "market_time_cst": "2026-08-07 16:14:14",
+              "lag_seconds": 79009,
+              "freshness": "LAST_SESSION",
+              "error": null
+            }
+          }
+        },
+        "metadata": {
+          "source": "Tencent",
+          "source_type": "API",
+          "source_tier": "SECONDARY_PROVIDER",
+          "fetched_at": "2026-08-08T14:11:03+08:00",
+          "data_time": "2026-08-07T16:14:14+08:00",
+          "lag_seconds": 79009,
+          "freshness": "LAST_SESSION",
+          "freshness_policy": "REALTIME_QUOTE",
+          "confidence": "MEDIUM",
+          "quality": "DEGRADED",
+          "fallback_used": true,
+          "quality_flags": [
+            "PRIMARY_SOURCE_FAILED",
+            "FALLBACK_USED",
+            "NOT_LIVE_NOW"
+          ]
+        }
+      },
+      "error": null,
+      "metadata": {
+        "source": "DERIVED",
+        "source_type": "DERIVED",
+        "source_tier": "DERIVED",
+        "fetched_at": "2026-08-08T14:11:03+08:00",
+        "data_time": "2026-08-07T16:14:14+08:00",
+        "lag_seconds": null,
+        "freshness": "DERIVED_CURRENT",
+        "freshness_policy": "DERIVED",
+        "confidence": "HIGH",
+        "quality": "PASS",
+        "fallback_used": false,
+        "quality_flags": []
+      },
+      "provenance": {
+        "type": "COMPOSITE",
+        "derived_from": [
+          "indices.沪深300.quote"
+        ]
+      }
+    },
+    "中证1000": {
+      "status": "OK",
+      "quote": {
+        "source": "Tencent",
+        "latest": 7679.53,
+        "change_percent": 1.98,
+        "open": 7534.24,
+        "high": 7685.57,
+        "low": 7448.46,
+        "market_time_cst": "2026-08-07 16:14:02",
+        "lag_seconds": 79021,
+        "freshness": "LAST_SESSION",
+        "resilience": {
+          "primary_source": "Eastmoney",
+          "fallback_source": "Tencent",
+          "selected_source": "Tencent",
+          "fallback_used": true,
+          "selection_reason": "PRIMARY_UNUSABLE_FALLBACK_USABLE",
+          "consensus": {
+            "status": "SINGLE_SOURCE",
+            "price_gap": null,
+            "price_gap_percent": null
+          },
+          "providers": {
+            "Eastmoney": {
+              "status": "ERROR",
+              "usable": false,
+              "latest": null,
+              "market_time_cst": null,
+              "lag_seconds": null,
+              "freshness": null,
+              "error": "HTTPError: HTTP Error 502: Bad Gateway"
+            },
+            "Tencent": {
+              "status": "OK",
+              "usable": true,
+              "latest": 7679.53,
+              "market_time_cst": "2026-08-07 16:14:02",
+              "lag_seconds": 79021,
+              "freshness": "LAST_SESSION",
+              "error": null
+            }
+          }
+        },
+        "metadata": {
+          "source": "Tencent",
+          "source_type": "API",
+          "source_tier": "SECONDARY_PROVIDER",
+          "fetched_at": "2026-08-08T14:11:03+08:00",
+          "data_time": "2026-08-07T16:14:02+08:00",
+          "lag_seconds": 79021,
+          "freshness": "LAST_SESSION",
+          "freshness_policy": "REALTIME_QUOTE",
+          "confidence": "MEDIUM",
+          "quality": "DEGRADED",
+          "fallback_used": true,
+          "quality_flags": [
+            "PRIMARY_SOURCE_FAILED",
+            "FALLBACK_USED",
+            "NOT_LIVE_NOW"
+          ]
+        }
+      },
+      "error": null,
+      "metadata": {
+        "source": "DERIVED",
+        "source_type": "DERIVED",
+        "source_tier": "DERIVED",
+        "fetched_at": "2026-08-08T14:11:03+08:00",
+        "data_time": "2026-08-07T16:14:02+08:00",
+        "lag_seconds": null,
+        "freshness": "DERIVED_CURRENT",
+        "freshness_policy": "DERIVED",
+        "confidence": "HIGH",
+        "quality": "PASS",
+        "fallback_used": false,
+        "quality_flags": []
+      },
+      "provenance": {
+        "type": "COMPOSITE",
+        "derived_from": [
+          "indices.中证1000.quote"
+        ]
+      }
+    },
+    "科创50": {
+      "status": "OK",
+      "quote": {
+        "source": "Eastmoney",
+        "latest": 1744.02,
+        "change_percent": 2.51,
+        "open": 1697.37,
+        "high": 1747.74,
+        "low": 1686.66,
+        "market_time_cst": "2026-08-07 16:11:44",
+        "lag_seconds": 79159,
+        "freshness": "LAST_SESSION",
+        "resilience": {
+          "primary_source": "Eastmoney",
+          "fallback_source": "Tencent",
+          "selected_source": "Eastmoney",
+          "fallback_used": false,
+          "selection_reason": "PRIMARY_USABLE",
+          "consensus": {
+            "status": "CONSISTENT",
+            "price_gap": 0.0,
+            "price_gap_percent": 0.0
+          },
+          "providers": {
+            "Eastmoney": {
+              "status": "OK",
+              "usable": true,
+              "latest": 1744.02,
+              "market_time_cst": "2026-08-07 16:11:44",
+              "lag_seconds": 79159,
+              "freshness": "LAST_SESSION",
+              "error": null
+            },
+            "Tencent": {
+              "status": "OK",
+              "usable": true,
+              "latest": 1744.02,
+              "market_time_cst": "2026-08-07 16:14:14",
+              "lag_seconds": 79009,
+              "freshness": "LAST_SESSION",
+              "error": null
+            }
+          }
+        },
+        "metadata": {
+          "source": "Eastmoney",
+          "source_type": "API",
+          "source_tier": "PRIMARY_PROVIDER",
+          "fetched_at": "2026-08-08T14:11:03+08:00",
+          "data_time": "2026-08-07T16:11:44+08:00",
+          "lag_seconds": 79159,
+          "freshness": "LAST_SESSION",
+          "freshness_policy": "REALTIME_QUOTE",
+          "confidence": "HIGH",
+          "quality": "PASS",
+          "fallback_used": false,
+          "quality_flags": [
+            "NOT_LIVE_NOW"
+          ]
+        }
+      },
+      "error": null,
+      "metadata": {
+        "source": "DERIVED",
+        "source_type": "DERIVED",
+        "source_tier": "DERIVED",
+        "fetched_at": "2026-08-08T14:11:03+08:00",
+        "data_time": "2026-08-07T16:11:44+08:00",
+        "lag_seconds": null,
+        "freshness": "DERIVED_CURRENT",
+        "freshness_policy": "DERIVED",
+        "confidence": "HIGH",
+        "quality": "PASS",
+        "fallback_used": false,
+        "quality_flags": []
+      },
+      "provenance": {
+        "type": "COMPOSITE",
+        "derived_from": [
+          "indices.科创50.quote"
+        ]
+      }
+    }
+  },
+  "market_environment": {
+    "status": "PARTIAL",
+    "confidence": "LOW",
+    "indices": {
+      "status": "OK",
+      "expected_count": 6,
+      "covered_count": 6,
+      "coverage_percent": 100.0,
+      "mean_change_percent": 1.535,
+      "median_change_percent": 1.385,
+      "broad_market_reference_percent": 1.1233,
+      "broad_market_reference_members": [
+        "上证指数",
+        "沪深300",
+        "深证成指"
+      ],
+      "broad_market_reference_expected_count": 3,
+      "broad_market_reference_covered_count": 3,
+      "broad_market_reference_quality": "HIGH",
+      "dispersion_percent": 1.58,
+      "up_count": 6,
+      "down_count": 0,
+      "flat_count": 0,
+      "breadth_score_percent": 100.0,
+      "bias": "STRONG_BULLISH",
+      "members": [
+        {
+          "name": "上证指数",
+          "status": "OK",
+          "source": "Tencent",
+          "latest": 3940.04,
+          "change_percent": 1.02,
+          "freshness": "LAST_SESSION",
+          "market_time_cst": "2026-08-07 16:14:02",
+          "available": true
+        },
+        {
+          "name": "沪深300",
+          "status": "OK",
+          "source": "Tencent",
+          "latest": 4694.44,
+          "change_percent": 0.93,
+          "freshness": "LAST_SESSION",
+          "market_time_cst": "2026-08-07 16:14:14",
+          "available": true
+        },
+        {
+          "name": "中证1000",
+          "status": "OK",
+          "source": "Tencent",
+          "latest": 7679.53,
+          "change_percent": 1.98,
+          "freshness": "LAST_SESSION",
+          "market_time_cst": "2026-08-07 16:14:02",
+          "available": true
+        },
+        {
+          "name": "深证成指",
+          "status": "OK",
+          "source": "Tencent",
+          "latest": 14311.01,
+          "change_percent": 1.42,
+          "freshness": "LAST_SESSION",
+          "market_time_cst": "2026-08-07 16:14:36",
+          "available": true
+        },
+        {
+          "name": "创业板指",
+          "status": "OK",
+          "source": "Eastmoney",
+          "latest": 3563.12,
+          "change_percent": 1.35,
+          "freshness": "LAST_SESSION",
+          "market_time_cst": "2026-08-07 16:11:42",
+          "available": true
+        },
+        {
+          "name": "科创50",
+          "status": "OK",
+          "source": "Eastmoney",
+          "latest": 1744.02,
+          "change_percent": 2.51,
+          "freshness": "LAST_SESSION",
+          "market_time_cst": "2026-08-07 16:11:44",
+          "available": true
+        }
+      ]
+    },
+    "breadth": {
+      "status": "ERROR",
+      "source": "market breadth source",
+      "collected_at_cst": "2026-08-08 14:11:03",
+      "market_session_date": null,
+      "freshness": "UNKNOWN",
+      "freshness_basis": "SOURCE_FAILURE",
+      "error": "RuntimeError: market breadth full-universe and stratified fallbacks both failed: full=RemoteDisconnected: Remote end closed connection without response; sample=RuntimeError: unable to discover market universe size: page 1: HTTPError: HTTP Error 502: Bad Gateway; page 2: HTTPError: HTTP Error 502: Bad Gateway; page 3: HTTPError: HTTP Error 502: Bad Gateway"
+    },
+    "regime": {
+      "status": "UNKNOWN",
+      "reason_codes": [
+        "MARKET_BREADTH_MISSING"
+      ],
+      "broad_market_reference_percent": 1.1233
+    },
+    "style": {
+      "status": "SMALL_GROWTH_LEADING",
+      "references": {
+        "large_cap_hs300_percent": 0.93,
+        "small_cap_csi1000_percent": 1.98,
+        "growth_proxy_percent": 1.93,
+        "growth_proxy_covered_count": 2,
+        "growth_proxy_expected_count": 2,
+        "growth_proxy_quality": "HIGH",
+        "shanghai_percent": 1.02,
+        "shenzhen_percent": 1.42
+      },
+      "spreads": {
+        "small_vs_large_percent": 1.05,
+        "growth_vs_large_percent": 1.0,
+        "shenzhen_vs_shanghai_percent": 0.4
+      }
+    },
+    "groups": {
+      "game_sector": {
+        "label": "A股游戏板块对照组",
+        "status": "OK",
+        "requested_member_count": 12,
+        "active_member_count": 12,
+        "covered_member_count": 12,
+        "mean_change_percent": -0.5425,
+        "median_change_percent": -0.275,
+        "breadth_score_percent": -33.33,
+        "coverage_percent": 100.0,
+        "reference_quality": {
+          "available": true,
+          "quality": "HIGH",
+          "status": "OK",
+          "requested_member_count": 12,
+          "covered_member_count": 12,
+          "coverage_percent": 100.0,
+          "high_confidence_rule": "covered>=5 && coverage>=75% && status=OK"
+        },
+        "bias": "BEARISH",
+        "target": {
+          "code": "002558",
+          "name": "巨人网络",
+          "change_percent": 0.27
+        },
+        "target_vs_peer_mean_percent": 0.8125
+      }
+    },
+    "targets": {
+      "002558": {
+        "name": "巨人网络",
+        "change_percent": 0.27,
+        "freshness": "LAST_SESSION",
+        "relative_strength": {
+          "market_reference_percent": 1.1233,
+          "vs_market_percent": -0.8533,
+          "relative_to_market": "UNDERPERFORM",
+          "group_id": "game_sector",
+          "group_reference_percent": -0.5425,
+          "vs_group_mean_percent": 0.8125,
+          "relative_to_group": "OUTPERFORM",
+          "style_reference_type": null,
+          "style_reference_percent": null,
+          "vs_style_reference_percent": null,
+          "relative_to_style": "UNKNOWN"
+        },
+        "driver_attribution": {
+          "primary_driver": "MIXED",
+          "confidence": "MEDIUM",
+          "reference_availability": {
+            "market": true,
+            "sector": true,
+            "style": false
+          },
+          "market_reference_quality": {
+            "available": true,
+            "quality": "HIGH",
+            "covered_index_count": 3,
+            "expected_index_count": 3,
+            "coverage_percent": 100.0,
+            "members": [
+              "上证指数",
+              "沪深300",
+              "深证成指"
+            ]
+          },
+          "sector_reference_quality": {
+            "available": true,
+            "quality": "HIGH",
+            "status": "OK",
+            "requested_member_count": 12,
+            "covered_member_count": 12,
+            "coverage_percent": 100.0,
+            "high_confidence_rule": "covered>=5 && coverage>=75% && status=OK"
+          },
+          "style_reference_quality": {
+            "available": false,
+            "quality": "LOW",
+            "reference_type": null
+          },
+          "classification_separation": {
+            "quality": "MEDIUM",
+            "market_distance_percent": 0.8533,
+            "sector_distance_percent": 0.8125,
+            "style_distance_percent": null,
+            "sector_advantage_over_market_percent": 0.0408,
+            "style_advantage_over_market_percent": null
+          },
+          "evidence": {
+            "stock_change_percent": 0.27,
+            "market_reference_percent": 1.1233,
+            "sector_reference_percent": -0.5425,
+            "style_reference_percent": null,
+            "stock_vs_market_percent": -0.8533,
+            "stock_vs_sector_percent": 0.8125,
+            "stock_vs_style_percent": null,
+            "sector_vs_market_percent": -1.6658
+          },
+          "reason_codes": [
+            "STOCK_DIVERGES_FROM_MARKET",
+            "STOCK_DIVERGES_FROM_SECTOR",
+            "STOCK_OUTPERFORMS_SECTOR",
+            "SECTOR_DIVERGES_FROM_MARKET"
+          ]
+        },
+        "intraday_context": {
+          "bias": "UPTREND",
+          "price_vs_vwap_percent": 1.1027
+        }
+      },
+      "600795": {
+        "name": "国电电力",
+        "change_percent": -0.8,
+        "freshness": "LAST_SESSION",
+        "relative_strength": {
+          "market_reference_percent": 1.1233,
+          "vs_market_percent": -1.9233,
+          "relative_to_market": "UNDERPERFORM",
+          "group_id": null,
+          "group_reference_percent": null,
+          "vs_group_mean_percent": null,
+          "relative_to_group": "UNKNOWN",
+          "style_reference_type": null,
+          "style_reference_percent": null,
+          "vs_style_reference_percent": null,
+          "relative_to_style": "UNKNOWN"
+        },
+        "driver_attribution": {
+          "primary_driver": "IDIOSYNCRATIC",
+          "confidence": "MEDIUM",
+          "reference_availability": {
+            "market": true,
+            "sector": false,
+            "style": false
+          },
+          "market_reference_quality": {
+            "available": true,
+            "quality": "HIGH",
+            "covered_index_count": 3,
+            "expected_index_count": 3,
+            "coverage_percent": 100.0,
+            "members": [
+              "上证指数",
+              "沪深300",
+              "深证成指"
+            ]
+          },
+          "sector_reference_quality": {
+            "available": false,
+            "quality": "LOW",
+            "status": "NO_GROUP"
+          },
+          "style_reference_quality": {
+            "available": false,
+            "quality": "LOW",
+            "reference_type": null
+          },
+          "classification_separation": {
+            "quality": "HIGH",
+            "market_distance_percent": 1.9233,
+            "sector_distance_percent": null,
+            "style_distance_percent": null,
+            "sector_advantage_over_market_percent": null,
+            "style_advantage_over_market_percent": null
+          },
+          "evidence": {
+            "stock_change_percent": -0.8,
+            "market_reference_percent": 1.1233,
+            "sector_reference_percent": null,
+            "style_reference_percent": null,
+            "stock_vs_market_percent": -1.9233,
+            "stock_vs_sector_percent": null,
+            "stock_vs_style_percent": null,
+            "sector_vs_market_percent": null
+          },
+          "reason_codes": [
+            "STOCK_DIVERGES_FROM_MARKET"
+          ]
+        },
+        "intraday_context": {
+          "bias": "DOWNTREND",
+          "price_vs_vwap_percent": -0.2004
+        }
+      }
+    },
+    "data_quality": {
+      "quote_resilience_status": "DEGRADED",
+      "live_price_guard_status": "OK",
+      "market_window": false,
+      "breadth_status": "ERROR",
+      "breadth_estimated": false,
+      "breadth_freshness": "UNKNOWN",
+      "breadth_market_session_date": null,
+      "breadth_freshness_basis": "SOURCE_FAILURE",
+      "breadth_sample_coverage_percent": null,
+      "breadth_all_strata_covered": null
+    },
+    "summary": "市场状态未知；宽基：上证指数 +1.02%、沪深300 +0.93%、中证1000 +1.98%、深证成指 +1.42%、创业板指 +1.35%、科创50 +2.51%；风格 SMALL_GROWTH_LEADING；板块：A股游戏板块对照组 -0.54%；数据置信度 LOW。",
+    "metadata": {
+      "source": "DERIVED",
+      "source_type": "DERIVED",
+      "source_tier": "DERIVED",
+      "fetched_at": "2026-08-08T14:11:03+08:00",
+      "data_time": null,
+      "lag_seconds": null,
+      "freshness": "UNKNOWN",
+      "freshness_policy": "DERIVED",
+      "confidence": "LOW",
+      "quality": "PARTIAL",
+      "fallback_used": false,
+      "quality_flags": [
+        "LOW_CONTEXT_CONFIDENCE",
+        "BREADTH_UNAVAILABLE"
+      ]
+    },
+    "provenance": {
+      "type": "DERIVED",
+      "derived_from": [
+        "indices",
+        "groups",
+        "detail_stocks",
+        "market_environment.breadth"
+      ],
+      "algorithm": "market_environment_v1"
+    }
+  },
+  "live_price_guard": {
+    "status": "OK",
+    "hard_violations": [],
+    "warnings": [],
+    "policy": {
+      "historical_sources_allowed_for_current_price": false,
+      "market_live_price_sources": [
+        "live quote",
+        "live same-day minute"
+      ],
+      "stale_quote_may_fallback_to_live_minute": true
+    },
+    "metadata": {
+      "source": "DERIVED",
+      "source_type": "DERIVED",
+      "source_tier": "DERIVED",
+      "fetched_at": "2026-08-08T14:11:03+08:00",
+      "data_time": null,
+      "lag_seconds": null,
+      "freshness": "DERIVED_CURRENT",
+      "freshness_policy": "DERIVED",
+      "confidence": "HIGH",
+      "quality": "PASS",
+      "fallback_used": false,
+      "quality_flags": []
+    },
+    "provenance": {
+      "type": "DERIVED",
+      "derived_from": [
+        "detail_stocks.*.quote",
+        "detail_stocks.*.minutes"
+      ],
+      "algorithm": "live_price_guard_v1"
+    }
+  },
+  "quote_resilience": {
+    "status": "DEGRADED",
+    "primary_source": "Eastmoney",
+    "fallback_source": "Tencent",
+    "consensus_thresholds_percent": {
+      "consistent_max": 0.08,
+      "divergent_above": 0.35
+    },
+    "detail": {
+      "fallback_used": [],
+      "divergent": [],
+      "unavailable": [],
+      "provider_counts": {
+        "Eastmoney": 2
+      }
+    },
+    "indices": {
+      "fallback_used": [
+        "上证指数",
+        "深证成指",
+        "沪深300",
+        "中证1000"
+      ],
+      "divergent": [],
+      "unavailable": [],
+      "provider_counts": {
+        "Tencent": 4,
+        "Eastmoney": 2
+      }
+    },
+    "light": {
+      "fallback_used": [],
+      "divergent": [],
+      "unavailable": [],
+      "provider_counts": {
+        "Tencent": 12
+      }
+    },
+    "fallback_count": 4,
+    "divergent_count": 0,
+    "unavailable_count": 0,
+    "minute_data_policy": {
+      "primary_source": "Tencent",
+      "fallback_source": null,
+      "note": "Minute data remains single-source until a second provider is validated against the existing cumulative-volume semantics."
+    },
+    "metadata": {
+      "source": "DERIVED",
+      "source_type": "DERIVED",
+      "source_tier": "DERIVED",
+      "fetched_at": "2026-08-08T14:11:03+08:00",
+      "data_time": null,
+      "lag_seconds": null,
+      "freshness": "DERIVED_CURRENT",
+      "freshness_policy": "DERIVED",
+      "confidence": "MEDIUM",
+      "quality": "DEGRADED",
+      "fallback_used": false,
+      "quality_flags": [
+        "FALLBACKS_PRESENT"
+      ]
+    },
+    "provenance": {
+      "type": "DERIVED",
+      "derived_from": [
+        "detail_stocks.*.quote.resilience",
+        "indices.*.quote.resilience",
+        "light_stocks.*.quote.resilience"
+      ],
+      "algorithm": "quote_resilience_summary_v1"
+    }
+  },
+  "data_quality": {
+    "schema_version": 1,
+    "metadata_contract": "provenance_freshness_quality_v1",
+    "overall": "PARTIAL",
+    "critical_failures": [],
+    "noncritical_failures": [],
+    "warnings": [
+      {
+        "path": "indices.上证指数.quote",
+        "quality": "DEGRADED",
+        "flags": [
+          "PRIMARY_SOURCE_FAILED",
+          "FALLBACK_USED",
+          "NOT_LIVE_NOW"
+        ]
+      },
+      {
+        "path": "indices.深证成指.quote",
+        "quality": "DEGRADED",
+        "flags": [
+          "PRIMARY_SOURCE_FAILED",
+          "FALLBACK_USED",
+          "NOT_LIVE_NOW"
+        ]
+      },
+      {
+        "path": "indices.沪深300.quote",
+        "quality": "DEGRADED",
+        "flags": [
+          "PRIMARY_SOURCE_FAILED",
+          "FALLBACK_USED",
+          "NOT_LIVE_NOW"
+        ]
+      },
+      {
+        "path": "indices.中证1000.quote",
+        "quality": "DEGRADED",
+        "flags": [
+          "PRIMARY_SOURCE_FAILED",
+          "FALLBACK_USED",
+          "NOT_LIVE_NOW"
+        ]
+      },
+      {
+        "path": "quote_resilience",
+        "quality": "DEGRADED",
+        "flags": [
+          "FALLBACKS_PRESENT"
+        ]
+      },
+      {
+        "path": "market_environment",
+        "quality": "PARTIAL",
+        "flags": [
+          "LOW_CONTEXT_CONFIDENCE",
+          "BREADTH_UNAVAILABLE"
+        ]
+      }
+    ],
+    "quality_summary": {
+      "DEGRADED": 5,
+      "PARTIAL": 1,
+      "PASS": 54
+    },
+    "source_summary": {
+      "source_tiers": {
+        "CACHE": 3,
+        "DERIVED": 28,
+        "OFFICIAL": 7,
+        "PRIMARY_PROVIDER": 4,
+        "SECONDARY_PROVIDER": 18
+      },
+      "sources": {
+        "CNINFO": 8,
+        "DERIVED": 27,
+        "Eastmoney": 4,
+        "History cache (Tencent qfq)": 2,
+        "Tencent": 18,
+        "market-data branch": 1
+      }
+    },
+    "freshness_summary": {
+      "CURRENT": 2,
+      "CURRENT_QUERY": 2,
+      "DERIVED_CURRENT": 27,
+      "HISTORICAL": 1,
+      "LAST_SESSION": 22,
+      "LATEST_COMPLETED_BAR": 2,
+      "RECENT_30D": 3,
+      "UNKNOWN": 1
+    }
+  },
+  "llm_data_summary": {
+    "critical_data_ready": true,
+    "realtime_quote_quality": "HIGH",
+    "market_context_quality": "MEDIUM",
+    "historical_context_quality": "HIGH",
+    "overall_data_quality": "PARTIAL",
+    "warnings": [
+      "indices.上证指数.quote=DEGRADED:PRIMARY_SOURCE_FAILED,FALLBACK_USED,NOT_LIVE_NOW",
+      "indices.深证成指.quote=DEGRADED:PRIMARY_SOURCE_FAILED,FALLBACK_USED,NOT_LIVE_NOW",
+      "indices.沪深300.quote=DEGRADED:PRIMARY_SOURCE_FAILED,FALLBACK_USED,NOT_LIVE_NOW",
+      "indices.中证1000.quote=DEGRADED:PRIMARY_SOURCE_FAILED,FALLBACK_USED,NOT_LIVE_NOW",
+      "quote_resilience=DEGRADED:FALLBACKS_PRESENT",
+      "market_environment=PARTIAL:LOW_CONTEXT_CONFIDENCE,BREADTH_UNAVAILABLE"
+    ]
+  }
+}
