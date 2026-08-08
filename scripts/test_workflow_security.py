@@ -96,6 +96,16 @@ def test_event_pdf_parser_is_version_and_hash_pinned():
     print("PASS event_pdf_parser_hash_pinned")
 
 
+def test_event_pdf_redirects_stay_on_official_host():
+    text = Path("scripts/company_event_facts.py").read_text(encoding="utf-8")
+    assert 'CNINFO_PDF_HOST = "static.cninfo.com.cn"' in text
+    assert "class _CninfoPdfRedirectHandler" in text
+    assert '_validate_cninfo_pdf_url(newurl, stage="redirect")' in text
+    assert "build_opener(_CninfoPdfRedirectHandler())" in text
+    assert '_validate_cninfo_pdf_url(resp.geturl(), stage="final")' in text
+    print("PASS event_pdf_redirect_provenance_boundary")
+
+
 def main():
     tests = [
         test_actions_are_sha_pinned,
@@ -103,6 +113,7 @@ def main():
         test_pre_merge_gate_is_unconditional_for_protected_branches,
         test_tencent_transport_never_downgrades_to_http,
         test_event_pdf_parser_is_version_and_hash_pinned,
+        test_event_pdf_redirects_stay_on_official_host,
     ]
     for test in tests:
         test()
