@@ -1,8 +1,12 @@
+import os
+import tempfile
 from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
 
 import data_metadata
 import data_policy
 import data_policy_bridge
+import history_store
 
 CST = timezone(timedelta(hours=8))
 data_policy_bridge.install(data_metadata)
@@ -106,6 +110,87 @@ def test_daily_metadata_rejects_stale_fallback_as_latest():
     assert stale_meta["freshness_sla"]["reason"] == "SESSION_COMPLETENESS_UNVERIFIED"
 
 
+def test_stale_daily_cache_cannot_launder_into_same_phase_hit():
+    fixed_now = datetime(2026, 8, 7, 10, 0, tzinfo=CST)
+
+    class FixedDateTime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return fixed_now.astimezone(tz) if tz else fixed_now.replace(tzinfo=None)
+
+    bars = []
+    start = datetime(2026, 5, 1)
+    for idx in range(60):
+        bars.append({"date": (start + timedelta(days=idx)).strftime("%Y-%m-%d")})
+
+    calls = {"count": 0}
+
+    def failing_fetch(base_obj, code, limit=90):
+        calls["count"] += 1
+        raise RuntimeError("synthetic daily-K validation failure")
+
+    base = SimpleNamespace(CST=CST)
+    daily = SimpleNamespace(fetch_daily_bars=failing_fetch)
+    old_datetime = history_store.datetime
+    old_history_dir = os.environ.get("MARKET_HISTORY_DIR")
+
+    with tempfile.TemporaryDirectory() as tmp:
+        try:
+            os.environ["MARKET_HISTORY_DIR"] = tmp
+            history_store.datetime = FixedDateTime
+            history_store.CACHE_META.clear()
+            history_store._save_cache(
+                "002558",
+                "Tencent qfq",
+                bars,
+                "2026-08-07:preopen",
+                "INCREMENTAL_VALIDATION",
+                fixed_now,
+                [],
+            )
+            history_store.install_daily_k_cache(base, daily)
+
+            # Run N: validation fails and persists the current key as stale.
+            daily.fetch_daily_bars(base, "002558")
+            first = dict(history_store.CACHE_META["002558"])
+            first_context = {
+                "status": "OK",
+                "source": "History stale cache (Tencent qfq)",
+                "errors": ["synthetic daily-K validation failure"],
+                "latest_completed_date": first["latest_bar_date"],
+                "previous_day": {"date": first["latest_bar_date"]},
+                "current_partial_bar": None,
+                "cache": first,
+            }
+            first_meta = data_metadata._daily_metadata(first_context, fixed_now.isoformat())
+            assert first["state"] == "STALE_FALLBACK"
+            assert first["validation_mode"] == "STALE_CACHE_FALLBACK"
+            assert first_meta["freshness_sla"]["status"] == "UNMEASURED"
+            assert calls["count"] == 1
+
+            # Run N+1 in the exact same validation phase. The persisted stale
+            # mode must not qualify for the zero-network HIT fast path.
+            daily.fetch_daily_bars(base, "002558")
+            second = dict(history_store.CACHE_META["002558"])
+            persisted = history_store._load_json(history_store._cache_path("002558"))
+            second_context = dict(first_context)
+            second_context["cache"] = second
+            second_meta = data_metadata._daily_metadata(second_context, fixed_now.isoformat())
+            assert second["state"] == "STALE_FALLBACK"
+            assert second["state"] != "HIT"
+            assert second["validation_mode"] == "STALE_CACHE_FALLBACK"
+            assert persisted["validation_mode"] == "STALE_CACHE_FALLBACK"
+            assert second_meta["freshness_sla"]["status"] == "UNMEASURED"
+            assert calls["count"] == 2
+        finally:
+            history_store.datetime = old_datetime
+            history_store.CACHE_META.clear()
+            if old_history_dir is None:
+                os.environ.pop("MARKET_HISTORY_DIR", None)
+            else:
+                os.environ["MARKET_HISTORY_DIR"] = old_history_dir
+
+
 def test_sla_total_counts_are_not_truncated():
     nodes = []
     for idx in range(83):
@@ -139,6 +224,7 @@ def main():
         test_event_discovery_requires_first_seen,
         test_session_completeness_requires_verified_evidence,
         test_daily_metadata_rejects_stale_fallback_as_latest,
+        test_stale_daily_cache_cannot_launder_into_same_phase_hit,
         test_sla_total_counts_are_not_truncated,
         test_future_classes_and_manifest,
     ]
