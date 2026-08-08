@@ -7,6 +7,7 @@ import quote_resilience
 WORKFLOW_DIR = Path(".github/workflows")
 ACTION_REF_RE = re.compile(r"uses:\s+(actions/[A-Za-z0-9_.-]+)@([^\s#]+)")
 FULL_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
+PYPDF_REQUIREMENT = "pypdf==6.14.2 --hash=sha256:3f07891af76dc002657e04993ab9b4de81de29f9013b9761d0b7968bff12e946"
 
 
 def test_actions_are_sha_pinned():
@@ -81,12 +82,27 @@ def test_tencent_transport_never_downgrades_to_http():
     print("PASS tencent_https_failure_has_no_http_fallback")
 
 
+def test_event_pdf_parser_is_version_and_hash_pinned():
+    requirement = Path("requirements-event-facts.txt").read_text(encoding="utf-8").strip()
+    assert requirement == PYPDF_REQUIREMENT
+
+    realtime = (WORKFLOW_DIR / "realtime-quotes.yml").read_text(encoding="utf-8")
+    reusable = (WORKFLOW_DIR / "reusable-a-share-quotes.yml").read_text(encoding="utf-8")
+    for name, text in (("realtime", realtime), ("reusable", reusable)):
+        assert "--require-hashes" in text, name
+        assert "--no-deps" in text, name
+        assert "requirements-event-facts.txt" in text, name
+        assert "pip install pypdf" not in text, name
+    print("PASS event_pdf_parser_hash_pinned")
+
+
 def main():
     tests = [
         test_actions_are_sha_pinned,
         test_reusable_defaults_to_called_workflow_sha,
         test_pre_merge_gate_is_unconditional_for_protected_branches,
         test_tencent_transport_never_downgrades_to_http,
+        test_event_pdf_parser_is_version_and_hash_pinned,
     ]
     for test in tests:
         test()

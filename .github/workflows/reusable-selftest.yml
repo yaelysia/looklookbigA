@@ -6,6 +6,10 @@ on:
       - "README.md"
       - "docs/STABLE_V1.md"
       - "docs/SECURITY_BRANCH_PROTECTION.md"
+      - "docs/DATA_PROVENANCE.md"
+      - "docs/CHANGES_SINCE_PREVIOUS.md"
+      - "docs/COMPANY_EVENTS.md"
+      - "requirements-event-facts.txt"
       - "vite.config.ts"
       - ".github/workflows/reusable-a-share-quotes.yml"
       - ".github/workflows/reusable-selftest.yml"
@@ -13,6 +17,7 @@ on:
       - ".github/workflows/realtime-quotes.yml"
       - ".github/workflows/v1-smoke.yml"
       - ".github/dependabot.yml"
+      - "config/quote_watchlist.json"
       - "scripts/realtime_quotes_watchlist.py"
       - "scripts/realtime_quotes_watchlist_runner.py"
       - "scripts/intraday_metrics.py"
@@ -26,6 +31,10 @@ on:
       - "scripts/changes_metadata_bridge.py"
       - "scripts/changes_since_previous.py"
       - "scripts/changes_comparability.py"
+      - "scripts/company_events.py"
+      - "scripts/company_event_coverage.py"
+      - "scripts/company_event_facts.py"
+      - "scripts/company_event_metadata.py"
       - "scripts/transport_security.py"
       - "scripts/config_security.py"
       - "scripts/prepare_reusable_config.py"
@@ -35,6 +44,10 @@ on:
       - "scripts/test_data_metadata.py"
       - "scripts/test_changes_since_previous.py"
       - "scripts/test_changes_comparability.py"
+      - "scripts/test_company_events.py"
+      - "scripts/test_company_event_coverage.py"
+      - "scripts/test_company_event_facts.py"
+      - "scripts/test_company_event_metadata.py"
       - "scripts/test_config_security.py"
       - "scripts/test_workflow_security.py"
       - "worker/index.ts"
@@ -66,6 +79,14 @@ jobs:
         run: python3 scripts/test_changes_since_previous.py
       - name: Run changes comparability regression tests
         run: python3 scripts/test_changes_comparability.py
+      - name: Run structured company event tests
+        run: python3 scripts/test_company_events.py
+      - name: Run company event coverage/backfill tests
+        run: python3 scripts/test_company_event_coverage.py
+      - name: Run official PDF event fact tests
+        run: python3 scripts/test_company_event_facts.py
+      - name: Run company event metadata tests
+        run: python3 scripts/test_company_event_metadata.py
       - name: Run public quote abuse-protection tests
         run: node --test tests/worker-abuse-protection.test.mjs
 
@@ -77,4 +98,4 @@ jobs:
       snapshot_artifact_name: reusable-selftest-snapshot
       retention_days: 1
       config_json: >-
-        {"detail_codes":["002558"],"light_codes":["002555","002517"],"groups":{"game_smoke":{"label":"游戏股复用工作流冒烟测试","target_code":"002558","member_codes":["002555","002517"]}},"max_total_codes":10}
+        {"detail_codes":["002558"],"light_codes":["002555","002517"],"groups":{"game_smoke":{"label":"游戏股复用工作流冒烟测试","target_code":"002558","member_codes":["002555","002517"]}},"max_total_codes":10,"event_lookback_days":7}

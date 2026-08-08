@@ -8,7 +8,7 @@
 
 - **`v1`**：对外复用的稳定分支。推荐其他仓库、长期自动化任务固定使用 `@v1`。
 - **`master`**：持续开发分支，新功能先在这里完成 PR 和完整 CI 验证。
-- **`market-data`**：主仓库自动生成的日 K 缓存和轻量盘中历史，不属于发布代码。
+- **`market-data`**：主仓库自动生成的日 K、公司事件缓存和轻量盘中历史，不属于发布代码。
 
 `v1` 不会自动跟随 `master`。只有当 `master` 的主行情工作流、reusable selftest 和安全检查都通过后，才通过 `master → v1` 的发布 PR 晋升。详细规则见 `docs/STABLE_V1.md`。
 
@@ -21,11 +21,14 @@
 - **市场环境与个股归因**：输出上证 / 沪深300 / 中证1000 / 深成 / 创业板 / 科创50、全市场广度、风格差、配置板块环境，以及重点股相对市场 / 板块的结构化 `driver_attribution`。
 - **20～60 日日 K 背景**：MA5 / MA10 / MA20 / MA60、ATR14、5 / 10 / 20 日高低、20 日收益、日线 swing high / low。
 - **支撑 / 压力上下文**：综合均线、昨日 OHLC、近期高低和日线拐点生成可解释的候选价位及共振强度。
-- **历史缓存**：主仓库使用独立 `market-data` 分支持久保存日 K 和轻量盘中快照；同一交易阶段重复分析时日 K 可以做到 0 次网络请求。
-- **实时价格保险**：历史缓存、历史快照和日 K 数据被禁止进入 `quote.latest`。盘中实时 quote 失效时，只允许降级到仍然 LIVE 的当日分钟价；两者都不新鲜时当前价直接标记不可用。
-- **Reusable workflow 安全边界**：版本绑定到精确 workflow SHA、调用者配置做路径/大小/数量校验、第三方 Actions 固定 commit SHA、行情传输禁止 HTTP 降级。
+- **公告 / 公司事件**：从巨潮资讯官方披露源获取 detail stock 最近 7 / 30 / 90 日公告，输出稳定 `event_id`、事件类型、发布时间、官方 PDF、重要性、结构化事实、事件关联、缓存和 provider health；重要公告可从官方 PDF 原文做确定性事实抽取。
+- **快照增量变化**：自动比较上一份完整归档快照，输出价格 / 成交额 / 分时 / 相对强弱 / 板块排名 / 市场环境 / 新增或更新事件的 `before / after / delta` 和显著性原因。
+- **统一 provenance / freshness / quality**：重要原始数据和派生数据统一携带 source、source tier、fetched/data time、freshness、quality、quality flags 和派生 provenance；顶层提供 `data_quality` 与 `llm_data_summary`。
+- **历史缓存**：主仓库使用独立 `market-data` 分支持久保存日 K、公司事件缓存和轻量盘中快照；同一交易阶段重复分析时日 K 可以做到 0 次网络请求。
+- **实时价格保险**：历史缓存、历史快照、公司事件缓存和日 K 数据被禁止进入 `quote.latest`。盘中实时 quote 失效时，只允许降级到仍然 LIVE 的当日分钟价；两者都不新鲜时当前价直接标记不可用。
+- **Reusable workflow 安全边界**：版本绑定到精确 workflow SHA、调用者配置做路径/大小/数量校验、第三方 Actions 固定 commit SHA、行情传输禁止 HTTP 降级、事件 PDF 解析依赖固定版本并固定 SHA256 hash。
 - **公共 Web 接口基础滥用防护**：`/` 和 `/quote` 通过 Cloudflare Rate Limiting binding 做服务端限流；限流 binding 不可用时 fail closed，另有 2 秒 isolate-local 短缓存仅用于合并重复上游行情请求。
-- **结构化产物**：每次运行生成 `snapshot.json`，包含实时行情、分时结构、日 K 背景、板块对照、市场环境、个股驱动归因、历史缓存状态、行情源容错状态和实时价格保护状态。
+- **结构化产物**：每次运行生成 `snapshot.json`，重点面向 LLM 直接读取，尽量同时保留结论、原始依据、来源、时间、质量和降级状态。
 
 ## 数据源与实时性
 
@@ -34,7 +37,8 @@
 - 东方财富：重点标的最新 quote、指数等实时行情的主源，以及全市场列表 / breadth 数据；
 - 腾讯：重点股 / 指数备用 quote、分钟线、批量轻量行情、前复权日 K；
 - 东方财富日 K：腾讯日 K 不可用时的备用源；
-- `market-data` / GitHub Actions cache：**仅用于历史日 K 与历史分析上下文，不作为实时现价来源**。
+- 巨潮资讯（CNINFO）：detail stock 官方公司公告及官方 PDF 文档；
+- `market-data` / GitHub Actions cache：**仅用于历史日 K、事件缓存与历史分析上下文，不作为实时现价来源**。
 
 行情传输只允许 HTTPS。腾讯 quote 模块本身只构造 `https://qt.gtimg.cn` 请求；HTTPS 请求失败会继续走其他已验证的 HTTPS source / error 路径，代码中不存在明文 HTTP fallback。
 
@@ -87,13 +91,16 @@ config/quote_watchlist.json
       "member_codes": ["002602", "002555", "002517"]
     }
   },
-  "max_total_codes": 50
+  "max_total_codes": 50,
+  "event_lookback_days": 30
 }
 ```
 
-`detail_codes` 会抓实时 quote、分钟线、日 K 和完整分析上下文；`light_codes` / group member 主要用于批量板块对照。
+`detail_codes` 会抓实时 quote、分钟线、日 K、官方公司事件和完整分析上下文；`light_codes` / group member 主要用于批量板块对照。
 
-对外 reusable workflow 会把该配置视为不可信输入：配置最大 32 KiB，`max_total_codes` 硬上限为 50，并统一统计 detail/light/group 合并后的唯一股票数量；单 group、member 数量和原始 code entry 也有上限。重复 code、非法路径、目录逃逸和 symlink 逃逸会被直接拒绝。
+`event_lookback_days` 允许 `7 / 30 / 90`，默认 `30`。它只控制 detail stock 的公告查询窗口，不影响行情实时性。
+
+对外 reusable workflow 会把该配置视为不可信输入：配置最大 32 KiB，`max_total_codes` 硬上限为 50，并统一统计 detail/light/group 合并后的唯一股票数量；单 group、member 数量和原始 code entry 也有上限。重复 code、非法路径、目录逃逸、symlink 逃逸以及非法公告回看窗口会被直接拒绝。
 
 ## 在本仓库运行
 
@@ -109,7 +116,7 @@ GitHub Actions 工作流：
 realtime-snapshot / snapshot.json
 ```
 
-主仓库运行成功后还会把日 K 缓存和轻量盘中快照写入独立的 `market-data` 分支，不污染 `master` 的代码提交历史。
+主仓库运行成功后还会把日 K 缓存、公司事件缓存和轻量盘中快照写入独立的 `market-data` 分支，不污染 `master` 的代码提交历史。
 
 ## 在其他仓库复用
 
@@ -182,14 +189,14 @@ jobs:
     uses: yaelysia/looklookbigA/.github/workflows/reusable-a-share-quotes.yml@v1
     with:
       config_json: >-
-        {"detail_codes":["300750"],"light_codes":["002594"],"groups":{},"max_total_codes":20}
+        {"detail_codes":["300750"],"light_codes":["002594"],"groups":{},"max_total_codes":20,"event_lookback_days":30}
 ```
 
 `config_path` 必须是 caller repository 内部的相对路径。绝对路径、`../` 逃逸和指向仓库外的 symlink 都会被拒绝。
 
 ### reusable workflow 历史缓存
 
-外部仓库默认使用 GitHub Actions cache 保存日 K 历史，因此不要求调用者创建 `market-data` 分支，也不需要 `contents: write` 权限。
+外部仓库默认使用 GitHub Actions cache 保存日 K 和事件历史，因此不要求调用者创建 `market-data` 分支，也不需要 `contents: write` 权限。
 
 ```yaml
 with:
@@ -197,13 +204,15 @@ with:
   cache_namespace: default
 ```
 
-第一次运行会初始化历史，之后同一交易阶段通常可以直接命中缓存。跨交易阶段只校验最近少量 K 线；检测到前复权变化或历史缺口时才会完整刷新。
+第一次运行会初始化历史，之后同一交易阶段通常可以直接命中日 K 缓存；公告事件会保留稳定 ID 并做带重叠窗口的增量刷新。缓存只作为历史上下文和事件 fallback，不进入实时现价选择。
 
 ## GitHub Actions 供应链安全
 
 仓库核心 workflow 中的 `actions/checkout`、`actions/cache`、`actions/upload-artifact`、`actions/download-artifact` 等第三方 Action 均固定到完整 commit SHA，而不是可变 `@v4` tag。
 
-`.github/dependabot.yml` 会继续跟踪 GitHub Actions 上游版本更新；升级时由 Dependabot / 人工 review 更新固定 SHA，再经过现有安全测试验证。
+官方公告 PDF 的文本解析使用独立的 `requirements-event-facts.txt`。`pypdf` 同时固定版本和 wheel SHA256；Realtime / reusable workflow 使用 `--require-hashes --no-deps` 安装。`scripts/test_workflow_security.py` 会阻止退化为裸版本安装。
+
+`.github/dependabot.yml` 同时跟踪 GitHub Actions 与 pip 依赖；升级后仍需要经过安全测试、真实 reusable smoke 和 PR review。
 
 ## `snapshot.json` 主要结构
 
@@ -214,20 +223,20 @@ snapshot.json
 │     ├─ quote
 │     ├─ minutes
 │     ├─ intraday
-│     └─ daily_context
+│     ├─ daily_context
+│     ├─ events
+│     └─ event_context
 ├─ light_stocks
 ├─ groups
 ├─ indices
 ├─ market_environment
-│  ├─ indices
-│  ├─ breadth
-│  ├─ regime
-│  ├─ style
-│  ├─ groups
-│  └─ targets.<code>.driver_attribution
+├─ changes_since_previous
+├─ company_events
 ├─ history
 ├─ live_price_guard
-└─ quote_resilience
+├─ quote_resilience
+├─ data_quality
+└─ llm_data_summary
 ```
 
 其中：
@@ -235,12 +244,95 @@ snapshot.json
 - `quote`：联网获得的当前行情，并包含该 quote 的双源容错 / 一致性元数据；
 - `intraday`：分时结构和最终可用当前价来源；
 - `daily_context`：历史日 K 指标及支撑压力；
+- `events`：detail stock 的官方公告事件集合，包含官方 PDF、结构化事实、cache/provider health 和统一 metadata；
 - `market_environment`：面向 LLM 的市场环境、风格、全市场广度、板块环境和个股驱动归因；
-- `history`：缓存状态和历史快照位置；
+- `changes_since_previous`：相对上一份完整归档快照的事实差分和显著性理由；
+- `company_events`：本次公告层整体健康状态与 PDF fact enrichment 状态；
+- `history`：缓存状态、上一份 comparison baseline 和当前完整快照归档位置；
 - `live_price_guard`：实时价格源安全检查；
-- `quote_resilience`：本次运行的 provider 使用情况、fallback 数量、双源分歧和不可用统计。
+- `quote_resilience`：本次运行的 provider 使用情况、fallback 数量、双源分歧和不可用统计；
+- `data_quality`：统一 provenance/freshness/quality 汇总；
+- `llm_data_summary`：给 LLM 快速判断关键实时、市场和历史上下文是否可用的紧凑入口。
 
-历史日 K 的 `source` 可能显示为 `History cache (...)`，这是正常的；**只有 `daily_context` 可以使用历史缓存，`quote.latest` 不允许使用任何 History / cache / snapshot 来源。**
+历史日 K 的 `source` 可能显示为 `History cache (...)`，这是正常的；**只有历史上下文字段可以使用缓存，`quote.latest` 不允许使用任何 History / cache / snapshot / event 来源。**
+
+## 面向 LLM 的 provenance / quality
+
+重要原始与派生节点统一使用：
+
+```text
+metadata
+├─ source
+├─ source_type
+├─ source_tier
+├─ fetched_at
+├─ data_time
+├─ lag_seconds
+├─ freshness
+├─ freshness_policy
+├─ confidence
+├─ quality
+├─ fallback_used
+└─ quality_flags
+```
+
+`quality` 为 `PASS / DEGRADED / PARTIAL / FAILED`。派生节点还会提供 `provenance.derived_from`、算法名/版本和必要的字段级来源。
+
+顶层推荐先看：
+
+```text
+llm_data_summary.critical_data_ready
+llm_data_summary.realtime_quote_quality
+llm_data_summary.market_context_quality
+llm_data_summary.historical_context_quality
+data_quality.critical_failures
+data_quality.warnings
+```
+
+但真正需要复核结论时，仍应读取对应节点自身的 metadata/provenance。详细 contract 见 `docs/DATA_PROVENANCE.md`。
+
+## 面向 LLM 的 `changes_since_previous`
+
+该节点用于回答“自上一次观察以来发生了什么”，而不是让模型重新手工 diff 两份大 JSON。
+
+```text
+changes_since_previous
+├─ baseline
+├─ thresholds
+├─ market
+├─ stocks.<code>
+├─ groups.<group_id>
+├─ events
+├─ summary
+├─ metadata
+└─ provenance
+```
+
+所有可比较数值尽量保留 `before / after / delta`；跨交易日累计成交额等语义不成立的字段会明确 `comparable=false`，不会制造假的负 delta。
+
+显著性 `NONE / MINOR / MODERATE / SIGNIFICANT` 的阈值直接写进 JSON，具体原因放在 `significance_reasons`。没有 baseline 时输出 `NO_BASELINE`，不会伪造零变化。详细见 `docs/CHANGES_SINCE_PREVIOUS.md`。
+
+## 面向 LLM 的公司事件
+
+公司公告使用官方 CNINFO 稳定公告 ID。主要结构：
+
+```text
+detail_stocks.<code>.events
+├─ status / provider_health
+├─ latest
+├─ recent[]
+├─ upcoming[]
+├─ event_context
+├─ cache
+├─ metadata
+└─ provenance
+```
+
+事件分类与事实抽取是确定性规则，不输出利好/利空判断。官方 PDF 原文抽取失败时保留标题级事实并显式降低 quality；provider 失败也不会伪装成“无公告”。
+
+更正/补充/进展公告保留独立 `event_id`，可用 `related_event_id / supersedes_event_id` 建立关系，不覆盖原始公告。
+
+详细 schema、缓存、PDF fact extraction 和降级语义见 `docs/COMPANY_EVENTS.md`。
 
 ## 面向 LLM 的 `market_environment`
 
@@ -289,28 +381,24 @@ market_environment
 - `growth_vs_large_percent`：(创业板 + 科创50)/2 - 沪深300；
 - `shenzhen_vs_shanghai_percent`：深成 - 上证。
 
-### 全市场 breadth 的精确值与估算值
+### 全市场 breadth 的精确值与分层估算
 
-全市场数据会先尝试一次完整 universe 获取：
+全市场数据会先尝试一次完整 universe 获取。成功时 `breadth.status=OK`、`estimated=false`，上涨 / 下跌 / 平盘、成交额、板块/交易所广度以及涨跌停近似统计均可直接使用。
 
-- 成功时：`breadth.status=OK`、`estimated=false`，上涨 / 下跌 / 平盘、成交额、板块/交易所广度以及涨跌停近似统计均可直接使用；
-- 完整 universe 不可用时：切换为按股票代码排序、跨全市场均匀抽取页面的确定性系统样本。当前目标约 8 页、最多约 800 只，实际 sample size 和 coverage 会写入 `breadth.sampling`。
+完整 universe 不可用时，会把股票代码 rank 空间拆成最多 8 个连续 stratum。**每个 stratum 都必须至少成功获取一个代表页**；目标页失败时只允许在同一 stratum 内尝试邻页。如果任意 stratum 最终缺失，就禁止做全市场 count extrapolation，`breadth.status=ERROR`、`regime=UNKNOWN`。
 
-样本模式必须按下面的语义读取：
+只有所有 strata 都被覆盖时，才按各 stratum 对应的 universe population 分层加权估算上涨 / 下跌 / 平盘数量。采样 metadata 会保留 stratum 范围、target/selected page、尝试页、population 和错误。
+
+即使分层采样成功，样本模式仍有：
 
 ```text
 breadth.status = PARTIAL
 breadth.estimated = true
-breadth.overall.up_count / down_count / flat_count = 估算值
-breadth.overall.unavailable_change_count = 无有效涨跌数据的估算数量
-breadth.overall.up_ratio_percent / down_ratio_percent = 样本中有有效涨跌数据标的的比例
 breadth.overall.amount_1e8 = null
 breadth.limit_statistics.available = false
 ```
 
-样本模式下**不会**把样本成交额外推成全市场总成交额，也不会把少量涨跌停事件线性放大；这两类字段宁可 `null`，也不输出看似精确但统计意义很差的数字。`sample_amount_1e8` 仅表示样本自身成交额。
-
-如果完整 universe 和系统样本都失败，`breadth.status=ERROR`，`regime` 会降级为 `UNKNOWN`；这个失败只影响市场环境层，不会让实时 quote / `live_price_guard` 主链路失败。
+不会把样本成交额外推成全市场成交额，也不会把少量涨跌停/炸板事件线性放大。
 
 ### 市场 regime
 
@@ -322,8 +410,6 @@ breadth.limit_statistics.available = false
 - `INDEX_DOWN_BREADTH_RESILIENT`：指数偏弱，但市场广度没有同步恶化；
 - `ROTATION_MIXED`：结构分化 / 风格轮动；
 - `BALANCED`：整体较均衡。
-
-`regime.breadth_estimated=true` 时，应结合 `market_environment.confidence` 与 `breadth.sampling.sample_coverage_percent` 使用。
 
 ### 个股 driver attribution
 
@@ -338,21 +424,7 @@ MIXED           多种驱动叠加或分离程度不足
 UNKNOWN         数据不足
 ```
 
-不要只读取 `primary_driver`。LLM 推荐同时读取：
-
-```text
-driver_attribution.confidence
-driver_attribution.evidence.stock_change_percent
-driver_attribution.evidence.market_reference_percent
-driver_attribution.evidence.sector_reference_percent
-driver_attribution.evidence.style_reference_percent
-driver_attribution.evidence.stock_vs_market_percent
-driver_attribution.evidence.stock_vs_sector_percent
-driver_attribution.evidence.stock_vs_style_percent
-driver_attribution.reason_codes
-```
-
-这样即使归因结果是 `MIXED`，模型仍可以根据实际差值自行判断“市场强、板块弱、个股相对板块抗跌”这类更细的语义。
+不要只读取 `primary_driver`。推荐同时读取 `market_reference_quality / sector_reference_quality / style_reference_quality / classification_separation / evidence / reason_codes`。尤其 `SECTOR` 的 HIGH confidence 还要求 peer 数量、coverage、group status 和 stock-sector 分离度达到门槛，1～2 个 peer 不会被标成 HIGH。
 
 ## 实时价格保护规则
 
@@ -369,7 +441,7 @@ LIVE 当日分钟价
 不会执行：
 
 ```text
-实时源失败 → 读取旧 snapshot / 日 K / history cache 冒充现价
+实时源失败 → 读取旧 snapshot / 日 K / history cache / event cache 冒充现价
 ```
 
 如果未来代码修改意外让历史来源进入实时 quote，`live_price_guard` 会将其视为 hard violation，并让该次工作流失败，而不是静默输出旧价格。
@@ -383,13 +455,19 @@ history/
 ├─ daily_k/
 │  ├─ 002558.json
 │  └─ 600795.json
+├─ events/
+│  ├─ _cninfo_stock_map.json
+│  ├─ 002558.json
+│  └─ 600795.json
 ├─ snapshots/
 │  └─ YYYY-MM-DD/
 │     └─ HHMMSS_run....json
 └─ manifest.json
 ```
 
-日 K 当前保留约 120 根用于增量校验和 60 日上下文计算。盘中历史快照会去掉重复的 60 根日 K 和大段分钟列表，只保存当时的关键分析状态。
+日 K 当前保留约 120 根用于增量校验和 60 日上下文计算。公告缓存用稳定 `event_id` 合并并带重叠窗口增量刷新。盘中历史快照会去掉重复的 60 根日 K 和大段分钟列表，只保存足够作为下一次 `changes_since_previous` baseline 的关键最终状态。
+
+当前 run 不会提前覆盖 manifest：先完成全部 enrichment 并写入完整 compact archive，成功后才把 manifest 指向新快照，避免 baseline 指向半成品或不存在文件。
 
 ## GitHub Actions 自检
 
@@ -403,10 +481,13 @@ history/
 
 - live-price guard 故障注入测试；
 - quote resilience 主源失败 / stale / 双源分歧选择测试；
-- watchlist/config 大小、数量、重复 code、路径和 symlink 逃逸测试；
-- GitHub Action SHA pinning 与 reusable workflow engine revision 测试；
+- watchlist/config 大小、数量、重复 code、路径、symlink 逃逸和公告窗口测试；
+- GitHub Action SHA pinning、reusable workflow engine revision、事件 PDF parser hash pinning 测试；
 - 腾讯 quote 模块自身 HTTPS-only、源码不包含明文 HTTP fallback 的回归测试；
-- market environment 的 market / sector / idiosyncratic driver attribution、stale index 排除、breadth 估算语义和 schema 回归测试；
+- market environment 的归因、严格分层 breadth、stale index 和 schema 测试；
+- provenance/freshness/quality metadata 回归测试；
+- changes-since-previous 的 baseline、跨交易日累计值、旧 schema 和事件 ID 差分测试；
+- 公司事件分类、稳定 ID、缓存降级、分页、官方 PDF facts 和 event metadata 测试；
 - Web 公共行情接口的 Cloudflare Rate Limiting binding 接线、fail-closed 行为和 2 秒短 TTL 去重缓存测试；
 - reusable workflow 小型观察列表实跑并生成 artifact。
 
@@ -455,25 +536,31 @@ npm run build
 
 ```text
 .github/workflows/                     GitHub Actions、reusable workflow、v1 smoke
-.github/dependabot.yml                 GitHub Actions 安全更新跟踪
-config/quote_watchlist.json           默认观察列表 / 板块分组
+.github/dependabot.yml                 GitHub Actions / pip 安全更新跟踪
+config/quote_watchlist.json           默认观察列表 / 板块分组 / event lookback
+requirements-event-facts.txt          固定版本 + hash 的官方 PDF 解析依赖
 docs/STABLE_V1.md                     稳定分支发布与兼容策略
+docs/DATA_PROVENANCE.md               provenance / freshness / quality contract
+docs/CHANGES_SINCE_PREVIOUS.md        快照增量变化 schema
+docs/COMPANY_EVENTS.md                官方公告 / 公司事件 schema
 scripts/config_security.py            caller/watchlist 输入安全边界
 scripts/prepare_reusable_config.py    reusable 配置解析入口
 scripts/transport_security.py         HTTPS-only 行情传输额外防御层
-scripts/test_config_security.py       配置攻击边界回归测试
-scripts/test_workflow_security.py     Action pin / engine SHA / HTTPS 测试
 scripts/realtime_quotes_watchlist.py  基础实时行情与分钟数据
 scripts/realtime_quotes_watchlist_runner.py 组合运行入口
 scripts/quote_resilience.py           东方财富 / 腾讯 quote 双源容错与一致性检查
-scripts/test_quote_resilience.py      行情源故障与分歧选择测试
 scripts/intraday_metrics.py           分时结构指标
 scripts/daily_k_context.py            日 K 背景与支撑压力
-scripts/history_store.py              历史缓存与盘中快照
-scripts/live_price_guard.py           实时价格来源保险
+scripts/history_store.py              历史缓存 / baseline / 最终快照归档
 scripts/market_environment.py         市场环境 / 风格 / 个股驱动归因
-scripts/market_breadth_source.py      全市场 breadth 全量 / 系统样本采集
-scripts/test_market_environment.py    市场环境与估算语义回归测试
+scripts/market_breadth_source.py      全市场 breadth 全量 / 严格分层采集
+scripts/data_metadata.py              统一 provenance / freshness / quality 元数据
+scripts/changes_since_previous.py     上一完整快照增量变化分析
+scripts/company_events.py             CNINFO 官方公告采集 / 分类 / 缓存 / 事件关系
+scripts/company_event_facts.py        官方 PDF 原文确定性 facts 抽取
+scripts/company_event_metadata.py     公司事件统一 metadata / provenance
+scripts/live_price_guard.py           实时价格来源保险
+scripts/test_*.py                     Python 安全与功能回归测试
 vite.config.ts                        Cloudflare Worker binding / rate-limit 配置
 worker/index.ts                       Worker 入口及 binding 注入
 worker/abuse-protection.js            Cloudflare 限流调用 / 2 秒上游去重缓存
@@ -484,4 +571,4 @@ app/                                  Web 页面
 
 ## 说明
 
-该项目输出的是行情数据与分析上下文，不构成投资建议。实时行情接口可能出现上游限流、502、数据延迟等情况，因此程序会保留数据源、时间戳、新鲜度、双源一致性和降级状态，供上层分析判断是否可以使用。
+该项目输出的是行情数据、公司披露事实与分析上下文，不构成投资建议。实时行情/公告接口可能出现上游限流、502、数据延迟或文档解析失败，因此程序会保留 source、source tier、时间戳、新鲜度、质量、fallback/provider health 和派生 provenance，供上层 LLM 判断是否可以使用。

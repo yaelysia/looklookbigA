@@ -24,5 +24,6 @@
       ]
     }
   },
-  "max_total_codes": 50
+  "max_total_codes": 50,
+  "event_lookback_days": 30
 }

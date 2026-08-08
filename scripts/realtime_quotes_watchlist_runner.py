@@ -1,6 +1,10 @@
 import changes_comparability
 import changes_metadata_bridge
 import changes_since_previous
+import company_event_coverage
+import company_event_facts
+import company_event_metadata
+import company_events
 import config_security
 import daily_k_context
 import data_metadata
@@ -21,6 +25,9 @@ changes_metadata_bridge.install(data_metadata)
 # provenance implementation. Cumulative turnover and peer-relative metrics are
 # only allowed to produce deltas when their comparison universes are confirmed.
 changes_comparability.install(changes_since_previous)
+# Historical announcement coverage must be complete before the event cache is
+# allowed to switch to ordinary recent-overlap incremental refresh.
+company_event_coverage.install(company_events)
 
 # Treat the watchlist as untrusted input before any network work starts.
 # This applies equally to the repository default config and reusable-workflow
@@ -53,6 +60,7 @@ daily_k_context.install(base)
 
 
 if __name__ == "__main__":
+    runtime_config = base.load_config()
     base.main()
     intraday_metrics.finalize_snapshot(base.SNAPSHOT_PATH)
     daily_k_context.finalize_snapshot(base.SNAPSHOT_PATH)
@@ -63,6 +71,15 @@ if __name__ == "__main__":
     live_price_guard.finalize_snapshot(base.SNAPSHOT_PATH)
     quote_resilience.finalize_snapshot(base.SNAPSHOT_PATH)
     market_environment.finalize_snapshot(base.SNAPSHOT_PATH)
+
+    # Official company events are collected before delta analysis so stable
+    # event IDs participate in new/updated/closed changes_since_previous.
+    company_events.finalize_snapshot(base.SNAPSHOT_PATH, runtime_config)
+    # Important structured event types may use their official CNINFO PDF for
+    # deterministic fact extraction. Failure only degrades fact enrichment;
+    # the official event record itself remains available.
+    company_event_facts.finalize_snapshot(base.SNAPSHOT_PATH)
+    company_event_metadata.finalize_snapshot(base.SNAPSHOT_PATH)
 
     # Compare against the last fully archived snapshot. This stays before the
     # metadata pass so the new changes node receives the same provenance and
