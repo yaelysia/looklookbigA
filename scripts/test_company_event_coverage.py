@@ -21,6 +21,14 @@ def _row(event_id, published="2026-08-01 09:00:00"):
     }
 
 
+def test_empty_cache_uses_full_window_bootstrap():
+    desired = datetime(2026, 7, 9).date()
+    start, mode = company_events._resolve_query_start({}, desired, datetime(2026, 8, 8, tzinfo=company_events.CST))
+    assert start == desired
+    assert mode == "FULL_WINDOW"
+    print("PASS empty_cache_full_window")
+
+
 def test_legacy_partial_cache_forces_backfill():
     desired = datetime(2026, 7, 9).date()
     cache = {
@@ -62,6 +70,7 @@ def test_partial_run_cannot_become_recent_only_incremental():
 
             first = company_events.fetch_events_for_code("002558", 30, now=now)
             assert first["status"] == "PARTIAL"
+            assert first["cache"]["refresh_mode"] == "FULL_WINDOW"
             assert first["cache"]["coverage_complete"] is False
             assert first["cache"]["covered_start_date"] is None
             assert first["cache"]["incomplete_ranges"]
@@ -139,6 +148,7 @@ def test_unsplittable_page_cap_stays_partial():
 
 def main():
     tests = [
+        test_empty_cache_uses_full_window_bootstrap,
         test_legacy_partial_cache_forces_backfill,
         test_partial_run_cannot_become_recent_only_incremental,
         test_page_cap_is_split_by_date_instead_of_truncated,
