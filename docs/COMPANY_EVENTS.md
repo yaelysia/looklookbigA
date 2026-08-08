@@ -18,7 +18,7 @@ No finance-media repost is promoted to `OFFICIAL` event facts.
 Provider failure and “there were no announcements” are different states:
 
 ```text
-successful query + zero rows
+successful complete query + zero rows
 → status=OK
 → no_events_reason=NO_ANNOUNCEMENTS_IN_WINDOW
 
@@ -223,7 +223,7 @@ original disclosure
 
 instead of losing the original history.
 
-## Cache and incremental refresh
+## Cache, historical completeness and incremental refresh
 
 Event cache lives under the existing history root:
 
@@ -236,9 +236,61 @@ history/events/
 
 The stock-code → CNINFO `orgId` map is cached with a seven-day TTL.
 
-Per-stock announcement cache records the earliest covered date. After bootstrap, refresh starts with a seven-day overlap around the latest cached announcement rather than repeatedly downloading the full 30/90-day window.
+Per-stock event cache schema v2 separates **the requested historical window** from **proof that the window was completely covered**. Important cache fields are:
 
-Merged cache is deduplicated by stable `event_id`, keeping the newest normalized representation for the same official announcement.
+```text
+requested_start_date
+covered_start_date
+coverage_complete
+query_status
+incomplete_ranges[]
+query_diagnostics
+```
+
+The semantics are strict:
+
+```text
+coverage_complete=true
++ query_status=OK
+→ covered_start_date is valid
+→ later runs may use INCREMENTAL_OVERLAP
+
+coverage_complete=false
+or prior query_status=PARTIAL
+→ covered_start_date is null / not trusted
+→ next run uses BACKFILL_INCOMPLETE from the full desired window
+```
+
+Legacy cache files are migrated conservatively. An old cache with `query_status=PARTIAL` is treated as incomplete even if that old file already contains a `covered_start_date` field. A successful recent query therefore cannot hide an older pagination gap.
+
+### Page failures
+
+If one CNINFO page fails, successfully fetched rows remain usable for the current run, but the result stays `PARTIAL`. The missing page/range is persisted under `incomplete_ranges`, and the next run performs historical backfill instead of switching to the normal seven-day overlap.
+
+### Queries larger than the page cap
+
+`MAX_PAGES=6` remains a per-query safety bound, not a statement that only six pages of history matter. When a requested date range reports more than six pages, the collector recursively splits the date range and queries smaller bounded segments.
+
+```text
+30/90 day window exceeds page cap
+        ↓
+split by date
+        ↓
+query each bounded segment
+        ↓
+all segments complete
+        → coverage_complete=true
+
+any segment/page still incomplete
+        → PARTIAL
+        → coverage_complete=false
+        → persist missing range
+        → BACKFILL_INCOMPLETE next run
+```
+
+A single-day range that itself exceeds the cap cannot be safely subdivided; it remains explicitly `PARTIAL` with `PAGE_CAP_EXCEEDED` rather than being silently treated as complete.
+
+Only after a complete historical window has been established does ordinary refresh start with a seven-day overlap around the latest cached announcement. Merged cache records are deduplicated by stable `event_id`, keeping the newest normalized representation for the same official announcement.
 
 This cache is historical/event context only. It is never considered a source for `quote.latest`.
 
