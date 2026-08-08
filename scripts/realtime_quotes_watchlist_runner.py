@@ -8,6 +8,7 @@ import company_events
 import config_security
 import daily_k_context
 import data_metadata
+import data_policy_bridge
 import history_store
 import intraday_metrics
 import live_price_guard
@@ -18,6 +19,9 @@ import realtime_quotes_watchlist as base
 import transport_security
 
 
+# Attach source-authority and freshness-SLA policy to the shared metadata
+# contract before any downstream metadata adapters use data_metadata._metadata.
+data_policy_bridge.install(data_metadata)
 # Keep #34 integration additive: extend the already-reviewed #35 metadata layer
 # instead of carrying an older copy of data_metadata.py on this stacked branch.
 changes_metadata_bridge.install(data_metadata)
