@@ -27,6 +27,7 @@ def valid_config():
             }
         },
         "max_total_codes": 10,
+        "event_lookback_days": 30,
     }
 
 
@@ -34,8 +35,24 @@ def test_valid_config():
     normalized = config_security.validate_raw_config(base, valid_config())
     assert normalized["detail_codes"] == ["002558"]
     assert normalized["light_codes"] == ["002555", "002517"]
+    assert normalized["event_lookback_days"] == 30
     assert normalized["truncated"] is False
     print("PASS valid_config")
+
+
+def test_event_lookback_values():
+    for value in (7, 30, 90):
+        raw = valid_config()
+        raw["event_lookback_days"] = value
+        normalized = config_security.validate_raw_config(base, raw)
+        assert normalized["event_lookback_days"] == value
+    raw = valid_config()
+    raw["event_lookback_days"] = 365
+    expect_reject(
+        "event lookback outside allowed set",
+        lambda: config_security.validate_raw_config(base, raw),
+    )
+    print("PASS event_lookback_values")
 
 
 def test_detail_cannot_bypass_total():
@@ -61,6 +78,7 @@ def test_group_cannot_push_unique_total_over_limit():
             }
         },
         "max_total_codes": 3,
+        "event_lookback_days": 30,
     }
     expect_reject(
         "group pushes unique total over max_total_codes",
@@ -145,6 +163,7 @@ def test_path_traversal_and_absolute_paths():
 def main():
     tests = [
         test_valid_config,
+        test_event_lookback_values,
         test_detail_cannot_bypass_total,
         test_group_cannot_push_unique_total_over_limit,
         test_hard_total_cap,
