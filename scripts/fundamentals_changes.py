@@ -48,6 +48,16 @@ def _numeric(before, after):
     return {"before": b, "after": a, "delta": a - b, "comparable": True}
 
 
+def _period_progression(before, after):
+    if not before or not after:
+        return "UNKNOWN"
+    if after > before:
+        return "ADVANCED"
+    if after < before:
+        return "REGRESSED"
+    return "SAME"
+
+
 def build_change(before, after):
     if not isinstance(after, dict):
         return {"status": "UNAVAILABLE", "significance": "NONE"}
@@ -56,7 +66,9 @@ def build_change(before, after):
 
     before_period = before.get("latest_report_period_end")
     after_period = after.get("latest_report_period_end")
-    new_period = bool(before_period and after_period and before_period != after_period)
+    progression = _period_progression(before_period, after_period)
+    new_period = progression == "ADVANCED"
+    regressed_period = progression == "REGRESSED"
     before_single = _latest_single(before)
     after_single = _latest_single(after)
     same_single_period = bool(before_single and after_single and before_single.get("report_period_end") == after_single.get("report_period_end"))
@@ -84,6 +96,8 @@ def build_change(before, after):
             "adjusted_net_profit": _numeric(_metric(before_single, "income", "adjusted_net_profit"), _metric(after_single, "income", "adjusted_net_profit")),
             "operating_cash_flow": _numeric(_metric(before_single, "cashflow", "operating_cash_flow"), _metric(after_single, "cashflow", "operating_cash_flow")),
         }
+    elif regressed_period:
+        metrics = {"status": "NONCOMPARABLE_REPORT_PERIOD_REGRESSION"}
     else:
         metrics = {"status": "NONCOMPARABLE_NEW_REPORT_PERIOD" if new_period else "UNAVAILABLE"}
 
@@ -91,16 +105,19 @@ def build_change(before, after):
     if new_period:
         reasons.append("NEW_FINANCIAL_REPORT_PERIOD")
         significance = _max(significance, "SIGNIFICANT")
-    if any(value.get("changed") for value in trends.values()):
+    if regressed_period:
+        reasons.append("FINANCIAL_REPORT_PERIOD_REGRESSED")
+        significance = _max(significance, "MODERATE")
+    if any(value.get("changed") for value in trends.values()) and not regressed_period:
         reasons.append("FUNDAMENTAL_TREND_CHANGED")
         significance = _max(significance, "MODERATE")
-    if cashflow_quality.get("changed"):
+    if cashflow_quality.get("changed") and not regressed_period:
         reasons.append("CASHFLOW_QUALITY_CHANGED")
         significance = _max(significance, "MODERATE")
-    if new_signals:
+    if new_signals and not regressed_period:
         reasons.append("NEW_FUNDAMENTAL_DIVERGENCE")
         significance = _max(significance, "MODERATE")
-    if cleared_signals:
+    if cleared_signals and not regressed_period:
         reasons.append("FUNDAMENTAL_DIVERGENCE_CLEARED")
         significance = _max(significance, "MINOR")
     if same_single_period and any(
@@ -110,10 +127,12 @@ def build_change(before, after):
         reasons.append("SAME_PERIOD_FINANCIAL_VALUES_UPDATED")
         significance = _max(significance, "MODERATE")
 
+    period_state = _state(before_period, after_period)
+    period_state["progression"] = progression
     return {
         "status": "OK",
         "significance": significance,
-        "latest_report_period": _state(before_period, after_period),
+        "latest_report_period": period_state,
         "same_single_period_comparison": same_single_period,
         "single_quarter_metrics": metrics,
         "trends": trends,
