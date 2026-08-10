@@ -130,7 +130,7 @@ Run B 立即启动
 
 Run B 仍然直接读取 Run A 的 exact artifact，`previous_snapshot_path` 指向 A，而不会退回 A-1。只有 exact artifact 已过期/下载失败时才回退 `market-data`；回退时必须用 run revision 或 legacy timestamp 证明 branch 状态至少不落后于上一成功 run，否则 fail closed。
 
-同一 branch 的 Realtime workflow 还使用 `cancel-in-progress=false` 的 concurrency barrier，避免多轮实时采集互相穿插。
+同一 branch 的 Realtime workflow还使用 `cancel-in-progress=false` 的 concurrency barrier，避免多轮实时采集互相穿插。
 
 ### Monotonic background writer
 
@@ -162,7 +162,7 @@ snapshot 时间是主排序依据，run id / attempt 用于同时间 tie-break�
 }
 ```
 
-`decision_snapshot_ready_ms` 从 Python runner 启动到本轮决策数据完成，记录在本地 history archive 之前。master 的 exact-previous-run API 查询 / artifact restore 发生在 runner 启动前，因此不包含在这个字段中；它属于 GitHub Actions 端到端开销，后续应单独监控。
+`decision_snapshot_ready_ms` 是 Python engine 从 runner 启动到本轮决策数据完成的耗时，记录在本地 history archive 之前。master 的 exact-previous-run API 查询 / artifact restore 发生在 runner 启动前，因此不包含在这个字段中；它属于 GitHub Actions 端到端开销，后续应单独监控。
 
 目标：
 
