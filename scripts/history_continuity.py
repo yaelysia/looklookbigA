@@ -167,19 +167,29 @@ def verify_fallback_at_least(current_root, expected_run_id=None, expected_starte
     expected = _as_int(expected_run_id)
     expected_time = _parse_time(expected_started_at)
 
-    if expected_time is not None and revision["time"] is not None and revision["time"] < expected_time:
-        raise RuntimeError(
-            "market-data baseline timestamp predates latest successful realtime run"
-        )
-    if expected is not None and revision["run_id"] is not None and revision["run_id"] < expected:
-        raise RuntimeError(
-            f"market-data baseline is behind latest successful realtime run: "
-            f"baseline={revision['run_id']} expected_at_least={expected}"
-        )
+    # New manifests can prove continuity with both run id and time. During the
+    # first upgrade from schema-v2 legacy manifests, run id is absent, so a
+    # timestamp at/after the exact previous successful run start is sufficient.
+    if revision["run_id"] is not None and expected is not None:
+        if revision["run_id"] < expected:
+            raise RuntimeError(
+                f"market-data baseline is behind latest successful realtime run: "
+                f"baseline={revision['run_id']} expected_at_least={expected}"
+            )
+        if expected_time is not None and revision["time"] is not None and revision["time"] < expected_time:
+            raise RuntimeError(
+                "market-data baseline timestamp predates latest successful realtime run"
+            )
+        return True
 
-    time_proved = expected_time is None or revision["time"] is not None
-    run_proved = expected is None or revision["run_id"] is not None
-    if not (time_proved and run_proved):
+    if expected_time is not None and revision["time"] is not None:
+        if revision["time"] < expected_time:
+            raise RuntimeError(
+                "legacy market-data baseline timestamp predates latest successful realtime run"
+            )
+        return True
+
+    if expected is not None or expected_time is not None:
         raise RuntimeError("cannot prove fallback history is at least the latest successful run")
     return True
 
