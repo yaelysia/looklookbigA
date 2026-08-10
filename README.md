@@ -102,6 +102,8 @@ FULL
 
 master 每轮开始会优先恢复上一条成功 Realtime run 的 exact history artifact，因此上一轮是否已经异步 push 到 `market-data` 不会影响 `changes_since_previous` 的 baseline 连续性；随后独立 `Persist Market History` workflow 再以 monotonic 规则后台提交 branch。
 
+`performance.decision_snapshot_ready_ms` 是 **Python engine** 从 runner 启动到决策数据完成的耗时；master 在 runner 启动前执行的 exact-baseline API 查询 / artifact restore，以及 checkout / artifact upload 等属于 GitHub Actions 端到端开销，不包含在该指标内。
+
 ## 在其他仓库复用
 
 项目提供 reusable workflow：
