@@ -7,7 +7,7 @@ IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 DIGEST_RE = re.compile(r"^[0-9a-f]{64}$")
 RUN_NAME_RE = re.compile(
     r"^alpha-refresh corr=(?P<corr>[A-Za-z0-9._:-]{1,128}) "
-    r"idem=(?P<idem>[0-9a-f]{16}) cmd=(?P<cmd>[0-9a-f]{64})$"
+    r"cmd=(?P<cmd>[0-9a-f]{64})$"
 )
 
 
@@ -59,13 +59,12 @@ def idempotency_fingerprint(idempotency_key):
     return hashlib.sha256(key.encode("utf-8")).hexdigest()[:16]
 
 
-def build_run_name(dispatch_correlation_id, idempotency_key, command_digest):
+def build_run_name(dispatch_correlation_id, idempotency_key_or_digest, command_digest=None):
     correlation = validate_identifier(dispatch_correlation_id, "dispatch_correlation_id")
-    digest = normalize_digest(command_digest)
-    return (
-        f"alpha-refresh corr={correlation} "
-        f"idem={idempotency_fingerprint(idempotency_key)} cmd={digest}"
+    digest = normalize_digest(
+        idempotency_key_or_digest if command_digest is None else command_digest
     )
+    return f"alpha-refresh corr={correlation} cmd={digest}"
 
 
 def parse_run_name(value):
@@ -99,28 +98,22 @@ def resolve_operation_by_correlation(
 
     exact = []
     correlation_conflicts = []
-    idempotency_conflicts = []
     for run in runs:
-        marker = parse_run_name(run.get("display_title") or run.get("run_name") or run.get("name"))
+        marker = parse_run_name(
+            run.get("display_title") or run.get("run_name") or run.get("name")
+        )
         if not marker:
             continue
         same_corr = marker["corr"] == correlation
-        same_idem = marker["idem"] == idem
         same_digest = marker["cmd"] == digest
-        if same_corr and same_idem and same_digest:
+        if same_corr and same_digest:
             exact.append(run)
         elif same_corr and not same_digest:
             correlation_conflicts.append(run)
-        elif same_idem and not same_digest:
-            idempotency_conflicts.append(run)
 
     if correlation_conflicts:
         raise RefreshIdentityConflict(
-            "dispatch_correlation_id is already bound to a different command_digest"
-        )
-    if idempotency_conflicts:
-        raise RefreshIdentityConflict(
-            "idempotency_key is already bound to a different command_digest"
+            "dispatch_correlation_id is already associated with a different command_digest"
         )
     if len(exact) > 1:
         raise RefreshOperationAmbiguous(
