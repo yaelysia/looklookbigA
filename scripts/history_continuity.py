@@ -64,17 +64,22 @@ def manifest_revision(manifest):
 
 
 def compare_revisions(left_manifest, right_manifest):
-    """Return -1/0/1 for left older/equal/newer than right."""
+    """Return -1/0/1 for left older/equal/newer than right.
+
+    Snapshot time is the primary monotonic key. GitHub run id / attempt only
+    disambiguate equal timestamps, so an older snapshot can never win merely
+    because an implementation detail gave it a larger numeric run id.
+    """
     left = manifest_revision(left_manifest)
     right = manifest_revision(right_manifest)
-    if left["run_id"] is not None and right["run_id"] is not None:
-        lk = (left["run_id"], left["attempt"], left["timestamp"] or 0)
-        rk = (right["run_id"], right["attempt"], right["timestamp"] or 0)
-    else:
-        if left["timestamp"] is None or right["timestamp"] is None:
-            raise ValueError("history revision is not comparable: missing run id and timestamp")
+    if left["timestamp"] is not None and right["timestamp"] is not None:
         lk = (left["timestamp"], left["run_id"] or 0, left["attempt"])
         rk = (right["timestamp"], right["run_id"] or 0, right["attempt"])
+    elif left["run_id"] is not None and right["run_id"] is not None:
+        lk = (left["run_id"], left["attempt"])
+        rk = (right["run_id"], right["attempt"])
+    else:
+        raise ValueError("history revision is not comparable: missing compatible time/run evidence")
     return (lk > rk) - (lk < rk)
 
 
@@ -160,23 +165,21 @@ def verify_fallback_at_least(current_root, expected_run_id=None, expected_starte
     manifest = validate_history_tree(current_root)
     revision = manifest_revision(manifest)
     expected = _as_int(expected_run_id)
-    if expected is not None and revision["run_id"] is not None:
-        if revision["run_id"] < expected:
-            raise RuntimeError(
-                f"market-data baseline is behind latest successful realtime run: "
-                f"baseline={revision['run_id']} expected_at_least={expected}"
-            )
-        return True
-
     expected_time = _parse_time(expected_started_at)
-    if expected_time is not None and revision["time"] is not None:
-        if revision["time"] < expected_time:
-            raise RuntimeError(
-                "legacy market-data baseline timestamp predates latest successful realtime run"
-            )
-        return True
 
-    if expected is not None or expected_time is not None:
+    if expected_time is not None and revision["time"] is not None and revision["time"] < expected_time:
+        raise RuntimeError(
+            "market-data baseline timestamp predates latest successful realtime run"
+        )
+    if expected is not None and revision["run_id"] is not None and revision["run_id"] < expected:
+        raise RuntimeError(
+            f"market-data baseline is behind latest successful realtime run: "
+            f"baseline={revision['run_id']} expected_at_least={expected}"
+        )
+
+    time_proved = expected_time is None or revision["time"] is not None
+    run_proved = expected is None or revision["run_id"] is not None
+    if not (time_proved and run_proved):
         raise RuntimeError("cannot prove fallback history is at least the latest successful run")
     return True
 
