@@ -12,6 +12,7 @@ on:
       - "docs/CHANGES_SINCE_PREVIOUS.md"
       - "docs/COMPANY_EVENTS.md"
       - "docs/INTRADAY_FAST.md"
+      - "docs/CAPITAL_FLOW.md"
       - "requirements-event-facts.txt"
       - "vite.config.ts"
       - ".github/workflows/reusable-a-share-quotes.yml"
@@ -32,6 +33,10 @@ on:
       - "scripts/intraday_metrics.py"
       - "scripts/daily_k_context.py"
       - "scripts/history_store.py"
+      - "scripts/capital_flow_context.py"
+      - "scripts/capital_flow_changes.py"
+      - "scripts/capital_flow_history_bridge.py"
+      - "scripts/capital_flow_metadata_bridge.py"
       - "scripts/live_price_guard.py"
       - "scripts/quote_resilience.py"
       - "scripts/market_environment.py"
@@ -55,6 +60,7 @@ on:
       - "scripts/test_data_metadata.py"
       - "scripts/test_data_policy.py"
       - "scripts/test_intraday_fast.py"
+      - "scripts/test_capital_flow_context.py"
       - "scripts/test_event_fact_continuity.py"
       - "scripts/test_history_continuity.py"
       - "scripts/test_changes_since_previous.py"
@@ -94,6 +100,8 @@ jobs:
         run: python3 scripts/test_data_policy.py
       - name: Run intraday fast-path behavior tests
         run: python3 scripts/test_intraday_fast.py
+      - name: Run capital-flow context tests
+        run: python3 scripts/test_capital_flow_context.py
       - name: Run event fact continuity tests
         run: python3 scripts/test_event_fact_continuity.py
       - name: Run history read-after-write continuity tests
