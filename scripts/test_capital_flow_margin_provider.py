@@ -47,7 +47,7 @@ def test_margin_query_uses_provider_native_date_sort_and_scode_filter():
     query = urllib.parse.parse_qs(parsed.query)
     assert query["reportName"] == ["RPTA_WEB_RZRQ_GGMX"]
     assert query["sortColumns"] == ["DATE"]
-    assert query["filter"] == ["(SCODE='002558')"]
+    assert query["filter"] == ['(SCODE="002558")']
     assert records[0]["trade_date"] == "2026-08-07"
     assert records[0]["financing_balance"] == 1000.0
     assert records[0]["financing_net_buy_amount"] == 30.0
