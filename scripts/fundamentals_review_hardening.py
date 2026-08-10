@@ -33,6 +33,85 @@ def _ttm_field(selected, fundamentals_context, group, field, key):
     }
 
 
+def _same_period_prior(periods, item):
+    if not item or not item.get("report_period_end") or not item.get("period_kind"):
+        return None
+    try:
+        prior_year = int(item["report_period_end"][:4]) - 1
+    except (TypeError, ValueError):
+        return None
+    key = f"{prior_year}{item.get('period_kind')}"
+    return next((row for row in periods or [] if row.get("period_key") == key), None)
+
+
+def _same_period_delta_series(periods, getter, fundamentals_context):
+    out = []
+    for item in sorted(periods or [], key=lambda x: x.get("report_period_end") or "")[-8:]:
+        prior = _same_period_prior(periods, item)
+        current_value = fundamentals_context._as_float(getter(item))
+        prior_value = fundamentals_context._as_float(getter(prior)) if prior else None
+        if current_value is None or prior_value is None:
+            continue
+        out.append({
+            "period": item.get("period_key"),
+            "period_end_date": item.get("report_period_end"),
+            "value_percent": fundamentals_context._round(current_value, 4),
+            "prior_year_value_percent": fundamentals_context._round(prior_value, 4),
+            "yoy_delta_pp": fundamentals_context._round(current_value - prior_value, 4),
+            "comparison": "SAME_REPORT_KIND_PRIOR_YEAR",
+        })
+    return out
+
+
+def _direction_state(series, value_key="value_percent"):
+    values = [float(item[value_key]) for item in series if item.get(value_key) is not None]
+    if len(values) < 3:
+        return "UNKNOWN"
+    recent = values[-3:]
+    changes = [recent[index] - recent[index - 1] for index in range(1, len(recent))]
+    scale = max(sum(abs(value) for value in recent) / len(recent), 1e-9)
+    tolerance = max(scale * 0.005, 0.05)
+    if all(abs(change) <= tolerance for change in changes):
+        return "STABLE"
+    if all(change > tolerance for change in changes):
+        return "RISING"
+    if all(change < -tolerance for change in changes):
+        return "FALLING"
+    return "VOLATILE"
+
+
+def _same_period_trend(periods, getter, fundamentals_context):
+    series = _same_period_delta_series(periods, getter, fundamentals_context)
+    values = [item.get("yoy_delta_pp") for item in series]
+    return {
+        "state": fundamentals_context._trend(values),
+        "series": series,
+        "evidence": series[-3:],
+        "comparability": "SAME_REPORT_KIND_PRIOR_YEAR_ONLY",
+        "method": "trend of same-report-kind year-over-year percentage-point deltas; mixed cumulative report kinds are never compared as adjacent levels",
+    }
+
+
+def _point_in_time_direction(periods, getter, fundamentals_context):
+    series = []
+    for item in sorted(periods or [], key=lambda x: x.get("report_period_end") or "")[-8:]:
+        value = fundamentals_context._as_float(getter(item))
+        if value is None:
+            continue
+        series.append({
+            "period": item.get("period_key"),
+            "period_end_date": item.get("report_period_end"),
+            "value_percent": fundamentals_context._round(value, 4),
+        })
+    return {
+        "state": _direction_state(series),
+        "series": series,
+        "evidence": series[-3:],
+        "comparability": "POINT_IN_TIME_SEQUENTIAL",
+        "method": "directional point-in-time trend; state is RISING/FALLING/STABLE/VOLATILE/UNKNOWN and carries no good/bad judgement",
+    }
+
+
 def install(fundamentals_context):
     if getattr(fundamentals_context, "_review_hardening_installed", False):
         return
@@ -110,6 +189,7 @@ def install(fundamentals_context):
     def build_context(code, item, raw, cache, urls, errors, now_iso, execution_mode):
         context = original_build_context(code, item, raw, cache, urls, errors, now_iso, execution_mode)
         single = context.get("single_quarters") or []
+        reported = context.get("reported_periods") or []
         coverage = context.setdefault("coverage", {})
         coverage["normalized_single_quarter_count"] = len(single)
         coverage["verified_single_quarter_count"] = sum(
@@ -117,6 +197,29 @@ def install(fundamentals_context):
             for row in single
         )
         coverage["ttm_available"] = ((context.get("ttm") or {}).get("status") == "OK")
+
+        trends = context.get("trends") or {}
+        trends["roe"] = _same_period_trend(
+            reported,
+            lambda row: ((row or {}).get("profitability") or {}).get("weighted_roe_percent_reported"),
+            fundamentals_context,
+        )
+        trends["gross_margin"] = _same_period_trend(
+            reported,
+            lambda row: ((row or {}).get("profitability") or {}).get("gross_margin_percent_reported"),
+            fundamentals_context,
+        )
+        trends["debt_ratio"] = _point_in_time_direction(
+            reported,
+            lambda row: ((row or {}).get("balance_sheet") or {}).get("debt_to_assets_percent"),
+            fundamentals_context,
+        )
+        context["trends"] = trends
+        if isinstance(context.get("profitability"), dict):
+            context["profitability"]["roe"] = trends["roe"]
+            context["profitability"]["gross_margin"] = trends["gross_margin"]
+        if isinstance(context.get("balance_sheet"), dict):
+            context["balance_sheet"]["debt_ratio_trend"] = trends["debt_ratio"]
 
         if context.get("status") == "CACHED":
             metadata = context.get("metadata") or {}
