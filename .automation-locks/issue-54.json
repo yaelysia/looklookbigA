@@ -1,0 +1,17 @@
+{
+  "kind": "looklookbigA-auto-work-lock",
+  "issue": 54,
+  "base_branch": "master",
+  "base_sha": "22a14142ed6acc15f318abf73fde515ae6eb3796",
+  "issue_title": "Promote full looklookAlpha capability profile to a stable release",
+  "issue_updated_at": "2026-08-10T10:10:40Z",
+  "created_at": "2026-08-10T15:14:51Z",
+  "scope_snapshot": {
+    "stable_profile": "Freeze and validate the full looklookAlpha-required capability profile on a stable ref with exact SHA, schema/capability manifest, workflow identity and fixtures.",
+    "refresh_contract": "Provide start_or_recover semantics keyed by dispatch_correlation_id + idempotency_key + command_digest; recover exact existing workflow operation after ambiguous dispatch/crash; reject conflicting reuse.",
+    "operation_status": "Expose exact run locator and ACCEPTED/QUEUED/RUNNING/SUCCEEDED/FAILED/CANCELLED without latest-run fallback.",
+    "artifact_contract": "Resolve exactly one primary Alpha snapshot artifact with stable identity and digest; reject missing/conflicting/corrupt artifacts.",
+    "quality_gate": "Cover crash recovery, concurrency isolation, idempotency/conflict, artifact digest, failure/cancel, live-price guard, provenance/freshness compatibility, reusable/full smoke and security gate.",
+    "release_requirement": "No Alpha production integration may depend on unpromoted master-only fields or latest semantics."
+  }
+}
