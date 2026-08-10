@@ -159,6 +159,12 @@ jobs:
       - name: Generate Alpha primary artifact manifest
         if: ${{ success() }}
         shell: bash
+        env:
+          LOOKLOOK_PRODUCING_REF: ${{ steps.engine-ref.outputs.ref }}
+          LOOKLOOK_PRODUCING_REF_NAME: ${{ steps.engine-ref.outputs.ref }}
+          LOOKLOOK_PRODUCING_COMMIT_SHA: ${{ steps.engine-ref.outputs.ref }}
+          LOOKLOOK_WORKFLOW_REF: yaelysia/looklookbigA/.github/workflows/reusable-a-share-quotes.yml@${{ steps.engine-ref.outputs.ref }}
+          LOOKLOOK_WORKFLOW_SHA: ${{ steps.engine-ref.outputs.ref }}
         run: >-
           python3 .engine/scripts/alpha_artifact_manifest.py
           --snapshot .engine/snapshot.json
