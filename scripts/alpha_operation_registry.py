@@ -95,6 +95,24 @@ def _record_matches(record, idem_fp, digest, workflow_identity):
     )
 
 
+def _identity_values(
+    dispatch_correlation_id,
+    idempotency_key,
+    command_digest,
+    workflow_identity,
+    material_execution_inputs,
+):
+    correlation = alpha_refresh_contract.validate_identifier(
+        dispatch_correlation_id, "dispatch_correlation_id"
+    )
+    alpha_refresh_contract.validate_identifier(idempotency_key, "idempotency_key")
+    idem_fp = alpha_refresh_contract.idempotency_fingerprint(idempotency_key)
+    digest = _validate_command(
+        workflow_identity, material_execution_inputs, command_digest
+    )
+    return correlation, idem_fp, digest
+
+
 def reserve_state(
     registry,
     *,
@@ -106,14 +124,20 @@ def reserve_state(
     owner_token=None,
     now=None,
 ):
+    """Reserve a new command or recover an existing one.
+
+    Existing operations whose dispatch lease expired are *not* automatically
+    redispatched. They return should_dispatch=False until a caller performs a
+    correlation scan and calls recover_after_correlation_scan_state(). This is
+    the crash/ambiguous-response barrier that prevents duplicate dispatches.
+    """
     now = now or utc_now()
-    correlation = alpha_refresh_contract.validate_identifier(
-        dispatch_correlation_id, "dispatch_correlation_id"
-    )
-    alpha_refresh_contract.validate_identifier(idempotency_key, "idempotency_key")
-    idem_fp = alpha_refresh_contract.idempotency_fingerprint(idempotency_key)
-    digest = _validate_command(
-        workflow_identity, material_execution_inputs, command_digest
+    correlation, idem_fp, digest = _identity_values(
+        dispatch_correlation_id,
+        idempotency_key,
+        command_digest,
+        workflow_identity,
+        material_execution_inputs,
     )
     owner_token = owner_token or str(uuid.uuid4())
 
@@ -138,26 +162,20 @@ def reserve_state(
         if correlation not in existing.setdefault("correlation_ids", []):
             existing["correlation_ids"].append(correlation)
             existing["correlation_ids"].sort()
+            existing["updated_at"] = iso(now)
+            result["updated_at"] = iso(now)
             changed = True
-        run_id = existing.get("workflow_run_id")
-        if run_id:
-            result["updated_at"] = iso(now) if changed else result.get("updated_at")
+
+        if existing.get("workflow_run_id"):
             return result, deepcopy(existing), changed, False
 
         lease_until = parse_iso(existing.get("dispatch_lease_until"))
         if lease_until and lease_until > now:
-            result["updated_at"] = iso(now) if changed else result.get("updated_at")
             return result, deepcopy(existing), changed, False
 
-        existing["dispatch_owner_token"] = owner_token
-        existing["dispatch_lease_until"] = iso(
-            now + timedelta(seconds=DISPATCH_LEASE_SECONDS)
-        )
-        existing["dispatch_state"] = "RESERVED"
-        existing["updated_at"] = iso(now)
-        changed = True
-        result["updated_at"] = iso(now)
-        return result, deepcopy(existing), changed, True
+        # Never redispatch an existing ambiguous/expired reservation here.
+        # The caller must first scan workflow runs by every correlation alias.
+        return result, deepcopy(existing), changed, False
 
     operation_id = _operation_id(idem_fp, digest, workflow_identity)
     record = {
@@ -200,12 +218,12 @@ def claim_run_state(
     now=None,
 ):
     now = now or utc_now()
-    correlation = alpha_refresh_contract.validate_identifier(
-        dispatch_correlation_id, "dispatch_correlation_id"
-    )
-    idem_fp = alpha_refresh_contract.idempotency_fingerprint(idempotency_key)
-    digest = _validate_command(
-        workflow_identity, material_execution_inputs, command_digest
+    correlation, idem_fp, digest = _identity_values(
+        dispatch_correlation_id,
+        idempotency_key,
+        command_digest,
+        workflow_identity,
+        material_execution_inputs,
     )
     result = deepcopy(registry or empty_registry())
     record = _find_by_correlation(result, correlation)
@@ -248,12 +266,12 @@ def resolve_state(
     workflow_identity,
     material_execution_inputs,
 ):
-    correlation = alpha_refresh_contract.validate_identifier(
-        dispatch_correlation_id, "dispatch_correlation_id"
-    )
-    idem_fp = alpha_refresh_contract.idempotency_fingerprint(idempotency_key)
-    digest = _validate_command(
-        workflow_identity, material_execution_inputs, command_digest
+    correlation, idem_fp, digest = _identity_values(
+        dispatch_correlation_id,
+        idempotency_key,
+        command_digest,
+        workflow_identity,
+        material_execution_inputs,
     )
     record = _find_by_correlation(registry or empty_registry(), correlation)
     if not record:
@@ -263,6 +281,88 @@ def resolve_state(
             "correlation resolves to a different logical command"
         )
     return deepcopy(record)
+
+
+def recover_after_correlation_scan_state(
+    registry,
+    runs,
+    *,
+    dispatch_correlation_id,
+    idempotency_key,
+    command_digest,
+    workflow_identity,
+    material_execution_inputs,
+    owner_token=None,
+    now=None,
+):
+    """Recover an exact run or authorize redispatch only after a run scan.
+
+    Callers must pass the provider workflow runs returned by a fresh GitHub API
+    query. Every correlation alias is checked. If any matching run exists it is
+    claimed; if multiple distinct matches exist the operation is ambiguous and
+    no redispatch is permitted. Only a verified-empty scan plus an expired
+    dispatch lease can issue a new dispatch permit.
+    """
+    now = now or utc_now()
+    correlation, idem_fp, digest = _identity_values(
+        dispatch_correlation_id,
+        idempotency_key,
+        command_digest,
+        workflow_identity,
+        material_execution_inputs,
+    )
+    result = deepcopy(registry or empty_registry())
+    record = _find_by_correlation(result, correlation) or _find_by_idempotency(
+        result, idem_fp
+    )
+    if not record:
+        raise RegistryConflict("cannot recover an operation that was never reserved")
+    if not _record_matches(record, idem_fp, digest, workflow_identity):
+        raise alpha_refresh_contract.RefreshIdentityConflict(
+            "recovery identity does not match the durable reservation"
+        )
+    if record.get("workflow_run_id"):
+        return result, deepcopy(record), False, False
+
+    matches = {}
+    for alias in record.get("correlation_ids") or []:
+        found = alpha_refresh_contract.resolve_operation_by_correlation(
+            runs, alias, idempotency_key, digest
+        )
+        if found:
+            matches[int(found["workflow_run_id"])] = (alias, found)
+    if len(matches) > 1:
+        raise alpha_refresh_contract.RefreshOperationAmbiguous(
+            f"multiple workflow runs found during correlation recovery: {sorted(matches)}"
+        )
+    if matches:
+        alias, found = next(iter(matches.values()))
+        return (*claim_run_state(
+            result,
+            dispatch_correlation_id=alias,
+            idempotency_key=idempotency_key,
+            command_digest=digest,
+            workflow_identity=workflow_identity,
+            material_execution_inputs=material_execution_inputs,
+            workflow_run_id=found["workflow_run_id"],
+            workflow_run_url=found.get("workflow_run_url"),
+            workflow_head_sha=found.get("head_sha"),
+            workflow_run_attempt=found.get("run_attempt"),
+            now=now,
+        ), False)
+
+    lease_until = parse_iso(record.get("dispatch_lease_until"))
+    if lease_until and lease_until > now:
+        return result, deepcopy(record), False, False
+
+    record["dispatch_owner_token"] = owner_token or str(uuid.uuid4())
+    record["dispatch_lease_until"] = iso(
+        now + timedelta(seconds=DISPATCH_LEASE_SECONDS)
+    )
+    record["dispatch_state"] = "RESERVED"
+    record["updated_at"] = iso(now)
+    result["updated_at"] = iso(now)
+    return result, deepcopy(record), True, True
 
 
 class GitHubRegistryStore:
@@ -375,6 +475,14 @@ def claim_run(store, **kwargs):
         lambda registry: (*claim_run_state(registry, **kwargs), False)
     )
     return record
+
+
+def recover_after_correlation_scan(store, runs, **kwargs):
+    return store.mutate(
+        lambda registry: recover_after_correlation_scan_state(
+            registry, runs, **kwargs
+        )
+    )
 
 
 def _parse_material_inputs(raw):
