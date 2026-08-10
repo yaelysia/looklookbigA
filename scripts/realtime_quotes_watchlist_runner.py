@@ -11,6 +11,8 @@ import config_security
 import daily_k_context
 import data_metadata
 import data_policy_bridge
+import event_fact_continuity
+import history_continuity
 import history_store
 import intraday_fast_tail
 import intraday_metrics
@@ -26,7 +28,14 @@ import transport_security
 data_policy_bridge.install(data_metadata)
 changes_metadata_bridge.install(data_metadata)
 changes_comparability.install(changes_since_previous)
+# Event refreshes may update the official envelope, but a weaker title/API
+# normalization of the same immutable CNINFO document must never erase facts
+# already extracted successfully from its official PDF.
+event_fact_continuity.install(company_events)
 company_event_coverage.install(company_events)
+# Every archived history state carries the exact workflow run revision. This is
+# consumed by the next-run exact-artifact read barrier and monotonic writer.
+history_continuity.install_manifest_revision(history_store)
 config_security.install(base)
 
 EXECUTION_MODE = performance_fast_path.configure_mode(base)
