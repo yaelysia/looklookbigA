@@ -2,7 +2,7 @@
   "kind": "looklookbigA-auto-worker-lease",
   "state": "ACTIVE",
   "token": "969cbd7d-fe36-4195-a4a8-6165a405f727",
-  "work_item": "preflight",
+  "work_item": "issue-54",
   "acquired_at": "2026-08-10T15:14:51+00:00",
   "lease_until": "2026-08-10T23:14:51+00:00",
   "start_time": "2026-08-10T15:14:51+00:00"
