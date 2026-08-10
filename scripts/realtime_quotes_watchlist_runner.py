@@ -1,5 +1,11 @@
 from concurrent.futures import ThreadPoolExecutor
 
+import capital_flow_changes
+import capital_flow_context
+import capital_flow_history_bridge
+import capital_flow_margin_bridge
+import capital_flow_metadata_bridge
+import capital_flow_window_bridge
 import changes_comparability
 import changes_metadata_bridge
 import changes_since_previous
@@ -26,6 +32,9 @@ import transport_security
 
 
 data_policy_bridge.install(data_metadata)
+capital_flow_metadata_bridge.install(data_metadata)
+capital_flow_window_bridge.install(capital_flow_context)
+capital_flow_margin_bridge.install(capital_flow_context)
 changes_metadata_bridge.install(data_metadata)
 changes_comparability.install(changes_since_previous)
 # Event refreshes may update the official envelope, but a weaker title/API
@@ -38,6 +47,9 @@ company_event_coverage.install(company_events)
 # Every archived history state carries the exact workflow run revision. This is
 # consumed by the next-run exact-artifact read barrier and monotonic writer.
 history_continuity.install_manifest_revision(history_store)
+# Capital-flow state is part of the next exact snapshot baseline without
+# changing the core history schema implementation.
+capital_flow_history_bridge.install(history_store)
 config_security.install(base)
 
 EXECUTION_MODE = performance_fast_path.configure_mode(base)
@@ -65,6 +77,9 @@ market_environment.install(base)
 
 performance_fast_path.install_fast_daily_cache(history_store, base, daily_k_context)
 intraday_metrics.install(base)
+# Capture the same minute response already used by intraday metrics. No extra
+# minute network request is allowed for capital-flow analysis.
+capital_flow_context.install(base)
 live_price_guard.install(base)
 daily_k_context.install(base)
 performance_fast_path.install_fast_daily_metadata(data_metadata)
@@ -117,7 +132,17 @@ if __name__ == "__main__":
         )
 
         performance_fast_path.timed_call(
+            "capital_flow",
+            capital_flow_context.finalize_snapshot,
+            base.SNAPSHOT_PATH,
+            base,
+            EXECUTION_MODE,
+        )
+        performance_fast_path.timed_call(
             "changes_since_previous", changes_since_previous.finalize_snapshot, base.SNAPSHOT_PATH
+        )
+        performance_fast_path.timed_call(
+            "capital_flow_changes", capital_flow_changes.finalize_snapshot, base.SNAPSHOT_PATH
         )
         performance_fast_path.timed_call("data_metadata", data_metadata.finalize_snapshot, base.SNAPSHOT_PATH)
 
