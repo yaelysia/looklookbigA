@@ -3,7 +3,7 @@
   "contract_version": 1,
   "stable_ref": "v1",
   "snapshot": {
-    "minimum_schema_version": 15,
+    "minimum_schema_version": 16,
     "required_features": {
       "intraday_structure_metrics": "v1",
       "daily_k_context": "v1",
@@ -13,7 +13,8 @@
       "changes_since_previous": "v1",
       "company_events": "v1",
       "capital_flow": "v1",
-      "fundamentals": "v1"
+      "fundamentals": "v1",
+      "alpha_provider_contract": "v1"
     },
     "required_top_level_objects": [
       "detail_stocks",
@@ -25,7 +26,8 @@
       "changes_since_previous",
       "company_events",
       "capital_flow_summary",
-      "fundamentals_summary"
+      "fundamentals_summary",
+      "provider_contract"
     ],
     "required_detail_objects": [
       "quote",
@@ -43,6 +45,10 @@
   },
   "refresh_operation": {
     "contract_version": 1,
+    "start_or_recover_entrypoint": "scripts/alpha_start_or_recover.py",
+    "registry_branch": "provider-operations",
+    "registry_path": ".provider-operations/refresh-registry-v1.json",
+    "dispatch_protocol": "DURABLE_RESERVATION_BEFORE_DISPATCH",
     "identity_fields": [
       "dispatch_correlation_id",
       "idempotency_key",
@@ -64,6 +70,7 @@
       "CANCELLED"
     ],
     "latest_run_fallback_allowed": false,
+    "ambiguous_dispatch_recovery": "FRESH_CORRELATION_SCAN_BEFORE_REDISPATCH",
     "same_key_same_digest": "RECOVER_SAME_OPERATION",
     "same_key_different_digest": "CONFLICT",
     "same_correlation_different_digest": "CORRELATION_MISMATCH"
@@ -75,5 +82,9 @@
     "cardinality": "EXACTLY_ONE",
     "digest_algorithm": "SHA-256",
     "digest_source": "PROVIDER_COMPUTED_OR_CONSUMER_VERIFIED"
+  },
+  "fixtures": {
+    "snapshot": "fixtures/looklookalpha/provider-v1-snapshot.json",
+    "raw_metadata": "fixtures/looklookalpha/provider-v1-metadata.json"
   }
 }
