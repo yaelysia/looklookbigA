@@ -32,6 +32,8 @@ jobs:
         run: python3 scripts/test_intraday_fast.py
       - name: Run capital-flow context tests
         run: python3 scripts/test_capital_flow_context.py
+      - name: Run margin provider query tests
+        run: python3 scripts/test_capital_flow_margin_provider.py
       - name: Run event fact continuity tests
         run: python3 scripts/test_event_fact_continuity.py
       - name: Run history read-after-write continuity tests
