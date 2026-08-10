@@ -1,3 +1,9 @@
+import json
+import os
+import tempfile
+from datetime import timedelta, timezone
+from pathlib import Path
+
 import data_metadata
 import data_policy
 import data_policy_bridge
@@ -124,13 +130,17 @@ def test_ttm_is_partial_when_one_core_field_missing():
     assert "revenue" in value["missing_core_fields"]
 
 
-def test_normal_fast_cache_is_pass_quality():
-    raw = {
-        "main": [{"REPORTDATE": "2026-03-31", "NOTICE_DATE": "2026-04-30 18:00:00", "TOTAL_OPERATE_INCOME": 100, "PARENT_NETPROFIT": 10, "DEDUCT_PARENT_NETPROFIT": 9}],
-        "income": [{"REPORT_DATE": "2026-03-31", "TOTAL_OPERATE_INCOME": 100, "PARENT_NETPROFIT": 10, "DEDUCT_PARENT_NETPROFIT": 9}],
-        "balance": [{"REPORT_DATE": "2026-03-31", "TOTAL_ASSETS": 1000, "TOTAL_LIABILITIES": 300}],
-        "cashflow": [{"REPORT_DATE": "2026-03-31", "NETCASH_OPERATE": 8}],
+def _healthy_raw(period="2026-03-31"):
+    return {
+        "main": [{"REPORTDATE": period, "NOTICE_DATE": "2026-04-30 18:00:00", "TOTAL_OPERATE_INCOME": 100, "PARENT_NETPROFIT": 10, "DEDUCT_PARENT_NETPROFIT": 9}],
+        "income": [{"REPORT_DATE": period, "TOTAL_OPERATE_INCOME": 100, "PARENT_NETPROFIT": 10, "DEDUCT_PARENT_NETPROFIT": 9}],
+        "balance": [{"REPORT_DATE": period, "TOTAL_ASSETS": 1000, "TOTAL_LIABILITIES": 300}],
+        "cashflow": [{"REPORT_DATE": period, "NETCASH_OPERATE": 8}],
     }
+
+
+def test_normal_fast_cache_is_pass_quality():
+    raw = _healthy_raw()
     cache = {"fetched_at": "2026-05-01T10:00:00+08:00", "first_seen_by_version": {}}
     context = fundamentals._build_context(
         "002558", {"events": {"recent": []}}, raw, cache, {}, [],
@@ -139,6 +149,7 @@ def test_normal_fast_cache_is_pass_quality():
     assert context["status"] == "CACHED"
     assert context["metadata"]["quality"] == "PASS"
     assert "FAST_CACHE_ONLY" in context["metadata"]["quality_flags"]
+    assert context["coverage"]["latest_report_period_complete"] is True
 
 
 def test_final_summary_recount_sees_fundamentals_upgrade():
@@ -151,6 +162,92 @@ def test_final_summary_recount_sees_fundamentals_upgrade():
     assert changes["summary"]["significant_changes"] == 1
 
 
+def test_empty_provider_result_is_explicit_error():
+    class Base:
+        @staticmethod
+        def http_get(url):
+            return json.dumps({"result": {"data": []}})
+
+    try:
+        fundamentals._fetch_report(Base, "002558", "SYNTHETIC", "REPORT_DATE")
+        raise AssertionError("empty provider result must raise")
+    except RuntimeError as exc:
+        assert "EMPTY_OR_MISSING_REPORT_RESULT" in str(exc)
+
+
+def test_cold_full_missing_latest_report_class_is_partial():
+    raw = _healthy_raw("2026-06-30")
+    raw["balance"] = []
+    raw["cashflow"] = []
+    context = fundamentals._build_context(
+        "002558", {"events": {"recent": []}}, raw,
+        {"first_seen_by_version": {}}, {}, [],
+        "2026-08-10T10:05:00+08:00", "FULL",
+    )
+    assert context["latest_report_period_end"] == "2026-06-30"
+    assert context["status"] == "PARTIAL"
+    assert context["metadata"]["quality"] == "DEGRADED"
+    assert context["provider_health"]["status"] == "PARTIAL"
+    assert context["coverage"]["latest_report_period_complete"] is False
+    assert context["coverage"]["missing_latest_report_classes"] == ["balance", "cashflow"]
+    assert "INCOMPLETE_LATEST_REPORT_CLASS_COVERAGE" in context["metadata"]["quality_flags"]
+
+
+def test_fast_cache_stale_latest_report_class_is_degraded():
+    raw = _healthy_raw("2026-06-30")
+    raw["balance"] = [{"REPORT_DATE": "2026-03-31", "TOTAL_ASSETS": 900, "TOTAL_LIABILITIES": 280}]
+    raw["cashflow"] = [{"REPORT_DATE": "2026-03-31", "NETCASH_OPERATE": 7}]
+    cache = {"fetched_at": "2026-07-01T10:00:00+08:00", "first_seen_by_version": {}}
+    context = fundamentals._build_context(
+        "002558", {"events": {"recent": []}}, raw, cache, {}, [],
+        "2026-07-01T10:05:00+08:00", "INTRADAY_FAST",
+    )
+    assert context["status"] == "CACHED"
+    assert context["metadata"]["quality"] == "DEGRADED"
+    assert context["provider_health"]["status"] == "PARTIAL"
+    assert context["coverage"]["latest_report_period_complete"] is False
+    assert context["coverage"]["stale_latest_report_classes"] == ["balance", "cashflow"]
+    assert "STALE_LATEST_REPORT_CLASS_BALANCE" in context["metadata"]["quality_flags"]
+
+
+def test_finalize_healthy_fast_summary_is_ok():
+    old_root = os.environ.get("MARKET_HISTORY_DIR")
+    with tempfile.TemporaryDirectory() as tmp:
+        os.environ["MARKET_HISTORY_DIR"] = tmp
+        fundamentals._write_json(fundamentals._cache_path("002558"), {
+            "schema_version": 1,
+            "code": "002558",
+            "source": "Eastmoney",
+            "source_tier": "PRIMARY_PROVIDER",
+            "fetched_at": "2026-05-01T10:00:00+08:00",
+            "first_seen_by_version": {},
+            "source_urls": {},
+            "raw": _healthy_raw(),
+        })
+        snapshot_path = Path(tmp) / "snapshot.json"
+        snapshot_path.write_text(json.dumps({
+            "runner_time_cst": "2026-05-01T10:05:00+08:00",
+            "detail_stocks": {"002558": {"events": {"recent": []}}},
+        }), encoding="utf-8")
+
+        class Base:
+            CST = timezone(timedelta(hours=8))
+
+        fundamentals.finalize_snapshot(snapshot_path, Base, "INTRADAY_FAST")
+        result = json.loads(snapshot_path.read_text(encoding="utf-8"))
+        context = result["detail_stocks"]["002558"]["fundamentals"]
+        assert context["status"] == "CACHED"
+        assert context["metadata"]["quality"] == "PASS"
+        assert result["fundamentals_summary"]["status"] == "OK"
+        assert result["fundamentals_summary"]["health_by_code"]["002558"] == "OK"
+        assert result["fundamentals_summary"]["quality_by_code"]["002558"] == "PASS"
+
+    if old_root is None:
+        os.environ.pop("MARKET_HISTORY_DIR", None)
+    else:
+        os.environ["MARKET_HISTORY_DIR"] = old_root
+
+
 def main():
     tests = [
         test_debt_ratio_is_directional_not_improving,
@@ -161,6 +258,10 @@ def main():
         test_ttm_is_partial_when_one_core_field_missing,
         test_normal_fast_cache_is_pass_quality,
         test_final_summary_recount_sees_fundamentals_upgrade,
+        test_empty_provider_result_is_explicit_error,
+        test_cold_full_missing_latest_report_class_is_partial,
+        test_fast_cache_stale_latest_report_class_is_degraded,
+        test_finalize_healthy_fast_summary_is_ok,
     ]
     for test in tests:
         test()
