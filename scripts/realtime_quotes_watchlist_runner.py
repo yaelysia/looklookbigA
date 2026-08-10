@@ -30,8 +30,10 @@ changes_metadata_bridge.install(data_metadata)
 changes_comparability.install(changes_since_previous)
 # Event refreshes may update the official envelope, but a weaker title/API
 # normalization of the same immutable CNINFO document must never erase facts
-# already extracted successfully from its official PDF.
-event_fact_continuity.install(company_events)
+# already extracted successfully from its official PDF. A failed later FULL
+# extraction also preserves the last successful facts while summary health is
+# still reported as PARTIAL.
+event_fact_continuity.install(company_events, company_event_facts)
 company_event_coverage.install(company_events)
 # Every archived history state carries the exact workflow run revision. This is
 # consumed by the next-run exact-artifact read barrier and monotonic writer.
