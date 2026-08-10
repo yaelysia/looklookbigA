@@ -18,6 +18,11 @@ on:
         required: false
         type: string
         default: ""
+      execution_mode:
+        description: AUTO, INTRADAY_FAST/FAST, or FULL. AUTO selects fast only during the A-share market window.
+        required: false
+        type: string
+        default: AUTO
       enable_history_cache:
         description: Reuse daily-K history through the caller repository's GitHub Actions cache.
         required: false
@@ -101,7 +106,24 @@ jobs:
           fi
           echo "ENGINE_REVISION_VERIFIED sha=$actual"
 
+      - name: Resolve execution mode
+        id: execution-mode
+        shell: bash
+        env:
+          REQUESTED_MODE: ${{ inputs.execution_mode }}
+        run: |
+          mode="$(cd .engine && PYTHONPATH=scripts python3 - <<'PY'
+          import os
+          import performance_fast_path
+          import realtime_quotes_watchlist as base
+          print(performance_fast_path.resolve_mode(base, requested=os.environ.get("REQUESTED_MODE")))
+          PY
+          )"
+          echo "mode=${mode}" >> "$GITHUB_OUTPUT"
+          echo "EXECUTION_MODE_RESOLVED requested=${REQUESTED_MODE} mode=${mode}"
+
       - name: Install pinned event-fact parser
+        if: steps.execution-mode.outputs.mode == 'FULL'
         shell: bash
         run: python3 -m pip install --disable-pip-version-check --no-deps --require-hashes -r .engine/requirements-event-facts.txt
 
@@ -128,6 +150,7 @@ jobs:
         shell: bash
         env:
           MARKET_HISTORY_DIR: ${{ github.workspace }}/.engine/.reusable-history/history
+          LOOKLOOK_EXECUTION_MODE: ${{ steps.execution-mode.outputs.mode }}
         run: |
           cd .engine
           python3 scripts/realtime_quotes_watchlist_runner.py
