@@ -48,6 +48,8 @@ jobs:
         run: python3 scripts/test_fundamentals_schema.py
       - name: Run fundamentals cache continuity tests
         run: python3 scripts/test_fundamentals_cache_continuity.py
+      - name: Run fundamentals review hardening tests
+        run: python3 scripts/test_fundamentals_review_hardening.py
       - name: Run event fact continuity tests
         run: python3 scripts/test_event_fact_continuity.py
       - name: Run history read-after-write continuity tests
