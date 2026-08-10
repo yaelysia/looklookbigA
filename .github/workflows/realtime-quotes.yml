@@ -23,6 +23,7 @@ on:
       - "scripts/realtime_quotes_watchlist.py"
       - "scripts/realtime_quotes_watchlist_runner.py"
       - "scripts/performance_fast_path.py"
+      - "scripts/intraday_fast_tail.py"
       - "scripts/intraday_metrics.py"
       - "scripts/daily_k_context.py"
       - "scripts/history_store.py"
