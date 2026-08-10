@@ -1,0 +1,195 @@
+# INTRADAY_FAST：盘中低延迟执行模式
+
+`INTRADAY_FAST` 用于盘中需要快速决策的场景。它不是删减版行情抓取器，而是把“必须等待的实时信息”和“可以复用或延后的慢信息”分开，使非关键数据源失败时不会拖住实时 quote / minute / peer / index。
+
+## 模式选择
+
+主工作流和 reusable workflow 都支持：
+
+```text
+AUTO
+INTRADAY_FAST / FAST
+FULL
+```
+
+`AUTO` 使用项目现有的 A 股交易窗口判断：交易窗口内自动选择 `INTRADAY_FAST`，盘后自动选择 `FULL`。`workflow_dispatch` 可以显式覆盖；reusable workflow 使用 `execution_mode` 输入。
+
+## FAST 的关键路径
+
+FAST 必须等待：
+
+```text
+重点股 realtime quote
+重点股 minute series
+板块 peer quotes
+6 个主要指数
+官方公司事件 discovery
+本地 intraday / changes / metadata 计算
+```
+
+它们仍然接受现有 `live_price_guard`、Source Trust、Freshness SLA、quality/provenance 约束。FAST 只改变调度与等待策略，不允许旧数据冒充实时数据。
+
+### Detail stock 并发
+
+- 多只 detail stock 并发采集；
+- 单只 detail stock 内 quote 与 minute 并发；
+- detail / light peer / indices 三组并发。
+
+### 主要指数
+
+`FULL` 保持 Eastmoney + Tencent 双源一致性检查。
+
+`INTRADAY_FAST` 使用一次 Tencent 批量请求获取 6 个主要指数，避免等待 6 个 Eastmoney 单请求产生长尾。Tencent 仍是 Source Trust B；FAST snapshot 会显式记录：
+
+```text
+selected_source = Tencent
+fallback_used = true
+selection_reason = INTRADAY_FAST_TENCENT_BATCH
+consensus.status = SINGLE_SOURCE_FAST_PATH
+Eastmoney.status = SKIPPED_FAST_PATH
+```
+
+因此 FAST 不会把“单源快速指数”描述成双源共识。
+
+### Daily-K
+
+盘中已完成的日 K 本身不会分钟级变化，因此 FAST 优先复用历史缓存：
+
+- 当日已经成功验证过的 cache：`HIT`，0 次 daily-K 网络请求；
+- 旧 cache、失败 cache 或无法证明当日已验证：允许作为历史上下文，但状态为 `FAST_REUSE_UNVERIFIED`；metadata 会 `DEGRADED`，session freshness SLA 保持 `UNMEASURED`；
+- 冷启动没有足够历史 bars 时才进行网络 bootstrap。
+
+这延续了项目的实时价格边界：daily-K/cache 永远不能进入 `quote.latest`。
+
+### Market breadth
+
+全市场 breadth 很重要，但不是盘中当前价的 critical dependency。真实 Actions 测试证明，即使设置短 socket timeout，上游连接、多页查询或失败路径仍可能制造 >10 秒长尾。
+
+因此 FAST 的最终规则是：
+
+```text
+不在 decision critical path 发 breadth 网络请求
+        ↓
+只允许复用 same-session 且 age <= 600s 的完整 breadth cache
+        ↓
+没有可信 cache
+        ↓
+显式 ERROR / market_environment 降低 confidence
+```
+
+FAST 不会为了补 breadth 使用截断 sample，也不会跨 session 复用昨天的广度。
+
+`FULL` 仍执行完整 full-universe + 严格 fallback breadth 采集。
+
+### 公司公告 / 事件
+
+公告 discovery 不应因为追求速度而完全跳过。FAST 仍刷新 CNINFO 官方事件，但：
+
+- detail stocks 的事件查询并发；
+- FAST 请求使用较短网络预算；
+- 事件预取与行情采集同时开始，两者耗时重叠；
+- CNINFO PDF facts extraction 在 FAST 中 `DEFERRED`，FULL 再执行。
+
+因此盘中仍可以看到刚出现的官方事件，而 PDF 原文深层事实抽取不会阻塞实时决策。
+
+## Workflow 启动成本
+
+FAST 不安装 `pypdf`。`requirements-event-facts.txt` 的 pinned/hash-verified parser 只在 `FULL` 安装。
+
+主 realtime workflow 也不再同步执行 `persist-history` 第二个 job。实时 workflow 上传 `snapshot.json` / `market-history-state` 后即可结束；master 的历史持久化由独立 `Persist Market History` workflow 通过 `workflow_run` 在后台处理。
+
+后台持久化只监听 `master` 上成功完成的 `Realtime A-share Quotes`，不会处理 feature/PR 分支产物。
+
+## Performance telemetry
+
+每份最终 snapshot 会包含：
+
+```json
+{
+  "performance": {
+    "mode": "INTRADAY_FAST",
+    "decision_snapshot_ready_ms": 2810.956,
+    "target_ms": 10000,
+    "hard_limit_ms": 15000,
+    "within_target": true,
+    "within_hard_limit": true,
+    "stages_ms": {}
+  }
+}
+```
+
+`decision_snapshot_ready_ms` 在本地 history archive 与后台持久化之前记录，代表 LLM 进行本轮决策所需信息已经生成的时间。
+
+目标：
+
+```text
+FAST target       <= 10s
+FAST hard budget  <= 15s
+```
+
+这些是性能 SLO，不会覆盖 freshness SLA。即使运行很快，quote/minute 不满足实时性要求时仍然不能被当成 live current price。
+
+## 2026-08-10 真实 Actions benchmark
+
+优化前，master 的一次真实 09:30 盘中运行：
+
+```text
+base collection / snapshot       ~52.9s
+完整 runner 到 metadata         ~56.9s
+```
+
+主要长尾来自串行 detail、全市场 breadth 失败重试，以及慢数据 enrichment。
+
+第一版 FAST 曾出现：
+
+```text
+best run                         ~9.15s
+另一轮 breadth/index 长尾         ~16.54s
+```
+
+第二轮结果促使 breadth 完全退出 critical path，并将 FAST indices 改为单次 Tencent batch、events 与 market collection 重叠。
+
+最终 hardening 后，同一交易时段真实直接 workflow：
+
+```text
+base_collection                  2362 ms
+detail_stocks                    2359 ms
+indices_and_breadth              1583 ms
+company_events_prefetch          2216 ms  # 与 base_collection 重叠
+decision_snapshot_ready          2811 ms
+```
+
+对应数据仍满足：
+
+```text
+2 detail stocks live
+12/12 light peers
+6/6 indices
+company events OK
+live_price_guard OK
+critical_data_ready = true
+daily_k_network_requests = 0
+```
+
+同一最终代码的 reusable FAST selftest：
+
+```text
+base_collection                  2148 ms
+company_events_prefetch          4247 ms  # 与 market collection 重叠
+decision_snapshot_ready          4266 ms
+```
+
+因此当前实测已经从约 57 秒级降到约 3～5 秒 decision-ready；GitHub Actions checkout / artifact 上传仍会额外增加少量端到端 UI 等待时间。
+
+## FULL 模式没有被弱化
+
+FAST 是额外执行路径，不替代 FULL：
+
+- required `pre-merge-security-gate` 的 reusable merge-ref smoke 强制 `execution_mode: FULL`；
+- FULL 继续安装 hash-pinned PDF parser；
+- FULL 继续做双源指数共识、完整 breadth、公司事件 PDF facts 和完整 slow context；
+- push `Reusable Workflow Selftest` 额外强制 FAST，保证两条路径都持续被真实 Actions 覆盖。
+
+## 后续方向
+
+如果后续需要把“点击触发到 LLM 可读”继续压到稳定 1～3 秒以下，主要瓶颈将不再是 Python pipeline，而是 GitHub Actions 冷启动、checkout 与 artifact 传输。届时更适合把 realtime fast plane 放到 Cloudflare Worker / 常驻轻服务，而 GitHub Actions 保留为 FULL ETL、历史与验证平面。
