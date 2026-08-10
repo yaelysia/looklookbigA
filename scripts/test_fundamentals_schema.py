@@ -1,8 +1,14 @@
+import data_metadata
+import data_policy
+import data_policy_bridge
 import fundamentals_context as fundamentals
+import fundamentals_policy_bridge
 import fundamentals_quality_bridge
 import fundamentals_schema_bridge
 
 
+fundamentals_policy_bridge.install(data_policy)
+data_policy_bridge.install(data_metadata)
 fundamentals_quality_bridge.install(fundamentals)
 fundamentals_schema_bridge.install(fundamentals)
 
