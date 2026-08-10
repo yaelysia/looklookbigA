@@ -475,6 +475,19 @@ v1 明确：
 peer_comparison.status = DEFERRED_V1
 ```
 
-原因是当前重点是给目标股补完整基础财务上下文；如果为了板块财务横比在每轮实时 pipeline 给 10～20 个 peer 各抓四张报表，会显著扩大低频网络负担。
+原因是当前重点是给目标股补完整基础财务上下文；如果为了板块财务横比在每轮实时 pipeline 给 10～20 个 peer 各抓四张报表，会显著扩大低价值网络负担。
 
 后续应做成独立低频 peer fundamentals cache，而不是进入盘中 critical path。
+
+## Review hardening regression contract
+
+`test_fundamentals_review_hardening.py` 固定覆盖以下语义回归：
+
+- debt ratio 连续上升不得输出 `IMPROVING`；
+- ROE 只与上年同报告类型比较，不做 FY→Q1 相邻 level 判断；
+- 非空但更旧的 provider window 不得覆盖新 cache；
+- 同 latest period 的短历史窗口不得擦掉旧历史；
+- report period 回退不得触发 `NEW_FINANCIAL_REPORT_PERIOD`；
+- 四个连续 quarter object 中任一核心字段缺失时 TTM 不得 `OK`；
+- 健康 FAST cache hit 可保持 `metadata.quality=PASS`；
+- feature change 后必须统一 recount generic changes summary。
