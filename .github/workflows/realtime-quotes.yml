@@ -25,6 +25,9 @@ on:
       - "scripts/realtime_quotes_watchlist_runner.py"
       - "scripts/performance_fast_path.py"
       - "scripts/intraday_fast_tail.py"
+      - "scripts/event_fact_continuity.py"
+      - "scripts/history_continuity.py"
+      - "scripts/resolve_previous_realtime_run.py"
       - "scripts/intraday_metrics.py"
       - "scripts/daily_k_context.py"
       - "scripts/history_store.py"
@@ -48,6 +51,8 @@ on:
       - "scripts/test_config_security.py"
       - "scripts/test_workflow_security.py"
       - "scripts/test_intraday_fast.py"
+      - "scripts/test_event_fact_continuity.py"
+      - "scripts/test_history_continuity.py"
       - "scripts/test_quote_resilience.py"
       - "scripts/test_market_environment.py"
       - "scripts/test_data_metadata.py"
@@ -63,11 +68,16 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: realtime-a-share-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   fetch-quotes:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     permissions:
+      actions: read
       contents: read
 
     steps:
@@ -93,13 +103,51 @@ jobs:
         if: steps.execution-mode.outputs.mode == 'FULL'
         run: python3 -m pip install --disable-pip-version-check --no-deps --require-hashes -r requirements-event-facts.txt
 
-      - name: Checkout persistent market history
+      - name: Resolve exact previous successful master run
+        id: previous-realtime
+        if: github.ref_name == 'master'
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 scripts/resolve_previous_realtime_run.py
+
+      - name: Restore exact previous successful history artifact
+        id: previous-history-artifact
+        if: github.ref_name == 'master' && steps.previous-realtime.outputs.run_id != ''
+        continue-on-error: true
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: market-history-state
+          path: .previous-realtime-history
+          run-id: ${{ steps.previous-realtime.outputs.run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Checkout persistent market history fallback
+        if: github.ref_name != 'master' || steps.previous-realtime.outputs.run_id == '' || steps.previous-history-artifact.outcome != 'success'
         uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: market-data
           path: .market-data
           fetch-depth: 1
           persist-credentials: false
+
+      - name: Hydrate exact previous successful baseline
+        if: github.ref_name == 'master' && steps.previous-realtime.outputs.run_id != '' && steps.previous-history-artifact.outcome == 'success'
+        shell: bash
+        run: >-
+          python3 scripts/history_continuity.py hydrate
+          --current .market-data/history
+          --incoming .previous-realtime-history
+          --expected-run-id '${{ steps.previous-realtime.outputs.run_id }}'
+
+      - name: Verify fallback baseline is not behind previous success
+        if: github.ref_name == 'master' && steps.previous-realtime.outputs.run_id != '' && steps.previous-history-artifact.outcome != 'success'
+        shell: bash
+        run: >-
+          python3 scripts/history_continuity.py verify
+          --current .market-data/history
+          --expected-run-id '${{ steps.previous-realtime.outputs.run_id }}'
+          --expected-started-at '${{ steps.previous-realtime.outputs.started_at }}'
 
       - name: Fetch realtime A-share watchlist
         shell: bash
