@@ -1,5 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor
 
+import alpha_provider_contract
 import capital_flow_changes
 import capital_flow_context
 import capital_flow_history_bridge
@@ -159,6 +160,9 @@ if __name__ == "__main__":
             "changes_summary_final", changes_summary_finalizer.finalize_snapshot, base.SNAPSHOT_PATH
         )
         performance_fast_path.timed_call("data_metadata", data_metadata.finalize_snapshot, base.SNAPSHOT_PATH)
+        performance_fast_path.timed_call(
+            "alpha_provider_contract", alpha_provider_contract.finalize_snapshot, base.SNAPSHOT_PATH
+        )
 
         intraday_fast_tail.finalize_performance(base.SNAPSHOT_PATH)
         history_store.archive_final_snapshot(base.SNAPSHOT_PATH)
