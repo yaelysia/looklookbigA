@@ -36,6 +36,16 @@ jobs:
         run: python3 scripts/test_capital_flow_margin_provider.py
       - name: Run capital-flow review hardening tests
         run: python3 scripts/test_capital_flow_review_hardening.py
+      - name: Run fundamentals normalization tests
+        run: python3 scripts/test_fundamentals_context.py
+      - name: Run fundamentals normalized-period tests
+        run: python3 scripts/test_fundamentals_period.py
+      - name: Run fundamentals quality tests
+        run: python3 scripts/test_fundamentals_quality.py
+      - name: Run fundamentals LLM schema tests
+        run: python3 scripts/test_fundamentals_schema.py
+      - name: Run fundamentals cache continuity tests
+        run: python3 scripts/test_fundamentals_cache_continuity.py
       - name: Run event fact continuity tests
         run: python3 scripts/test_event_fact_continuity.py
       - name: Run history read-after-write continuity tests

@@ -16,8 +16,18 @@ import company_events
 import config_security
 import daily_k_context
 import data_metadata
+import data_policy
 import data_policy_bridge
 import event_fact_continuity
+import fundamentals_cache_continuity
+import fundamentals_changes
+import fundamentals_context
+import fundamentals_history_bridge
+import fundamentals_metadata_bridge
+import fundamentals_period_bridge
+import fundamentals_policy_bridge
+import fundamentals_quality_bridge
+import fundamentals_schema_bridge
 import history_continuity
 import history_store
 import intraday_fast_tail
@@ -31,25 +41,23 @@ import realtime_quotes_watchlist as base
 import transport_security
 
 
+fundamentals_policy_bridge.install(data_policy)
 data_policy_bridge.install(data_metadata)
 capital_flow_metadata_bridge.install(data_metadata)
+fundamentals_metadata_bridge.install(data_metadata)
 capital_flow_window_bridge.install(capital_flow_context)
 capital_flow_margin_bridge.install(capital_flow_context)
+fundamentals_cache_continuity.install(fundamentals_context)
+fundamentals_period_bridge.install(fundamentals_context)
+fundamentals_quality_bridge.install(fundamentals_context)
+fundamentals_schema_bridge.install(fundamentals_context)
 changes_metadata_bridge.install(data_metadata)
 changes_comparability.install(changes_since_previous)
-# Event refreshes may update the official envelope, but a weaker title/API
-# normalization of the same immutable CNINFO document must never erase facts
-# already extracted successfully from its official PDF. A failed later FULL
-# extraction also preserves the last successful facts while summary health is
-# still reported as PARTIAL.
 event_fact_continuity.install(company_events, company_event_facts)
 company_event_coverage.install(company_events)
-# Every archived history state carries the exact workflow run revision. This is
-# consumed by the next-run exact-artifact read barrier and monotonic writer.
 history_continuity.install_manifest_revision(history_store)
-# Capital-flow state is part of the next exact snapshot baseline without
-# changing the core history schema implementation.
 capital_flow_history_bridge.install(history_store)
+fundamentals_history_bridge.install(history_store)
 config_security.install(base)
 
 EXECUTION_MODE = performance_fast_path.configure_mode(base)
@@ -61,11 +69,7 @@ performance_fast_path.install_network_deadlines(base, quote_resilience, company_
 performance_fast_path.install_concurrent_detail(base)
 
 if performance_fast_path.is_fast():
-    # FAST indices are a single Tencent Trust-B batch. This avoids the long tail
-    # from waiting for six primary Eastmoney requests solely for consensus.
     intraday_fast_tail.install_fast_indices(base, quote_resilience)
-    # Breadth is non-critical: no breadth network I/O is allowed on the FAST
-    # decision path. Only same-session cache <=10m may be reused.
     market_environment.fetch_market_breadth = (
         lambda base_obj, now, indices=None: intraday_fast_tail.cache_only_market_breadth(
             base_obj, now, indices
@@ -77,8 +81,6 @@ market_environment.install(base)
 
 performance_fast_path.install_fast_daily_cache(history_store, base, daily_k_context)
 intraday_metrics.install(base)
-# Capture the same minute response already used by intraday metrics. No extra
-# minute network request is allowed for capital-flow analysis.
 capital_flow_context.install(base)
 live_price_guard.install(base)
 daily_k_context.install(base)
@@ -88,10 +90,6 @@ performance_fast_path.install_parallel_main(base)
 
 if __name__ == "__main__":
     runtime_config = base.load_config()
-
-    # Start official event discovery concurrently with market collection. Event
-    # freshness is preserved; only its waiting time is overlapped. PDF fact
-    # extraction remains the deferred secondary layer in FAST.
     event_pool = None
     event_future = None
     if performance_fast_path.is_fast():
@@ -132,6 +130,13 @@ if __name__ == "__main__":
         )
 
         performance_fast_path.timed_call(
+            "fundamentals",
+            fundamentals_context.finalize_snapshot,
+            base.SNAPSHOT_PATH,
+            base,
+            EXECUTION_MODE,
+        )
+        performance_fast_path.timed_call(
             "capital_flow",
             capital_flow_context.finalize_snapshot,
             base.SNAPSHOT_PATH,
@@ -144,10 +149,11 @@ if __name__ == "__main__":
         performance_fast_path.timed_call(
             "capital_flow_changes", capital_flow_changes.finalize_snapshot, base.SNAPSHOT_PATH
         )
+        performance_fast_path.timed_call(
+            "fundamentals_changes", fundamentals_changes.finalize_snapshot, base.SNAPSHOT_PATH
+        )
         performance_fast_path.timed_call("data_metadata", data_metadata.finalize_snapshot, base.SNAPSHOT_PATH)
 
-        # Measure user-visible decision readiness before local archive and the
-        # separate persist-history job.
         intraday_fast_tail.finalize_performance(base.SNAPSHOT_PATH)
         history_store.archive_final_snapshot(base.SNAPSHOT_PATH)
     finally:

@@ -8,7 +8,7 @@
 
 - **`v1`**：对外复用的稳定分支。推荐其他仓库、长期自动化任务固定使用 `@v1`。
 - **`master`**：持续开发分支，新功能先在这里完成 PR 和完整 CI 验证。
-- **`market-data`**：主仓库自动生成的日 K、公司事件、低频资金缓存和轻量盘中历史，不属于发布代码。
+- **`market-data`**：主仓库自动生成的日 K、公司事件、低频资金 / 财务缓存和轻量盘中历史，不属于发布代码。
 
 `v1` 不会自动跟随 `master`。只有当 `master` 的主行情工作流、reusable selftest 和安全检查都通过后，才通过 `master → v1` 的发布 PR 晋升。详细规则见 `docs/STABLE_V1.md`。
 
@@ -19,15 +19,16 @@
 - **行情源容错**：FULL 路径重点股和主要指数使用东方财富主源 + 腾讯备用源；主源失败或不可用时自动降级，并记录 provider 状态及双源价格一致性。FAST 的指数使用一次腾讯 Trust-B 批量请求并明确标记 `SINGLE_SOURCE_FAST_PATH`，不伪装为双源共识。
 - **当日分钟线**：腾讯分钟行情，生成 5 / 15 / 30 分钟动量、VWAP 位置、日内位置和量能强度。
 - **资金 / 成交行为上下文**：为 detail stock 输出 `capital_flow`，区分 `OBSERVED / DERIVED / OFFICIAL_DELAYED / VENDOR_ESTIMATE`；包含 1/5/15/30 分钟成交速度、上涨/下跌分钟成交结构、量价确认、方向性 pressure、承接/absorption、VWAP 行为、融资融券延迟数据和同行资金同步性。FAST 只复用现有分钟/quote/上一 exact snapshot 与融资缓存，不增加盘中资金网络依赖；语义与公式见 `docs/CAPITAL_FLOW.md`。
+- **基本面 / 财务趋势上下文**：为 detail stock 输出 `fundamentals`，保留公司披露累计口径，同时仅通过可验证的 `Q1 / H1-Q1 / Q3-H1 / FY-Q3` 恢复单季度，连续四个已验证单季度才计算 TTM；提供营收/利润/扣非利润、利润率、ROE、经营现金流质量、资产负债同比、趋势 evidence、财务背离和 `changes_since_previous`。FAST 只读财务缓存，FULL 才并发刷新 main/income/balance/cashflow 四张低频报表；详见 `docs/FUNDAMENTALS.md`。
 - **板块对照组**：支持轻量批量行情与组内均值、中位数、涨跌家数、领涨领跌、目标股相对强弱。
 - **市场环境与个股归因**：输出上证 / 沪深300 / 中证1000 / 深成 / 创业板 / 科创50、全市场广度、风格差、配置板块环境，以及重点股相对市场 / 板块的结构化 `driver_attribution`。FAST 的全市场 breadth 仅允许 same-session、≤600 秒缓存，否则显式降级；FULL 继续现场完整获取。
 - **20～60 日日 K 背景**：MA5 / MA10 / MA20 / MA60、ATR14、5 / 10 / 20 日高低、20 日收益、日线 swing high / low。
 - **支撑 / 压力上下文**：综合均线、昨日 OHLC、近期高低和日线拐点生成可解释的候选价位及共振强度。
 - **公告 / 公司事件**：从巨潮资讯官方披露源获取 detail stock 最近 7 / 30 / 90 日公告，输出稳定 `event_id`、事件类型、发布时间、官方 PDF、重要性、结构化事实、事件关联、缓存和 provider health；重要公告可从官方 PDF 原文做确定性事实抽取。已经成功得到的官方 PDF facts 在后续较弱 FAST refresh 或失败的 FULL re-enrichment 中不会被擦除。
-- **快照增量变化**：自动比较上一份完整归档快照，输出价格 / 成交额 / 分时 / 资金行为 / 相对强弱 / 板块排名 / 市场环境 / 新增或更新事件的 `before / after / delta` 和显著性原因。资金相对强弱只在 peer universe 可比时计算变化；融资数据只在新的披露交易日出现时报告变化。master Realtime 使用上一条成功 run 的 exact `market-history-state` artifact 作为优先 baseline，避免异步 branch persistence 导致跳过上一轮。
+- **快照增量变化**：自动比较上一份完整归档快照，输出价格 / 成交额 / 分时 / 资金行为 / 基本面 / 相对强弱 / 板块排名 / 市场环境 / 新增或更新事件的 `before / after / delta` 和显著性原因。资金相对强弱只在 peer universe 可比时计算变化；融资数据只在新的披露交易日出现时报告变化；基本面区分新报告期与同报告期修订。master Realtime 使用上一条成功 run 的 exact `market-history-state` artifact 作为优先 baseline，避免异步 branch persistence 导致跳过上一轮。
 - **统一 provenance / freshness / quality / trust / SLA**：重要原始数据和派生数据统一携带来源、时间、freshness、quality、Source Trust 和 Freshness SLA；顶层提供适合 LLM 消费的质量摘要。
-- **历史缓存**：主仓库使用独立 `market-data` 分支持久保存日 K、公司事件、融资融券低频缓存和轻量盘中快照；同一交易阶段重复分析时日 K 可以做到 0 次网络请求。后台 writer 使用 monotonic revision guard，旧 run 不允许覆盖新状态。
-- **实时价格保险**：历史缓存、历史快照、公司事件缓存、资金缓存和日 K 数据被禁止进入 `quote.latest`。盘中实时 quote 失效时，只允许降级到仍然 LIVE 的当日分钟价；两者都不新鲜时当前价直接标记不可用。
+- **历史缓存**：主仓库使用独立 `market-data` 分支持久保存日 K、公司事件、融资融券低频缓存、财务报表低频缓存和轻量盘中快照；同一交易阶段重复分析时日 K 可以做到 0 次网络请求。后台 writer 使用 monotonic revision guard，旧 run 不允许覆盖新状态。
+- **实时价格保险**：历史缓存、历史快照、公司事件缓存、资金缓存、财务缓存和日 K 数据被禁止进入 `quote.latest`。盘中实时 quote 失效时，只允许降级到仍然 LIVE 的当日分钟价；两者都不新鲜时当前价直接标记不可用。
 - **Reusable workflow 安全边界**：版本绑定到精确 workflow SHA、调用者配置做路径/大小/数量校验、第三方 Actions 固定 commit SHA、行情传输禁止 HTTP 降级、事件 PDF 解析依赖固定版本并固定 SHA256 hash。
 - **公共 Web 接口基础滥用防护**：`/` 和 `/quote` 通过 Cloudflare Rate Limiting binding 做服务端限流；限流 binding 不可用时 fail closed，另有 2 秒 isolate-local 短缓存仅用于合并重复上游行情请求。
 - **结构化产物**：每次运行生成 `snapshot.json`，重点面向 LLM 直接读取，尽量同时保留结论、原始依据、来源、时间、质量和降级状态。
@@ -36,11 +37,11 @@
 
 目前主要使用：
 
-- 东方财富：FULL 重点标的最新 quote、指数等实时行情主源、全市场列表 / breadth，以及融资融券披露数据的市场数据供应商入口；融资数据在 schema 中属于 `OFFICIAL_DELAYED`，但通过东方财富取得时 Source Trust 仍为 B，不伪装成交易所第一方来源；
+- 东方财富：FULL 重点标的最新 quote、指数等实时行情主源、全市场列表 / breadth、融资融券披露数据，以及公司财务报表的市场数据供应商入口；融资数据在 schema 中属于 `OFFICIAL_DELAYED`，财务报表属于 `FUNDAMENTALS`，但通过东方财富取得时 Source Trust 仍为 B，不伪装成交易所 / 公司第一方来源；
 - 腾讯：重点股 / 指数备用 quote、FAST 批量指数、分钟线、批量轻量行情、前复权日 K；
 - 东方财富日 K：腾讯日 K 不可用时的备用源；
 - 巨潮资讯（CNINFO）：detail stock 官方公司公告及官方 PDF 文档；
-- `market-data` / GitHub Actions cache/artifact：仅用于历史日 K、事件/资金低频缓存与历史分析上下文，不作为实时现价来源。
+- `market-data` / GitHub Actions cache/artifact：仅用于历史日 K、事件 / 资金 / 财务低频缓存与历史分析上下文，不作为实时现价来源。
 
 行情传输只允许 HTTPS。盘中数据会携带 `market_time_cst`、`lag_seconds` 和 `freshness`。重点标的还会生成 `current_price_guard`，明确记录本次当前价来自实时 quote、实时分钟线，还是已经不可用。
 
@@ -51,6 +52,7 @@
 - `docs/FRESHNESS_SLA.md`
 - `docs/INTRADAY_FAST.md`
 - `docs/CAPITAL_FLOW.md`
+- `docs/FUNDAMENTALS.md`
 
 ## 默认观察列表
 
@@ -78,7 +80,7 @@ config/quote_watchlist.json
 }
 ```
 
-`detail_codes` 会抓实时 quote、分钟线、日 K、官方公司事件，并生成资金/成交行为和完整分析上下文；`light_codes` / group member 主要用于批量板块对照。
+`detail_codes` 会抓实时 quote、分钟线、日 K、官方公司事件，并生成资金/成交行为、基本面与完整分析上下文；`light_codes` / group member 主要用于批量板块对照。
 
 `event_lookback_days` 允许 `7 / 30 / 90`，默认 `30`。它只控制 detail stock 的公告查询窗口，不影响行情实时性。
 
@@ -100,7 +102,7 @@ INTRADAY_FAST
 FULL
 ```
 
-`AUTO` 在 A 股交易窗口自动使用 FAST，其他时间使用 FULL。运行后生成 `realtime-snapshot / snapshot.json` 和 `market-history-state` artifact。
+`AUTO` 在 A 股交易窗口自动使用 FAST，其他时间使用 FULL。FAST 对融资融券和基本面都只读低频缓存，不增加这两类网络依赖；FULL 负责刷新。运行后生成 `realtime-snapshot / snapshot.json` 和 `market-history-state` artifact。
 
 master 每轮开始会优先恢复上一条成功 Realtime run 的 exact history artifact，因此上一轮是否已经异步 push 到 `market-data` 不会影响 `changes_since_previous` 的 baseline 连续性；随后独立 `Persist Market History` workflow 再以 monotonic 规则后台提交 branch。
 
@@ -143,6 +145,6 @@ reusable workflow 未显式覆盖 `source_ref` 时，会使用 `job.workflow_sha
 - CNINFO PDF 初始 URL、每次 redirect 和最终 URL 均限制在官方 HTTPS host；
 - required `pre-merge-security-gate` 在 `master` / `v1` 上无 paths 条件，任何 PR 都必须通过；
 - required reusable smoke 强制 FULL，push selftest 额外覆盖 FAST；
-- Safety tests 覆盖 live-price、source resilience、配置边界、资金行为语义与 FAST cache-only 边界、event coverage、PDF facts、Source Trust/Freshness SLA、event fact continuity 与 history read-after-write/monotonic persistence。
+- Safety tests 覆盖 live-price、source resilience、配置边界、资金行为与融资 provider 口径、财务累计→单季度归一化、TTM 连续性、财务趋势 evidence、partial-report cache continuity、event coverage、PDF facts、Source Trust/Freshness SLA、event fact continuity 与 history read-after-write/monotonic persistence。
 
 稳定分支与发布流程见 `docs/STABLE_V1.md`。
