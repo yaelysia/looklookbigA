@@ -9,6 +9,7 @@ import capital_flow_window_bridge
 import changes_comparability
 import changes_metadata_bridge
 import changes_since_previous
+import changes_summary_finalizer
 import company_event_coverage
 import company_event_facts
 import company_event_metadata
@@ -27,6 +28,7 @@ import fundamentals_metadata_bridge
 import fundamentals_period_bridge
 import fundamentals_policy_bridge
 import fundamentals_quality_bridge
+import fundamentals_review_hardening
 import fundamentals_schema_bridge
 import history_continuity
 import history_store
@@ -51,6 +53,7 @@ fundamentals_cache_continuity.install(fundamentals_context)
 fundamentals_period_bridge.install(fundamentals_context)
 fundamentals_quality_bridge.install(fundamentals_context)
 fundamentals_schema_bridge.install(fundamentals_context)
+fundamentals_review_hardening.install(fundamentals_context)
 changes_metadata_bridge.install(data_metadata)
 changes_comparability.install(changes_since_previous)
 event_fact_continuity.install(company_events, company_event_facts)
@@ -151,6 +154,9 @@ if __name__ == "__main__":
         )
         performance_fast_path.timed_call(
             "fundamentals_changes", fundamentals_changes.finalize_snapshot, base.SNAPSHOT_PATH
+        )
+        performance_fast_path.timed_call(
+            "changes_summary_final", changes_summary_finalizer.finalize_snapshot, base.SNAPSHOT_PATH
         )
         performance_fast_path.timed_call("data_metadata", data_metadata.finalize_snapshot, base.SNAPSHOT_PATH)
 
