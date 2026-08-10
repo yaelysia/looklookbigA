@@ -13,10 +13,18 @@ def _operation_identity_from_env():
     correlation = os.environ.get("LOOKLOOK_DISPATCH_CORRELATION_ID") or ""
     idempotency_key = os.environ.get("LOOKLOOK_IDEMPOTENCY_KEY") or ""
     command_digest = (os.environ.get("LOOKLOOK_COMMAND_DIGEST") or "").lower()
-    supplied = [bool(correlation), bool(idempotency_key), bool(command_digest)]
+    workflow_identity = os.environ.get("LOOKLOOK_WORKFLOW_IDENTITY") or ""
+    requested_mode = (os.environ.get("LOOKLOOK_REQUESTED_MODE") or "auto").lower()
+
+    supplied = [
+        bool(correlation),
+        bool(idempotency_key),
+        bool(command_digest),
+        bool(workflow_identity),
+    ]
     if any(supplied) and not all(supplied):
         raise RuntimeError(
-            "refresh operation identity must provide correlation, idempotency key and command digest together"
+            "refresh operation identity must provide correlation, idempotency key, command digest and workflow identity together"
         )
     if not all(supplied):
         return {
@@ -24,18 +32,31 @@ def _operation_identity_from_env():
             "dispatch_correlation_id": None,
             "idempotency_fingerprint": None,
             "command_digest": None,
+            "workflow_identity": None,
+            "material_execution_inputs": None,
         }
 
     alpha_refresh_contract.validate_identifier(correlation, "dispatch_correlation_id")
     alpha_refresh_contract.validate_identifier(idempotency_key, "idempotency_key")
-    alpha_refresh_contract.normalize_digest(command_digest)
+    digest = alpha_refresh_contract.normalize_digest(command_digest)
+    material_execution_inputs = {"mode": requested_mode}
+    expected_digest = alpha_refresh_contract.canonical_command_digest(
+        workflow_identity, material_execution_inputs
+    )
+    if digest != expected_digest:
+        raise RuntimeError(
+            f"refresh command digest mismatch: expected={expected_digest} provided={digest}"
+        )
+
     return {
         "present": True,
         "dispatch_correlation_id": correlation,
         "idempotency_fingerprint": alpha_refresh_contract.idempotency_fingerprint(
             idempotency_key
         ),
-        "command_digest": command_digest,
+        "command_digest": digest,
+        "workflow_identity": workflow_identity,
+        "material_execution_inputs": material_execution_inputs,
     }
 
 
