@@ -1,3 +1,7 @@
+import json
+from pathlib import Path
+
+
 CORE_TTM_FIELDS = (
     ("income", "revenue", "revenue"),
     ("income", "parent_net_profit", "parent_net_profit"),
@@ -112,12 +116,132 @@ def _point_in_time_direction(periods, getter, fundamentals_context):
     }
 
 
+def _row_report_date(row, fundamentals_context):
+    if not isinstance(row, dict):
+        return None
+    return fundamentals_context._date(row.get("REPORT_DATE") or row.get("REPORTDATE"))
+
+
+def _latest_period_coverage(raw, target_latest_period, fundamentals_context):
+    details = {}
+    missing = []
+    stale = []
+    for key in fundamentals_context.REPORTS:
+        rows = raw.get(key) if isinstance((raw or {}).get(key), list) else []
+        dates = [
+            value for value in (_row_report_date(row, fundamentals_context) for row in rows)
+            if value
+        ]
+        latest = max(dates) if dates else None
+        if latest is None:
+            state = "MISSING"
+            missing.append(key)
+        elif target_latest_period and latest < target_latest_period:
+            state = "STALE"
+            stale.append(key)
+        elif target_latest_period and latest == target_latest_period:
+            state = "CURRENT"
+        elif target_latest_period and latest > target_latest_period:
+            state = "AHEAD"
+        else:
+            state = "UNKNOWN"
+        details[key] = {
+            "row_count": len(rows),
+            "latest_period": latest,
+            "target_latest_period": target_latest_period,
+            "coverage": state,
+        }
+    complete = bool(target_latest_period) and all(
+        value.get("coverage") == "CURRENT" for value in details.values()
+    )
+    return {
+        "target_latest_period": target_latest_period,
+        "complete": complete,
+        "classes": details,
+        "missing_classes": sorted(missing),
+        "stale_classes": sorted(stale),
+    }
+
+
+def _coverage_reason_codes(coverage):
+    reasons = []
+    if not coverage.get("complete"):
+        reasons.append("INCOMPLETE_LATEST_REPORT_CLASS_COVERAGE")
+    reasons.extend(
+        f"MISSING_LATEST_REPORT_CLASS_{key.upper()}"
+        for key in coverage.get("missing_classes") or []
+    )
+    reasons.extend(
+        f"STALE_LATEST_REPORT_CLASS_{key.upper()}"
+        for key in coverage.get("stale_classes") or []
+    )
+    return reasons
+
+
+def _append_flags(metadata, values):
+    flags = list((metadata or {}).get("quality_flags") or [])
+    for value in values:
+        if value not in flags:
+            flags.append(value)
+    metadata["quality_flags"] = flags
+
+
+def _summary_health(context):
+    if not isinstance(context, dict):
+        return "UNAVAILABLE"
+    status = context.get("status")
+    quality = ((context.get("metadata") or {}).get("quality"))
+    if status in {"OK", "CACHED"} and quality == "PASS":
+        return "OK"
+    if status == "UNAVAILABLE":
+        return "UNAVAILABLE"
+    return "PARTIAL"
+
+
+def _recount_fundamentals_summary(snapshot):
+    detail = snapshot.get("detail_stocks") or {}
+    contexts = {
+        code: (item or {}).get("fundamentals")
+        for code, item in detail.items()
+        if isinstance((item or {}).get("fundamentals"), dict)
+    }
+    health = {code: _summary_health(value) for code, value in sorted(contexts.items())}
+    if health and all(value == "OK" for value in health.values()):
+        status = "OK"
+    elif health and all(value == "UNAVAILABLE" for value in health.values()):
+        status = "UNAVAILABLE"
+    elif health:
+        status = "PARTIAL"
+    else:
+        status = "UNAVAILABLE"
+    summary = snapshot.setdefault("fundamentals_summary", {})
+    summary["status"] = status
+    summary["detail_stock_count"] = len(contexts)
+    summary["status_by_code"] = {
+        code: value.get("status") for code, value in sorted(contexts.items())
+    }
+    summary["health_by_code"] = health
+    summary["quality_by_code"] = {
+        code: ((value.get("metadata") or {}).get("quality"))
+        for code, value in sorted(contexts.items())
+    }
+    return summary
+
+
 def install(fundamentals_context):
     if getattr(fundamentals_context, "_review_hardening_installed", False):
         return
 
     original_normalize = fundamentals_context._normalize_single_quarters
     original_build_context = fundamentals_context._build_context
+    original_fetch_report = fundamentals_context._fetch_report
+    original_finalize_snapshot = fundamentals_context.finalize_snapshot
+
+    def fetch_report(base, code, report_name, sort_column, page_size=40):
+        rows, url = original_fetch_report(base, code, report_name, sort_column, page_size)
+        if not rows:
+            raise RuntimeError("EMPTY_OR_MISSING_REPORT_RESULT")
+        return rows, url
 
     def normalize_single_quarters(periods):
         rows = original_normalize(periods)
@@ -198,6 +322,14 @@ def install(fundamentals_context):
         )
         coverage["ttm_available"] = ((context.get("ttm") or {}).get("status") == "OK")
 
+        latest_period = context.get("latest_report_period_end")
+        latest_coverage = _latest_period_coverage(raw, latest_period, fundamentals_context)
+        coverage["latest_report_period_complete"] = latest_coverage["complete"]
+        coverage["report_class_latest_period"] = latest_coverage["classes"]
+        coverage["missing_latest_report_classes"] = latest_coverage["missing_classes"]
+        coverage["stale_latest_report_classes"] = latest_coverage["stale_classes"]
+        coverage_reasons = _coverage_reason_codes(latest_coverage)
+
         trends = context.get("trends") or {}
         trends["roe"] = _same_period_trend(
             reported,
@@ -221,16 +353,28 @@ def install(fundamentals_context):
         if isinstance(context.get("balance_sheet"), dict):
             context["balance_sheet"]["debt_ratio_trend"] = trends["debt_ratio"]
 
+        metadata = context.get("metadata") or {}
+        provider_health = context.get("provider_health") or {}
+        if reported and not latest_coverage["complete"]:
+            if execution_mode == "FULL":
+                context["status"] = "PARTIAL"
+            provider_health["status"] = "PARTIAL"
+            existing_reasons = list(provider_health.get("reason_codes") or [])
+            for reason in coverage_reasons:
+                if reason not in existing_reasons:
+                    existing_reasons.append(reason)
+            provider_health["reason_codes"] = existing_reasons
+            metadata["quality"] = "DEGRADED"
+            metadata["confidence"] = "MEDIUM"
+            _append_flags(metadata, coverage_reasons)
+
         if context.get("status") == "CACHED":
-            metadata = context.get("metadata") or {}
-            report_rows = coverage.get("provider_report_rows") or {}
-            complete_classes = all(int(report_rows.get(key) or 0) > 0 for key in fundamentals_context.REPORTS)
             refresh_due = bool(((context.get("refresh_trigger") or {}).get("recommended")))
-            provider_errors = ((context.get("provider_health") or {}).get("errors") or [])
+            provider_errors = provider_health.get("errors") or []
             flags = list(metadata.get("quality_flags") or [])
             if "FAST_CACHE_ONLY" not in flags:
                 flags.append("FAST_CACHE_ONLY")
-            if complete_classes and not refresh_due and not provider_errors:
+            if latest_coverage["complete"] and not refresh_due and not provider_errors:
                 metadata["quality"] = "PASS"
                 metadata["confidence"] = "HIGH"
             else:
@@ -238,13 +382,30 @@ def install(fundamentals_context):
                 metadata["confidence"] = "MEDIUM"
                 if refresh_due and "PERIODIC_REPORT_EVENT_AFTER_CACHE" not in flags:
                     flags.append("PERIODIC_REPORT_EVENT_AFTER_CACHE")
-                if not complete_classes and "INCOMPLETE_REPORT_CLASS_COVERAGE" not in flags:
-                    flags.append("INCOMPLETE_REPORT_CLASS_COVERAGE")
+                for reason in coverage_reasons:
+                    if reason not in flags:
+                        flags.append(reason)
             metadata["quality_flags"] = flags
-            context["metadata"] = metadata
+
+        context["provider_health"] = provider_health
+        context["metadata"] = metadata
         return context
 
+    def finalize_snapshot(snapshot_path, base, execution_mode):
+        original_finalize_snapshot(snapshot_path, base, execution_mode)
+        path = Path(snapshot_path)
+        snapshot = json.loads(path.read_text(encoding="utf-8"))
+        summary = _recount_fundamentals_summary(snapshot)
+        path.write_text(json.dumps(snapshot, ensure_ascii=False, indent=2), encoding="utf-8")
+        print(
+            "FUNDAMENTALS_SUMMARY_FINAL "
+            f"status={summary.get('status')} health_by_code={summary.get('health_by_code')}",
+            flush=True,
+        )
+
+    fundamentals_context._fetch_report = fetch_report
     fundamentals_context._normalize_single_quarters = normalize_single_quarters
     fundamentals_context._ttm = ttm
     fundamentals_context._build_context = build_context
+    fundamentals_context.finalize_snapshot = finalize_snapshot
     fundamentals_context._review_hardening_installed = True
