@@ -10,7 +10,6 @@ fundamentals_cache_continuity.install(fundamentals)
 
 def test_partial_full_refresh_keeps_cached_missing_report_class():
     old_root = os.environ.get("MARKET_HISTORY_DIR")
-    original = fundamentals_cache_continuity.__dict__.get("_unused")
     with tempfile.TemporaryDirectory() as tmp:
         os.environ["MARKET_HISTORY_DIR"] = tmp
         fundamentals._write_json(fundamentals._cache_path("002558"), {
@@ -23,13 +22,10 @@ def test_partial_full_refresh_keeps_cached_missing_report_class():
             "source_urls": {"balance": "https://old.example/balance"},
         })
 
-        # Replace the already-wrapped function's captured upstream behavior by
-        # installing against a lightweight module clone is overkill; instead
-        # validate the same merge contract with the public cache/fetch wrapper
-        # through a temporary second module-like object.
         class Module:
             REPORTS = fundamentals.REPORTS
             _load_json = staticmethod(fundamentals._load_json)
+            _write_json = staticmethod(fundamentals._write_json)
             _cache_path = staticmethod(fundamentals._cache_path)
             _report_cache_continuity_installed = False
 
