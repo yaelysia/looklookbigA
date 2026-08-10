@@ -4,6 +4,7 @@ import capital_flow_changes
 import capital_flow_context
 import capital_flow_history_bridge
 import capital_flow_metadata_bridge
+import capital_flow_window_bridge
 import changes_comparability
 import changes_metadata_bridge
 import changes_since_previous
@@ -31,6 +32,7 @@ import transport_security
 
 data_policy_bridge.install(data_metadata)
 capital_flow_metadata_bridge.install(data_metadata)
+capital_flow_window_bridge.install(capital_flow_context)
 changes_metadata_bridge.install(data_metadata)
 changes_comparability.install(changes_since_previous)
 # Event refreshes may update the official envelope, but a weaker title/API
