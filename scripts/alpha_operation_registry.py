@@ -1,0 +1,464 @@
+import base64
+import json
+import os
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
+import uuid
+from copy import deepcopy
+from datetime import datetime, timedelta, timezone
+
+import alpha_refresh_contract
+
+
+REGISTRY_BRANCH = "provider-operations"
+REGISTRY_PATH = ".provider-operations/refresh-registry-v1.json"
+REGISTRY_SCHEMA = 1
+DISPATCH_LEASE_SECONDS = 1800
+MAX_CAS_ATTEMPTS = 8
+
+
+class RegistryError(RuntimeError):
+    pass
+
+
+class RegistryConflict(RegistryError):
+    pass
+
+
+class RegistryTransportError(RegistryError):
+    pass
+
+
+def utc_now():
+    return datetime.now(timezone.utc)
+
+
+def iso(dt):
+    return dt.astimezone(timezone.utc).isoformat()
+
+
+def parse_iso(value):
+    if not value:
+        return None
+    return datetime.fromisoformat(str(value).replace("Z", "+00:00"))
+
+
+def empty_registry():
+    return {
+        "schema_version": REGISTRY_SCHEMA,
+        "kind": "looklookbigA-alpha-refresh-registry",
+        "updated_at": None,
+        "operations": {},
+    }
+
+
+def _operation_id(idem_fp, command_digest, workflow_identity):
+    import hashlib
+
+    payload = f"{idem_fp}\n{command_digest}\n{workflow_identity}".encode("utf-8")
+    return "op_" + hashlib.sha256(payload).hexdigest()[:32]
+
+
+def _validate_command(workflow_identity, material_execution_inputs, command_digest):
+    digest = alpha_refresh_contract.normalize_digest(command_digest)
+    expected = alpha_refresh_contract.canonical_command_digest(
+        workflow_identity, material_execution_inputs
+    )
+    if digest != expected:
+        raise RegistryConflict(
+            f"command_digest mismatch: expected={expected} provided={digest}"
+        )
+    return digest
+
+
+def _find_by_correlation(registry, correlation):
+    for record in (registry.get("operations") or {}).values():
+        if correlation in (record.get("correlation_ids") or []):
+            return record
+    return None
+
+
+def _find_by_idempotency(registry, idem_fp):
+    for record in (registry.get("operations") or {}).values():
+        if record.get("idempotency_fingerprint") == idem_fp:
+            return record
+    return None
+
+
+def _record_matches(record, idem_fp, digest, workflow_identity):
+    return (
+        record.get("idempotency_fingerprint") == idem_fp
+        and record.get("command_digest") == digest
+        and record.get("workflow_identity") == workflow_identity
+    )
+
+
+def reserve_state(
+    registry,
+    *,
+    dispatch_correlation_id,
+    idempotency_key,
+    command_digest,
+    workflow_identity,
+    material_execution_inputs,
+    owner_token=None,
+    now=None,
+):
+    now = now or utc_now()
+    correlation = alpha_refresh_contract.validate_identifier(
+        dispatch_correlation_id, "dispatch_correlation_id"
+    )
+    alpha_refresh_contract.validate_identifier(idempotency_key, "idempotency_key")
+    idem_fp = alpha_refresh_contract.idempotency_fingerprint(idempotency_key)
+    digest = _validate_command(
+        workflow_identity, material_execution_inputs, command_digest
+    )
+    owner_token = owner_token or str(uuid.uuid4())
+
+    result = deepcopy(registry or empty_registry())
+    operations = result.setdefault("operations", {})
+
+    by_corr = _find_by_correlation(result, correlation)
+    if by_corr and not _record_matches(by_corr, idem_fp, digest, workflow_identity):
+        raise alpha_refresh_contract.RefreshIdentityConflict(
+            "dispatch_correlation_id is already bound to a different logical command"
+        )
+
+    by_key = _find_by_idempotency(result, idem_fp)
+    if by_key and not _record_matches(by_key, idem_fp, digest, workflow_identity):
+        raise alpha_refresh_contract.RefreshIdentityConflict(
+            "idempotency_key is already bound to a different logical command"
+        )
+
+    existing = by_corr or by_key
+    changed = False
+    if existing:
+        if correlation not in existing.setdefault("correlation_ids", []):
+            existing["correlation_ids"].append(correlation)
+            existing["correlation_ids"].sort()
+            changed = True
+        run_id = existing.get("workflow_run_id")
+        if run_id:
+            result["updated_at"] = iso(now) if changed else result.get("updated_at")
+            return result, deepcopy(existing), changed, False
+
+        lease_until = parse_iso(existing.get("dispatch_lease_until"))
+        if lease_until and lease_until > now:
+            result["updated_at"] = iso(now) if changed else result.get("updated_at")
+            return result, deepcopy(existing), changed, False
+
+        existing["dispatch_owner_token"] = owner_token
+        existing["dispatch_lease_until"] = iso(
+            now + timedelta(seconds=DISPATCH_LEASE_SECONDS)
+        )
+        existing["dispatch_state"] = "RESERVED"
+        existing["updated_at"] = iso(now)
+        changed = True
+        result["updated_at"] = iso(now)
+        return result, deepcopy(existing), changed, True
+
+    operation_id = _operation_id(idem_fp, digest, workflow_identity)
+    record = {
+        "operation_id": operation_id,
+        "primary_correlation_id": correlation,
+        "correlation_ids": [correlation],
+        "idempotency_fingerprint": idem_fp,
+        "command_digest": digest,
+        "workflow_identity": workflow_identity,
+        "material_execution_inputs": material_execution_inputs,
+        "dispatch_state": "RESERVED",
+        "dispatch_owner_token": owner_token,
+        "dispatch_lease_until": iso(
+            now + timedelta(seconds=DISPATCH_LEASE_SECONDS)
+        ),
+        "workflow_run_id": None,
+        "workflow_run_url": None,
+        "workflow_head_sha": None,
+        "workflow_run_attempt": None,
+        "created_at": iso(now),
+        "updated_at": iso(now),
+    }
+    operations[operation_id] = record
+    result["updated_at"] = iso(now)
+    return result, deepcopy(record), True, True
+
+
+def claim_run_state(
+    registry,
+    *,
+    dispatch_correlation_id,
+    idempotency_key,
+    command_digest,
+    workflow_identity,
+    material_execution_inputs,
+    workflow_run_id,
+    workflow_run_url=None,
+    workflow_head_sha=None,
+    workflow_run_attempt=None,
+    now=None,
+):
+    now = now or utc_now()
+    correlation = alpha_refresh_contract.validate_identifier(
+        dispatch_correlation_id, "dispatch_correlation_id"
+    )
+    idem_fp = alpha_refresh_contract.idempotency_fingerprint(idempotency_key)
+    digest = _validate_command(
+        workflow_identity, material_execution_inputs, command_digest
+    )
+    result = deepcopy(registry or empty_registry())
+    record = _find_by_correlation(result, correlation)
+    if not record:
+        raise RegistryConflict(
+            "workflow started without a durable pre-dispatch reservation"
+        )
+    if not _record_matches(record, idem_fp, digest, workflow_identity):
+        raise alpha_refresh_contract.RefreshIdentityConflict(
+            "workflow run identity does not match the durable reservation"
+        )
+
+    run_id = int(workflow_run_id)
+    existing_run_id = record.get("workflow_run_id")
+    if existing_run_id is not None and int(existing_run_id) != run_id:
+        raise RegistryConflict(
+            f"duplicate workflow runs detected for one logical operation: existing={existing_run_id} new={run_id}"
+        )
+
+    record["workflow_run_id"] = run_id
+    record["workflow_run_url"] = workflow_run_url
+    record["workflow_head_sha"] = workflow_head_sha
+    record["workflow_run_attempt"] = (
+        int(workflow_run_attempt) if workflow_run_attempt not in (None, "") else None
+    )
+    record["dispatch_state"] = "DISPATCHED"
+    record["dispatch_owner_token"] = None
+    record["dispatch_lease_until"] = None
+    record["updated_at"] = iso(now)
+    result["updated_at"] = iso(now)
+    return result, deepcopy(record), True
+
+
+def resolve_state(
+    registry,
+    *,
+    dispatch_correlation_id,
+    idempotency_key,
+    command_digest,
+    workflow_identity,
+    material_execution_inputs,
+):
+    correlation = alpha_refresh_contract.validate_identifier(
+        dispatch_correlation_id, "dispatch_correlation_id"
+    )
+    idem_fp = alpha_refresh_contract.idempotency_fingerprint(idempotency_key)
+    digest = _validate_command(
+        workflow_identity, material_execution_inputs, command_digest
+    )
+    record = _find_by_correlation(registry or empty_registry(), correlation)
+    if not record:
+        return None
+    if not _record_matches(record, idem_fp, digest, workflow_identity):
+        raise alpha_refresh_contract.RefreshIdentityConflict(
+            "correlation resolves to a different logical command"
+        )
+    return deepcopy(record)
+
+
+class GitHubRegistryStore:
+    def __init__(self, repository, token, branch=REGISTRY_BRANCH, path=REGISTRY_PATH):
+        self.repository = repository
+        self.token = token
+        self.branch = branch
+        self.path = path
+        self.api = f"https://api.github.com/repos/{repository}"
+
+    def _request(self, method, url, payload=None, allow_404=False):
+        data = None
+        headers = {
+            "Accept": "application/vnd.github+json",
+            "Authorization": f"Bearer {self.token}",
+            "X-GitHub-Api-Version": "2022-11-28",
+            "User-Agent": "looklookbigA-alpha-refresh-contract",
+        }
+        if payload is not None:
+            data = json.dumps(payload).encode("utf-8")
+            headers["Content-Type"] = "application/json"
+        req = urllib.request.Request(url, method=method, data=data, headers=headers)
+        try:
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                raw = resp.read().decode("utf-8")
+                return resp.status, json.loads(raw) if raw else None
+        except urllib.error.HTTPError as exc:
+            raw = exc.read().decode("utf-8", errors="replace")
+            if allow_404 and exc.code == 404:
+                return 404, None
+            if exc.code in {409, 422}:
+                raise RegistryConflict(
+                    f"GitHub CAS conflict HTTP {exc.code}: {raw[:500]}"
+                ) from exc
+            raise RegistryTransportError(
+                f"GitHub API HTTP {exc.code}: {raw[:500]}"
+            ) from exc
+        except Exception as exc:
+            raise RegistryTransportError(f"GitHub API request failed: {exc}") from exc
+
+    def ensure_branch(self, base_sha):
+        quoted = urllib.parse.quote(f"heads/{self.branch}", safe="/")
+        status, _ = self._request(
+            "GET", f"{self.api}/git/ref/{quoted}", allow_404=True
+        )
+        if status != 404:
+            return
+        try:
+            self._request(
+                "POST",
+                f"{self.api}/git/refs",
+                {"ref": f"refs/heads/{self.branch}", "sha": base_sha},
+            )
+        except RegistryConflict:
+            status, _ = self._request(
+                "GET", f"{self.api}/git/ref/{quoted}", allow_404=True
+            )
+            if status == 404:
+                raise
+
+    def load(self):
+        encoded_path = urllib.parse.quote(self.path, safe="/")
+        query = urllib.parse.urlencode({"ref": self.branch})
+        status, obj = self._request(
+            "GET", f"{self.api}/contents/{encoded_path}?{query}", allow_404=True
+        )
+        if status == 404:
+            return empty_registry(), None
+        content = base64.b64decode(obj["content"]).decode("utf-8")
+        return json.loads(content), obj["sha"]
+
+    def save(self, registry, sha):
+        encoded_path = urllib.parse.quote(self.path, safe="/")
+        payload = {
+            "message": "Update Alpha refresh operation registry",
+            "content": base64.b64encode(
+                (json.dumps(registry, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+            ).decode("ascii"),
+            "branch": self.branch,
+        }
+        if sha:
+            payload["sha"] = sha
+        _, obj = self._request(
+            "PUT", f"{self.api}/contents/{encoded_path}", payload
+        )
+        return (obj.get("content") or {}).get("sha")
+
+    def mutate(self, mutator):
+        for attempt in range(MAX_CAS_ATTEMPTS):
+            registry, sha = self.load()
+            new_registry, record, changed, flag = mutator(registry)
+            if not changed:
+                return record, flag
+            try:
+                self.save(new_registry, sha)
+                return record, flag
+            except RegistryConflict:
+                if attempt + 1 >= MAX_CAS_ATTEMPTS:
+                    raise
+                time.sleep(0.05 * (attempt + 1))
+        raise RegistryConflict("registry CAS retry budget exhausted")
+
+
+def reserve_or_recover(store, **kwargs):
+    return store.mutate(lambda registry: reserve_state(registry, **kwargs))
+
+
+def claim_run(store, **kwargs):
+    record, _ = store.mutate(
+        lambda registry: (*claim_run_state(registry, **kwargs), False)
+    )
+    return record
+
+
+def _parse_material_inputs(raw):
+    value = json.loads(raw)
+    if not isinstance(value, dict):
+        raise RegistryError("material execution inputs must be a JSON object")
+    return value
+
+
+def _store_from_args(args):
+    token = os.environ.get(args.token_env)
+    if not token:
+        raise RegistryError(f"missing token in environment variable {args.token_env}")
+    return GitHubRegistryStore(args.repository, token, args.registry_branch)
+
+
+def main(argv=None):
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Durable Alpha refresh operation registry")
+    parser.add_argument("--repository", default=os.environ.get("GITHUB_REPOSITORY"))
+    parser.add_argument("--token-env", default="GITHUB_TOKEN")
+    parser.add_argument("--registry-branch", default=REGISTRY_BRANCH)
+    sub = parser.add_subparsers(dest="command", required=True)
+
+    def identity_args(p):
+        p.add_argument("--correlation", required=True)
+        p.add_argument("--idempotency-key", required=True)
+        p.add_argument("--command-digest", required=True)
+        p.add_argument("--workflow-identity", required=True)
+        p.add_argument("--material-inputs-json", required=True)
+
+    reserve = sub.add_parser("reserve")
+    identity_args(reserve)
+    reserve.add_argument("--base-sha", required=True)
+    reserve.add_argument("--owner-token", default=None)
+
+    claim = sub.add_parser("claim-run")
+    identity_args(claim)
+    claim.add_argument("--base-sha", required=True)
+    claim.add_argument("--run-id", required=True, type=int)
+    claim.add_argument("--run-url", default=None)
+    claim.add_argument("--head-sha", default=None)
+    claim.add_argument("--run-attempt", default=None)
+
+    resolve = sub.add_parser("resolve")
+    identity_args(resolve)
+
+    args = parser.parse_args(argv)
+    if not args.repository:
+        raise RegistryError("repository is required")
+    material = _parse_material_inputs(args.material_inputs_json)
+    store = _store_from_args(args)
+
+    if args.command in {"reserve", "claim-run"}:
+        store.ensure_branch(args.base_sha)
+
+    identity = {
+        "dispatch_correlation_id": args.correlation,
+        "idempotency_key": args.idempotency_key,
+        "command_digest": args.command_digest,
+        "workflow_identity": args.workflow_identity,
+        "material_execution_inputs": material,
+    }
+    if args.command == "reserve":
+        record, should_dispatch = reserve_or_recover(
+            store, owner_token=args.owner_token, **identity
+        )
+        print(json.dumps({"operation": record, "should_dispatch": should_dispatch}))
+    elif args.command == "claim-run":
+        record = claim_run(
+            store,
+            workflow_run_id=args.run_id,
+            workflow_run_url=args.run_url,
+            workflow_head_sha=args.head_sha,
+            workflow_run_attempt=args.run_attempt,
+            **identity,
+        )
+        print(json.dumps({"operation": record}))
+    else:
+        registry, _ = store.load()
+        record = resolve_state(registry, **identity)
+        print(json.dumps({"operation": record}))
+
+
+if __name__ == "__main__":
+    main()
