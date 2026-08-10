@@ -92,13 +92,57 @@ FAST 不会为了补 breadth 使用截断 sample，也不会跨 session 复用�
 
 因此盘中仍可以看到刚出现的官方事件，而 PDF 原文深层事实抽取不会阻塞实时决策。
 
-## Workflow 启动成本
+#### 官方 PDF facts 的单调性
+
+`DEFERRED` 只表示“本轮不重新解析 PDF”，不能意味着删除历史上已经成功获得的事实。对于相同 `event_id` 且能确认 `source_document_id`（或官方 document URL）未变化的 CNINFO immutable document：
+
+```text
+FULL 曾成功得到 ORIGINAL_PDF_TEXT facts
+        ↓
+FAST overlap refresh 只返回 TITLE/API facts
+        ↓
+保留已有 ORIGINAL_PDF_TEXT + document_extraction=OK
+        ↓
+不产生假的 changes_since_previous.events.updated
+```
+
+新的、不同 document 不继承旧 facts。FULL 后续若成功重新解析 PDF，可以替换 document fact layer；如果本次 FULL PDF 下载/解析失败，则本轮 `fact_enrichment` health 仍报告失败/部分降级，但上一次已经成功验证的 PDF facts 不会被擦成 `UNAVAILABLE`。
+
+## Workflow 启动成本与历史连续性
 
 FAST 不安装 `pypdf`。`requirements-event-facts.txt` 的 pinned/hash-verified parser 只在 `FULL` 安装。
 
-主 realtime workflow 也不再同步执行 `persist-history` 第二个 job。实时 workflow 上传 `snapshot.json` / `market-history-state` 后即可结束；master 的历史持久化由独立 `Persist Market History` workflow 通过 `workflow_run` 在后台处理。
+主 realtime workflow 不再同步执行 `persist-history` 第二个 job。实时 workflow 上传 `snapshot.json` / `market-history-state` 后即可结束；master 的历史持久化由独立 `Persist Market History` workflow 通过 `workflow_run` 在后台处理。
 
 后台持久化只监听 `master` 上成功完成的 `Realtime A-share Quotes`，不会处理 feature/PR 分支产物。
+
+### Read-after-write baseline barrier
+
+后台写入不能破坏 `changes_since_previous` 的连续性。master 上每次新的 Realtime run 开始时，会先解析“上一条成功的 Realtime A-share Quotes run”，优先直接下载那个 exact run 的 immutable `market-history-state` artifact，并用它作为本轮 `.market-data/history`。
+
+因此即使出现：
+
+```text
+Run A realtime = success
+Persist A 尚未 push market-data
+Run B 立即启动
+```
+
+Run B 仍然直接读取 Run A 的 exact artifact，`previous_snapshot_path` 指向 A，而不会退回 A-1。只有 exact artifact 已过期/下载失败时才回退 `market-data`；回退时必须用 run revision 或 legacy timestamp 证明 branch 状态至少不落后于上一成功 run，否则 fail closed。
+
+同一 branch 的 Realtime workflow 还使用 `cancel-in-progress=false` 的 concurrency barrier，避免多轮实时采集互相穿插。
+
+### Monotonic background writer
+
+`Persist Market History` 不再把 artifact 直接解压到 `history/`。它先把 incoming state 放入隔离目录，并 checkout 触发该 Realtime run 的 exact `head_sha`，使用对应版本的 `history_continuity.py` 比较：
+
+```text
+latest_runner_time_cst
++ latest_run_id
++ latest_run_attempt
+```
+
+snapshot 时间是主排序依据，run id / attempt 用于同时间 tie-break。只有 incoming state 严格更新时才允许替换 `market-data/history`；较旧或重复的 persistence 到达时直接 no-op。因此即使异步 writer 到达顺序反转，也不能把 manifest、event cache 或 daily-K cache 回滚。
 
 ## Performance telemetry
 
@@ -179,7 +223,7 @@ company_events_prefetch          4247 ms  # 与 market collection 重叠
 decision_snapshot_ready          4266 ms
 ```
 
-因此当前实测已经从约 57 秒级降到约 3～5 秒 decision-ready；GitHub Actions checkout / artifact 上传仍会额外增加少量端到端 UI 等待时间。
+因此当前实测已经从约 57 秒级降到约 3～5 秒 decision-ready；GitHub Actions checkout / artifact 上传，以及 master exact-baseline artifact 恢复，会额外增加少量端到端 UI 等待时间。
 
 ## FULL 模式没有被弱化
 
@@ -188,7 +232,8 @@ FAST 是额外执行路径，不替代 FULL：
 - required `pre-merge-security-gate` 的 reusable merge-ref smoke 强制 `execution_mode: FULL`；
 - FULL 继续安装 hash-pinned PDF parser；
 - FULL 继续做双源指数共识、完整 breadth、公司事件 PDF facts 和完整 slow context；
-- push `Reusable Workflow Selftest` 额外强制 FAST，保证两条路径都持续被真实 Actions 覆盖。
+- push `Reusable Workflow Selftest` 额外强制 FAST，保证两条路径都持续被真实 Actions 覆盖；
+- required Safety tests 额外覆盖 event fact monotonicity 和两轮 history read-after-write/乱序 writer 状态机。
 
 ## 后续方向
 
