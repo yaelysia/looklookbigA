@@ -1,0 +1,9 @@
+{
+  "kind": "looklookbigA-auto-worker-lease",
+  "state": "IDLE",
+  "token": null,
+  "work_item": null,
+  "acquired_at": null,
+  "lease_until": null,
+  "start_time": null
+}
