@@ -50,6 +50,8 @@ on:
       - "scripts/fundamentals_policy_bridge.py"
       - "scripts/fundamentals_quality_bridge.py"
       - "scripts/fundamentals_schema_bridge.py"
+      - "scripts/fundamentals_review_hardening.py"
+      - "scripts/changes_summary_finalizer.py"
       - "scripts/live_price_guard.py"
       - "scripts/quote_resilience.py"
       - "scripts/market_environment.py"
@@ -81,6 +83,7 @@ on:
       - "scripts/test_fundamentals_quality.py"
       - "scripts/test_fundamentals_schema.py"
       - "scripts/test_fundamentals_cache_continuity.py"
+      - "scripts/test_fundamentals_review_hardening.py"
       - "scripts/test_event_fact_continuity.py"
       - "scripts/test_history_continuity.py"
       - "scripts/test_changes_since_previous.py"
@@ -136,6 +139,8 @@ jobs:
         run: python3 scripts/test_fundamentals_schema.py
       - name: Run fundamentals cache continuity tests
         run: python3 scripts/test_fundamentals_cache_continuity.py
+      - name: Run fundamentals review hardening tests
+        run: python3 scripts/test_fundamentals_review_hardening.py
       - name: Run event fact continuity tests
         run: python3 scripts/test_event_fact_continuity.py
       - name: Run history read-after-write continuity tests
