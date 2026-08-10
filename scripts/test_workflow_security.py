@@ -47,6 +47,8 @@ def test_pre_merge_gate_is_unconditional_for_protected_branches():
     assert "- reusable-smoke" in text
     assert 'if: ${{ always() }}' in text
     assert "enable_history_cache: false" in text
+    assert "Run event fact continuity tests" in text
+    assert "Run history read-after-write continuity tests" in text
     print("PASS unconditional_pre_merge_security_gate")
 
 
@@ -106,14 +108,21 @@ def test_intraday_fast_workflow_contract():
     reusable = (WORKFLOW_DIR / "reusable-a-share-quotes.yml").read_text(encoding="utf-8")
     premerge = (WORKFLOW_DIR / "pre-merge-security-gate.yml").read_text(encoding="utf-8")
     selftest = (WORKFLOW_DIR / "reusable-selftest.yml").read_text(encoding="utf-8")
+    runner = Path("scripts/realtime_quotes_watchlist_runner.py").read_text(encoding="utf-8")
 
     assert "intraday_fast" in realtime
     assert "LOOKLOOK_EXECUTION_MODE" in realtime
     assert "steps.execution-mode.outputs.mode == 'FULL'" in realtime
     assert '"scripts/performance_fast_path.py"' in realtime
     assert '"scripts/intraday_fast_tail.py"' in realtime
+    assert '"scripts/event_fact_continuity.py"' in realtime
+    assert '"scripts/history_continuity.py"' in realtime
+    assert '"scripts/resolve_previous_realtime_run.py"' in realtime
     assert '"scripts/test_intraday_fast.py"' in realtime
     assert "persist-history:" not in realtime
+
+    assert "event_fact_continuity.install(company_events)" in runner
+    assert "history_continuity.install_manifest_revision(history_store)" in runner
 
     assert "execution_mode:" in reusable
     assert "default: AUTO" in reusable
@@ -122,13 +131,38 @@ def test_intraday_fast_workflow_contract():
 
     assert "execution_mode: FULL" in premerge
     assert "Run intraday fast-path behavior tests" in premerge
+    assert "Run event fact continuity tests" in premerge
+    assert "Run history read-after-write continuity tests" in premerge
     assert "execution_mode: INTRADAY_FAST" in selftest
     assert '"scripts/intraday_fast_tail.py"' in selftest
     assert "Run intraday fast-path behavior tests" in selftest
     print("PASS intraday_fast_workflow_contract")
 
 
-def test_background_history_persistence_is_master_only():
+def test_realtime_history_read_after_write_barrier():
+    text = (WORKFLOW_DIR / "realtime-quotes.yml").read_text(encoding="utf-8")
+    resolver = Path("scripts/resolve_previous_realtime_run.py").read_text(encoding="utf-8")
+
+    assert "actions: read" in text
+    assert "group: realtime-a-share-${{ github.ref }}" in text
+    assert "cancel-in-progress: false" in text
+    assert "Resolve exact previous successful master run" in text
+    assert "python3 scripts/resolve_previous_realtime_run.py" in text
+    assert "Restore exact previous successful history artifact" in text
+    assert "run-id: ${{ steps.previous-realtime.outputs.run_id }}" in text
+    assert "path: .previous-realtime-history" in text
+    assert "continue-on-error: true" in text
+    assert "python3 scripts/history_continuity.py hydrate" in text
+    assert "--incoming .previous-realtime-history" in text
+    assert "Verify fallback baseline is not behind previous success" in text
+    assert "python3 scripts/history_continuity.py verify" in text
+    assert "--expected-started-at" in text
+    assert "branch=master&status=success" in resolver
+    assert 'API_ROOT = "https://api.github.com"' in resolver
+    print("PASS realtime_exact_previous_run_read_barrier")
+
+
+def test_background_history_persistence_is_master_only_and_monotonic():
     text = (WORKFLOW_DIR / "persist-market-history.yml").read_text(encoding="utf-8")
     assert "workflow_run:" in text
     assert "- Realtime A-share Quotes" in text
@@ -140,7 +174,18 @@ def test_background_history_persistence_is_master_only():
     assert "actions: read" in text
     assert "contents: write" in text
     assert "cancel-in-progress: false" in text
-    print("PASS background_history_persistence_master_only")
+
+    # The incoming artifact is staged separately. It cannot overwrite history
+    # before the exact triggering engine revision applies the monotonic guard.
+    assert "path: .incoming-history" in text
+    assert "path: history" not in text
+    assert "ref: ${{ github.event.workflow_run.head_sha }}" in text
+    assert "path: .engine" in text
+    assert "python3 .engine/scripts/history_continuity.py persist" in text
+    assert "--current history" in text
+    assert "--incoming .incoming-history" in text
+    assert "--expected-run-id '${{ github.event.workflow_run.id }}'" in text
+    print("PASS background_history_persistence_master_only_monotonic")
 
 
 def main():
@@ -152,7 +197,8 @@ def main():
         test_event_pdf_parser_is_version_and_hash_pinned,
         test_event_pdf_redirects_stay_on_official_host,
         test_intraday_fast_workflow_contract,
-        test_background_history_persistence_is_master_only,
+        test_realtime_history_read_after_write_barrier,
+        test_background_history_persistence_is_master_only_and_monotonic,
     ]
     for test in tests:
         test()
