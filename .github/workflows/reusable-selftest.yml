@@ -11,17 +11,24 @@ on:
       - "docs/FRESHNESS_SLA.md"
       - "docs/CHANGES_SINCE_PREVIOUS.md"
       - "docs/COMPANY_EVENTS.md"
+      - "docs/INTRADAY_FAST.md"
       - "requirements-event-facts.txt"
       - "vite.config.ts"
       - ".github/workflows/reusable-a-share-quotes.yml"
       - ".github/workflows/reusable-selftest.yml"
       - ".github/workflows/pre-merge-security-gate.yml"
       - ".github/workflows/realtime-quotes.yml"
+      - ".github/workflows/persist-market-history.yml"
       - ".github/workflows/v1-smoke.yml"
       - ".github/dependabot.yml"
       - "config/quote_watchlist.json"
       - "scripts/realtime_quotes_watchlist.py"
       - "scripts/realtime_quotes_watchlist_runner.py"
+      - "scripts/performance_fast_path.py"
+      - "scripts/intraday_fast_tail.py"
+      - "scripts/event_fact_continuity.py"
+      - "scripts/history_continuity.py"
+      - "scripts/resolve_previous_realtime_run.py"
       - "scripts/intraday_metrics.py"
       - "scripts/daily_k_context.py"
       - "scripts/history_store.py"
@@ -47,6 +54,9 @@ on:
       - "scripts/test_market_environment.py"
       - "scripts/test_data_metadata.py"
       - "scripts/test_data_policy.py"
+      - "scripts/test_intraday_fast.py"
+      - "scripts/test_event_fact_continuity.py"
+      - "scripts/test_history_continuity.py"
       - "scripts/test_changes_since_previous.py"
       - "scripts/test_changes_comparability.py"
       - "scripts/test_company_events.py"
@@ -82,6 +92,12 @@ jobs:
         run: python3 scripts/test_data_metadata.py
       - name: Run source trust and freshness SLA tests
         run: python3 scripts/test_data_policy.py
+      - name: Run intraday fast-path behavior tests
+        run: python3 scripts/test_intraday_fast.py
+      - name: Run event fact continuity tests
+        run: python3 scripts/test_event_fact_continuity.py
+      - name: Run history read-after-write continuity tests
+        run: python3 scripts/test_history_continuity.py
       - name: Run changes-since-previous tests
         run: python3 scripts/test_changes_since_previous.py
       - name: Run changes comparability regression tests
@@ -100,6 +116,7 @@ jobs:
   reusable-selftest:
     uses: ./.github/workflows/reusable-a-share-quotes.yml
     with:
+      execution_mode: INTRADAY_FAST
       enable_history_cache: true
       cache_namespace: reusable-selftest
       snapshot_artifact_name: reusable-selftest-snapshot

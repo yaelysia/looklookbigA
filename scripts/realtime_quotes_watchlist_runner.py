@@ -1,3 +1,5 @@
+from concurrent.futures import ThreadPoolExecutor
+
 import changes_comparability
 import changes_metadata_bridge
 import changes_since_previous
@@ -9,88 +11,120 @@ import config_security
 import daily_k_context
 import data_metadata
 import data_policy_bridge
+import event_fact_continuity
+import history_continuity
 import history_store
+import intraday_fast_tail
 import intraday_metrics
 import live_price_guard
 import market_breadth_source
 import market_environment
+import performance_fast_path
 import quote_resilience
 import realtime_quotes_watchlist as base
 import transport_security
 
 
-# Attach source-authority and freshness-SLA policy to the shared metadata
-# contract before any downstream metadata adapters use data_metadata._metadata.
 data_policy_bridge.install(data_metadata)
-# Keep #34 integration additive: extend the already-reviewed #35 metadata layer
-# instead of carrying an older copy of data_metadata.py on this stacked branch.
 changes_metadata_bridge.install(data_metadata)
-# Tighten delta comparability without modifying the already-reviewed #37
-# provenance implementation. Cumulative turnover and peer-relative metrics are
-# only allowed to produce deltas when their comparison universes are confirmed.
 changes_comparability.install(changes_since_previous)
-# Historical announcement coverage must be complete before the event cache is
-# allowed to switch to ordinary recent-overlap incremental refresh.
+# Event refreshes may update the official envelope, but a weaker title/API
+# normalization of the same immutable CNINFO document must never erase facts
+# already extracted successfully from its official PDF. A failed later FULL
+# extraction also preserves the last successful facts while summary health is
+# still reported as PARTIAL.
+event_fact_continuity.install(company_events, company_event_facts)
 company_event_coverage.install(company_events)
-
-# Treat the watchlist as untrusted input before any network work starts.
-# This applies equally to the repository default config and reusable-workflow
-# caller/inline configs.
+# Every archived history state carries the exact workflow run revision. This is
+# consumed by the next-run exact-artifact read barrier and monotonic writer.
+history_continuity.install_manifest_revision(history_store)
 config_security.install(base)
 
-# Never downgrade a failed HTTPS market-data request to plaintext HTTP.
+EXECUTION_MODE = performance_fast_path.configure_mode(base)
+
 transport_security.install_quote_resilience(quote_resilience)
-
-# Extend the broad-market index set before the resilient index fetcher is
-# installed so Eastmoney + Tencent fallback applies to the extra references.
 market_environment.configure_indices(base, quote_resilience)
-
-# Install the quote-source resilience layer before downstream enrichers.
-# Current quotes/indices can fall back from Eastmoney to Tencent, while the
-# live-price guard still owns the final rule that stale/history data can never
-# become a usable current price.
 quote_resilience.install(base)
-# Keep collection and interpretation separate. The source refuses to turn a
-# truncated, gainers-sorted sample into fake market breadth.
-market_environment.fetch_market_breadth = market_breadth_source.fetch_market_breadth
-# Market breadth wraps the already-resilient index fetch. The breadth request
-# is diagnostic: failure degrades market_environment but does not break quote
-# generation or current-price safety.
+performance_fast_path.install_network_deadlines(base, quote_resilience, company_events)
+performance_fast_path.install_concurrent_detail(base)
+
+if performance_fast_path.is_fast():
+    # FAST indices are a single Tencent Trust-B batch. This avoids the long tail
+    # from waiting for six primary Eastmoney requests solely for consensus.
+    intraday_fast_tail.install_fast_indices(base, quote_resilience)
+    # Breadth is non-critical: no breadth network I/O is allowed on the FAST
+    # decision path. Only same-session cache <=10m may be reused.
+    market_environment.fetch_market_breadth = (
+        lambda base_obj, now, indices=None: intraday_fast_tail.cache_only_market_breadth(
+            base_obj, now, indices
+        )
+    )
+else:
+    market_environment.fetch_market_breadth = market_breadth_source.fetch_market_breadth
 market_environment.install(base)
-history_store.install_daily_k_cache(base, daily_k_context)
+
+performance_fast_path.install_fast_daily_cache(history_store, base, daily_k_context)
 intraday_metrics.install(base)
 live_price_guard.install(base)
 daily_k_context.install(base)
+performance_fast_path.install_fast_daily_metadata(data_metadata)
+performance_fast_path.install_parallel_main(base)
 
 
 if __name__ == "__main__":
     runtime_config = base.load_config()
-    base.main()
-    intraday_metrics.finalize_snapshot(base.SNAPSHOT_PATH)
-    daily_k_context.finalize_snapshot(base.SNAPSHOT_PATH)
 
-    # Prepare the previous-snapshot pointer, but do not advance the manifest
-    # until the current run has all enrichment layers.
-    history_store.finalize_snapshot(base.SNAPSHOT_PATH)
-    live_price_guard.finalize_snapshot(base.SNAPSHOT_PATH)
-    quote_resilience.finalize_snapshot(base.SNAPSHOT_PATH)
-    market_environment.finalize_snapshot(base.SNAPSHOT_PATH)
+    # Start official event discovery concurrently with market collection. Event
+    # freshness is preserved; only its waiting time is overlapped. PDF fact
+    # extraction remains the deferred secondary layer in FAST.
+    event_pool = None
+    event_future = None
+    if performance_fast_path.is_fast():
+        event_pool = ThreadPoolExecutor(max_workers=1)
+        event_future = event_pool.submit(
+            intraday_fast_tail.prefetch_company_events,
+            runtime_config,
+            company_events,
+        )
 
-    # Official company events are collected before delta analysis so stable
-    # event IDs participate in new/updated/closed changes_since_previous.
-    company_events.finalize_snapshot(base.SNAPSHOT_PATH, runtime_config)
-    # Important structured event types may use their official CNINFO PDF for
-    # deterministic fact extraction. Failure only degrades fact enrichment;
-    # the official event record itself remains available.
-    company_event_facts.finalize_snapshot(base.SNAPSHOT_PATH)
-    company_event_metadata.finalize_snapshot(base.SNAPSHOT_PATH)
+    try:
+        performance_fast_path.timed_call("base_collection", base.main)
+        performance_fast_path.timed_call("intraday_metrics", intraday_metrics.finalize_snapshot, base.SNAPSHOT_PATH)
+        performance_fast_path.timed_call("daily_k_context", daily_k_context.finalize_snapshot, base.SNAPSHOT_PATH)
+        performance_fast_path.timed_call("history_prepare", history_store.finalize_snapshot, base.SNAPSHOT_PATH)
+        performance_fast_path.timed_call("live_price_guard", live_price_guard.finalize_snapshot, base.SNAPSHOT_PATH)
+        performance_fast_path.timed_call("quote_resilience", quote_resilience.finalize_snapshot, base.SNAPSHOT_PATH)
+        performance_fast_path.timed_call("market_environment", market_environment.finalize_snapshot, base.SNAPSHOT_PATH)
 
-    # Compare against the last fully archived snapshot. This stays before the
-    # metadata pass so the new changes node receives the same provenance and
-    # quality contract as the rest of snapshot.json.
-    changes_since_previous.finalize_snapshot(base.SNAPSHOT_PATH)
-    data_metadata.finalize_snapshot(base.SNAPSHOT_PATH)
+        if performance_fast_path.is_fast():
+            prefetched = event_future.result()
+            performance_fast_path.timed_call(
+                "company_events_apply",
+                intraday_fast_tail.apply_prefetched_company_events,
+                base.SNAPSHOT_PATH,
+                prefetched,
+            )
+            print("COMPANY_EVENT_FACTS status=DEFERRED execution_mode=INTRADAY_FAST", flush=True)
+        else:
+            performance_fast_path.timed_call(
+                "company_events", company_events.finalize_snapshot, base.SNAPSHOT_PATH, runtime_config
+            )
+            performance_fast_path.timed_call(
+                "company_event_facts", company_event_facts.finalize_snapshot, base.SNAPSHOT_PATH
+            )
+        performance_fast_path.timed_call(
+            "company_event_metadata", company_event_metadata.finalize_snapshot, base.SNAPSHOT_PATH
+        )
 
-    # Only now is the current snapshot complete enough to become the next
-    # comparison baseline. Archive first, then advance manifest atomically.
-    history_store.archive_final_snapshot(base.SNAPSHOT_PATH)
+        performance_fast_path.timed_call(
+            "changes_since_previous", changes_since_previous.finalize_snapshot, base.SNAPSHOT_PATH
+        )
+        performance_fast_path.timed_call("data_metadata", data_metadata.finalize_snapshot, base.SNAPSHOT_PATH)
+
+        # Measure user-visible decision readiness before local archive and the
+        # separate persist-history job.
+        intraday_fast_tail.finalize_performance(base.SNAPSHOT_PATH)
+        history_store.archive_final_snapshot(base.SNAPSHOT_PATH)
+    finally:
+        if event_pool is not None:
+            event_pool.shutdown(wait=True)

@@ -30,6 +30,12 @@ jobs:
         run: python3 scripts/test_data_metadata.py
       - name: Run source trust and freshness SLA tests
         run: python3 scripts/test_data_policy.py
+      - name: Run intraday fast-path behavior tests
+        run: python3 scripts/test_intraday_fast.py
+      - name: Run event fact continuity tests
+        run: python3 scripts/test_event_fact_continuity.py
+      - name: Run history read-after-write continuity tests
+        run: python3 scripts/test_history_continuity.py
       - name: Run changes-since-previous tests
         run: python3 scripts/test_changes_since_previous.py
       - name: Run changes comparability regression tests
@@ -49,6 +55,7 @@ jobs:
     name: Reusable smoke
     uses: ./.github/workflows/reusable-a-share-quotes.yml
     with:
+      execution_mode: FULL
       enable_history_cache: false
       snapshot_artifact_name: pre-merge-security-gate-snapshot
       retention_days: 1
