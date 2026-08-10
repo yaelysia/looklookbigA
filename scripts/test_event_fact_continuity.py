@@ -1,3 +1,4 @@
+import copy
 import json
 import os
 import tempfile
@@ -5,6 +6,7 @@ from datetime import datetime
 
 import changes_since_previous
 import company_event_coverage
+import company_event_facts
 import company_events
 import event_fact_continuity
 
@@ -19,24 +21,9 @@ def _row(document_id="123456789", adjunct="finalpage/2026-08-09/abc.PDF"):
     }
 
 
-def _container(event):
-    return {
-        "status": "OK",
-        "source": "CNINFO",
-        "source_tier": "OFFICIAL",
-        "recent": [event],
-        "latest": event,
-        "upcoming": [],
-    }
-
-
-def test_full_enriched_cache_survives_fast_overlap_without_fake_update():
-    event_fact_continuity.install(company_events)
-    company_event_coverage.install(company_events)
-    now = datetime(2026, 8, 10, 10, 30, tzinfo=company_events.CST)
-    row = _row()
-    cached_event = company_events.normalize_announcement("002558", row, now)
-    cached_event["facts"] = {
+def _enriched_event(now, row=None):
+    event = company_events.normalize_announcement("002558", row or _row(), now)
+    event["facts"] = {
         "extraction_scope": "ORIGINAL_PDF_TEXT",
         "amounts": [],
         "percentages": [157.38, 183.12],
@@ -50,10 +37,30 @@ def test_full_enriched_cache_survives_fast_overlap_without_fake_update():
         "eps_max_yuan": 1.16,
         "document_extraction": {
             "status": "OK",
-            "source_url": cached_event["source_url"],
+            "source_url": event["source_url"],
             "parser": "pypdf",
         },
     }
+    return event
+
+
+def _container(event):
+    return {
+        "status": "OK",
+        "source": "CNINFO",
+        "source_tier": "OFFICIAL",
+        "recent": [event],
+        "latest": event,
+        "upcoming": [],
+    }
+
+
+def test_full_enriched_cache_survives_fast_overlap_without_fake_update():
+    event_fact_continuity.install(company_events, company_event_facts)
+    company_event_coverage.install(company_events)
+    now = datetime(2026, 8, 10, 10, 30, tzinfo=company_events.CST)
+    row = _row()
+    cached_event = _enriched_event(now, row)
 
     old_root = os.environ.get("MARKET_HISTORY_DIR")
     original_page = company_events._announcement_page
@@ -82,8 +89,6 @@ def test_full_enriched_cache_survives_fast_overlap_without_fake_update():
 
         def fake_page(code, org_id, start_date, end_date, page_num):
             calls.append((code, org_id, start_date, end_date, page_num))
-            # This is the FAST overlap representation: same immutable official
-            # document, but only title/API normalization is available.
             return [row], 1
 
         company_events._announcement_page = fake_page
@@ -118,14 +123,30 @@ def test_full_enriched_cache_survives_fast_overlap_without_fake_update():
         os.environ["MARKET_HISTORY_DIR"] = old_root
 
 
+def test_failed_full_refresh_keeps_last_successful_pdf_facts():
+    event_fact_continuity.install(company_events, company_event_facts)
+    now = datetime(2026, 8, 10, 10, 30, tzinfo=company_events.CST)
+    event = _enriched_event(now)
+    prior = copy.deepcopy(event["facts"])
+    original_download = company_event_facts._download_pdf
+
+    def fail_download(_url):
+        raise RuntimeError("synthetic PDF refresh failure")
+
+    company_event_facts._download_pdf = fail_download
+    try:
+        value, ok = company_event_facts.enrich_event(event)
+    finally:
+        company_event_facts._download_pdf = original_download
+
+    assert ok is False
+    assert value["facts"] == prior
+    assert value["facts"]["document_extraction"]["status"] == "OK"
+
+
 def test_different_document_does_not_inherit_old_pdf_facts():
     now = datetime(2026, 8, 10, 10, 30, tzinfo=company_events.CST)
-    cached = company_events.normalize_announcement("002558", _row("old-doc"), now)
-    cached["facts"] = {
-        "extraction_scope": "ORIGINAL_PDF_TEXT",
-        "document_extraction": {"status": "OK", "source_url": cached["source_url"], "parser": "pypdf"},
-        "profit_min_yuan": 100.0,
-    }
+    cached = _enriched_event(now, _row("old-doc"))
     fresh = dict(company_events.normalize_announcement("002558", _row("old-doc"), now))
     fresh["source_document_id"] = "new-doc"
     fresh["source_url"] = "https://static.cninfo.com.cn/finalpage/2026-08-10/new.PDF"
@@ -138,6 +159,7 @@ def test_different_document_does_not_inherit_old_pdf_facts():
 def main():
     tests = [
         test_full_enriched_cache_survives_fast_overlap_without_fake_update,
+        test_failed_full_refresh_keeps_last_successful_pdf_facts,
         test_different_document_does_not_inherit_old_pdf_facts,
     ]
     for test in tests:
