@@ -214,3 +214,30 @@ def apply_prefetched_company_events(snapshot_path, prefetched):
         f"prefetch_ms={prefetched.get('elapsed_ms')}",
         flush=True,
     )
+
+
+def finalize_performance(snapshot_path):
+    performance_fast_path.finalize_performance(snapshot_path)
+    if not performance_fast_path.is_fast():
+        return
+    path = Path(snapshot_path)
+    data = json.loads(path.read_text(encoding="utf-8"))
+    perf = data.get("performance") or {}
+    perf["fast_path_contract"] = {
+        "critical": ["realtime_quote", "minute_series", "peer_quotes", "indices"],
+        "detail_quotes": "Eastmoney/Tencent resilience retained with bounded request budgets",
+        "indices": "single Tencent Trust-B batch; dual-source consensus deferred to FULL",
+        "daily_k": "reuse current-day validated cache; otherwise explicit unverified fast reuse",
+        "market_breadth": (
+            "no network I/O; reuse same-session cache <= "
+            f"{performance_fast_path.FAST_BREADTH_CACHE_MAX_AGE_SECONDS}s or mark unavailable"
+        ),
+        "company_events": (
+            f"official CNINFO refresh in parallel with market collection; per-request budget "
+            f"{performance_fast_path.FAST_NETWORK_TIMEOUT_SECONDS}s"
+        ),
+        "pdf_facts": "deferred to FULL",
+        "history_persist": "outside decision-ready timing",
+    }
+    data["performance"] = perf
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
