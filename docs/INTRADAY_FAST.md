@@ -152,7 +152,7 @@ snapshot 时间是主排序依据，run id / attempt 用于同时间 tie-break�
 {
   "performance": {
     "mode": "INTRADAY_FAST",
-    "decision_snapshot_ready_ms": 2810.956,
+    "decision_snapshot_ready_ms": 2493.657,
     "target_ms": 10000,
     "hard_limit_ms": 15000,
     "within_target": true,
@@ -162,13 +162,13 @@ snapshot 时间是主排序依据，run id / attempt 用于同时间 tie-break�
 }
 ```
 
-`decision_snapshot_ready_ms` 在本地 history archive 与后台持久化之前记录，代表 LLM 进行本轮决策所需信息已经生成的时间。
+`decision_snapshot_ready_ms` 从 Python runner 启动到本轮决策数据完成，记录在本地 history archive 之前。master 的 exact-previous-run API 查询 / artifact restore 发生在 runner 启动前，因此不包含在这个字段中；它属于 GitHub Actions 端到端开销，后续应单独监控。
 
 目标：
 
 ```text
-FAST target       <= 10s
-FAST hard budget  <= 15s
+FAST engine target       <= 10s
+FAST engine hard budget  <= 15s
 ```
 
 这些是性能 SLO，不会覆盖 freshness SLA。即使运行很快，quote/minute 不满足实时性要求时仍然不能被当成 live current price。
@@ -193,21 +193,21 @@ best run                         ~9.15s
 
 第二轮结果促使 breadth 完全退出 critical path，并将 FAST indices 改为单次 Tencent batch、events 与 market collection 重叠。
 
-最终 hardening 后，同一交易时段真实直接 workflow：
+最终 continuity hardening 后的 exact-head reusable FAST selftest：
 
 ```text
-base_collection                  2362 ms
-detail_stocks                    2359 ms
-indices_and_breadth              1583 ms
-company_events_prefetch          2216 ms  # 与 base_collection 重叠
-decision_snapshot_ready          2811 ms
+base_collection                  2457 ms
+detail_stocks                    2454 ms
+indices_and_breadth              1414 ms
+company_events_prefetch          2077 ms  # 与 base_collection 重叠
+decision_snapshot_ready          2494 ms
 ```
 
 对应数据仍满足：
 
 ```text
-2 detail stocks live
-12/12 light peers
+detail stock live
+peer quotes complete
 6/6 indices
 company events OK
 live_price_guard OK
@@ -215,15 +215,7 @@ critical_data_ready = true
 daily_k_network_requests = 0
 ```
 
-同一最终代码的 reusable FAST selftest：
-
-```text
-base_collection                  2148 ms
-company_events_prefetch          4247 ms  # 与 market collection 重叠
-decision_snapshot_ready          4266 ms
-```
-
-因此当前实测已经从约 57 秒级降到约 3～5 秒 decision-ready；GitHub Actions checkout / artifact 上传，以及 master exact-baseline artifact 恢复，会额外增加少量端到端 UI 等待时间。
+因此 engine 决策路径仍稳定在约 2～5 秒；GitHub Actions checkout、master exact-baseline API/artifact 恢复、artifact 上传会额外增加端到端 UI 等待时间，但不会再通过慢行情/事件链把 runner 拖回几十秒。
 
 ## FULL 模式没有被弱化
 
@@ -237,4 +229,4 @@ FAST 是额外执行路径，不替代 FULL：
 
 ## 后续方向
 
-如果后续需要把“点击触发到 LLM 可读”继续压到稳定 1～3 秒以下，主要瓶颈将不再是 Python pipeline，而是 GitHub Actions 冷启动、checkout 与 artifact 传输。届时更适合把 realtime fast plane 放到 Cloudflare Worker / 常驻轻服务，而 GitHub Actions 保留为 FULL ETL、历史与验证平面。
+如果后续需要把“点击触发到 LLM 可读”继续压到稳定 1～3 秒以下，主要瓶颈将不再是 Python pipeline，而是 GitHub Actions 冷启动、checkout、exact-baseline restore 与 artifact 传输。届时更适合把 realtime fast plane 放到 Cloudflare Worker / 常驻轻服务，而 GitHub Actions 保留为 FULL ETL、历史与验证平面。
