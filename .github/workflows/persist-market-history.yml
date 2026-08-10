@@ -31,13 +31,29 @@ jobs:
           ref: market-data
           fetch-depth: 1
 
+      - name: Checkout exact realtime engine revision
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          path: .engine
+          fetch-depth: 1
+          persist-credentials: false
+
       - name: Restore generated history state from completed realtime run
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
           name: market-history-state
-          path: history
+          path: .incoming-history
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}
+
+      - name: Apply monotonic history update
+        shell: bash
+        run: >-
+          python3 .engine/scripts/history_continuity.py persist
+          --current history
+          --incoming .incoming-history
+          --expected-run-id '${{ github.event.workflow_run.id }}'
 
       - name: Persist market history
         shell: bash
@@ -46,7 +62,7 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add history
           if git diff --cached --quiet; then
-            echo "HISTORY_PERSIST no changes"
+            echo "HISTORY_PERSIST no changes (already current or incoming run is older)"
             exit 0
           fi
           git commit -m "Persist market history run ${{ github.event.workflow_run.id }}"
