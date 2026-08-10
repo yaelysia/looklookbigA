@@ -17,6 +17,11 @@ def sha256_file(path):
     return digest.hexdigest()
 
 
+def _env(name, fallback=None):
+    value = os.environ.get(name)
+    return value if value not in (None, "") else fallback
+
+
 def build_manifest(snapshot_path=DEFAULT_SNAPSHOT, artifact_name="realtime-snapshot"):
     snapshot_path = Path(snapshot_path)
     stat = snapshot_path.stat()
@@ -33,11 +38,19 @@ def build_manifest(snapshot_path=DEFAULT_SNAPSHOT, artifact_name="realtime-snaps
             "digest_source": "PROVIDER_COMPUTED",
             "workflow_run_id": os.environ.get("GITHUB_RUN_ID"),
             "workflow_run_attempt": os.environ.get("GITHUB_RUN_ATTEMPT"),
-            "producing_ref": os.environ.get("GITHUB_REF"),
-            "producing_ref_name": os.environ.get("GITHUB_REF_NAME"),
-            "producing_commit_sha": os.environ.get("GITHUB_SHA"),
-            "workflow_ref": os.environ.get("GITHUB_WORKFLOW_REF"),
-            "workflow_sha": os.environ.get("GITHUB_WORKFLOW_SHA"),
+            "producing_ref": _env("LOOKLOOK_PRODUCING_REF", os.environ.get("GITHUB_REF")),
+            "producing_ref_name": _env(
+                "LOOKLOOK_PRODUCING_REF_NAME", os.environ.get("GITHUB_REF_NAME")
+            ),
+            "producing_commit_sha": _env(
+                "LOOKLOOK_PRODUCING_COMMIT_SHA", os.environ.get("GITHUB_SHA")
+            ),
+            "workflow_ref": _env(
+                "LOOKLOOK_WORKFLOW_REF", os.environ.get("GITHUB_WORKFLOW_REF")
+            ),
+            "workflow_sha": _env(
+                "LOOKLOOK_WORKFLOW_SHA", os.environ.get("GITHUB_WORKFLOW_SHA")
+            ),
             "produced_at": datetime.now(timezone.utc).isoformat(),
         },
     }
