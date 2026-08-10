@@ -36,7 +36,8 @@ def scan_workflow_runs(repository, token, workflow_path, not_before=None):
     operation reservation window we can stop; every plausible run created
     after the durable reservation has already been inspected by correlation.
     """
-    encoded_workflow = urllib.parse.quote(workflow_path, safe="")
+    workflow_id = str(workflow_path).rsplit("/", 1)[-1]
+    encoded_workflow = urllib.parse.quote(workflow_id, safe="")
     api = f"https://api.github.com/repos/{repository}/actions/workflows/{encoded_workflow}/runs"
     floor = None
     if not_before:
