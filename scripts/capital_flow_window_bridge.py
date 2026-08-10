@@ -14,4 +14,17 @@ def install(capital_flow_context):
         }
 
     capital_flow_context._volume_structure = volume_structure
+
+    # This bridge is already installed by the production runner and unit tests.
+    # Reuse that stable hook to activate the review hardening without changing
+    # the hot-path orchestration order.
+    import capital_flow_changes
+    import capital_flow_review_hardening
+    import history_store
+    capital_flow_review_hardening.install(
+        capital_flow_context,
+        capital_flow_changes,
+        history_store,
+    )
+
     capital_flow_context._completed_window_semantics_installed = True
