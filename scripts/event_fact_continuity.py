@@ -54,14 +54,32 @@ def preserve_richer_facts(cached_events, fresh_events):
     return out
 
 
-def install(company_events):
-    if getattr(company_events, "_event_fact_continuity_installed", False):
-        return
-    original_merge = company_events._merge_events
+def install(company_events, company_event_facts=None):
+    if not getattr(company_events, "_event_fact_continuity_installed", False):
+        original_merge = company_events._merge_events
 
-    def merge_events(cached_events, fresh_events):
-        protected_fresh = preserve_richer_facts(cached_events, fresh_events)
-        return original_merge(cached_events, protected_fresh)
+        def merge_events(cached_events, fresh_events):
+            protected_fresh = preserve_richer_facts(cached_events, fresh_events)
+            return original_merge(cached_events, protected_fresh)
 
-    company_events._merge_events = merge_events
-    company_events._event_fact_continuity_installed = True
+        company_events._merge_events = merge_events
+        company_events._event_fact_continuity_installed = True
+
+    if company_event_facts is not None and not getattr(
+        company_event_facts, "_event_fact_failure_continuity_installed", False
+    ):
+        original_enrich = company_event_facts.enrich_event
+
+        def enrich_event(event):
+            had_success = _has_successful_pdf_facts(event)
+            prior_facts = copy.deepcopy((event or {}).get("facts") or {}) if had_success else None
+            value, ok = original_enrich(event)
+            if had_success and not ok and isinstance(value, dict):
+                # Current FULL refresh health is still reported as failed by the
+                # caller, but previously verified official-PDF facts remain the
+                # authoritative fact layer until a new successful extraction.
+                value["facts"] = prior_facts
+            return value, ok
+
+        company_event_facts.enrich_event = enrich_event
+        company_event_facts._event_fact_failure_continuity_installed = True
