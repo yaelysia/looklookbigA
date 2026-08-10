@@ -2,15 +2,16 @@ import json
 import os
 import tempfile
 from datetime import datetime, timezone, timedelta
-from pathlib import Path
 
 import capital_flow_changes
 import capital_flow_context as capital
+import capital_flow_window_bridge
 import data_metadata
 import data_policy_bridge
 
 
 data_policy_bridge.install(data_metadata)
+capital_flow_window_bridge.install(capital)
 CST = timezone(timedelta(hours=8))
 
 
@@ -49,6 +50,8 @@ def test_observed_turnover_and_directional_structure_are_not_vendor_flow():
     assert turnover["amount_rate_vs_baseline"] is not None
     assert structure["full_session"]["up_amount"] > 0
     assert structure["full_session"]["down_amount"] > 0
+    assert structure["last_30m"]["classified_minutes"] == 30
+    assert structure["last_15m"]["classified_minutes"] == 15
     assert "not true active buy/sell" in structure["full_session"]["semantic_note"]
 
 
@@ -81,6 +84,7 @@ def test_pressure_absorption_and_vwap_are_explainable_derived_metrics():
 def test_margin_fast_path_is_cache_only_and_truthfully_unverified():
     class Base:
         http_calls = 0
+
         @staticmethod
         def http_get(url):
             Base.http_calls += 1
