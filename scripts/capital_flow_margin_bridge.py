@@ -11,9 +11,9 @@ def install(capital_flow_context):
         params = {
             "reportName": capital_flow_context.MARGIN_REPORT,
             "columns": "ALL",
-            # RPTA_WEB_RZRQ_GGMX exposes SCODE and DATE. Use provider-native
-            # names here; aliases are only for normalized output parsing.
-            "filter": f"(SCODE='{code}')",
+            # RPTA_WEB_RZRQ_GGMX exposes SCODE and DATE. Its historical
+            # per-security filter grammar uses a double-quoted SCODE value.
+            "filter": f'(SCODE="{code}")',
             "sortColumns": "DATE",
             "sortTypes": "-1",
             "pageNumber": "1",
