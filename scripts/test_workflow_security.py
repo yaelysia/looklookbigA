@@ -106,6 +106,32 @@ def test_event_pdf_redirects_stay_on_official_host():
     print("PASS event_pdf_redirect_provenance_boundary")
 
 
+def test_intraday_fast_workflow_contract():
+    realtime = (WORKFLOW_DIR / "realtime-quotes.yml").read_text(encoding="utf-8")
+    reusable = (WORKFLOW_DIR / "reusable-a-share-quotes.yml").read_text(encoding="utf-8")
+    premerge = (WORKFLOW_DIR / "pre-merge-security-gate.yml").read_text(encoding="utf-8")
+    selftest = (WORKFLOW_DIR / "reusable-selftest.yml").read_text(encoding="utf-8")
+
+    assert "intraday_fast" in realtime
+    assert "LOOKLOOK_EXECUTION_MODE" in realtime
+    assert "steps.execution-mode.outputs.mode == 'FULL'" in realtime
+    assert '"scripts/performance_fast_path.py"' in realtime
+    assert '"scripts/test_intraday_fast.py"' in realtime
+
+    assert "execution_mode:" in reusable
+    assert "default: AUTO" in reusable
+    assert "LOOKLOOK_EXECUTION_MODE" in reusable
+    assert "steps.execution-mode.outputs.mode == 'FULL'" in reusable
+
+    # Protected-branch merge smoke must retain the complete path, while the
+    # push selftest gives the latency-sensitive path a real reusable run.
+    assert "execution_mode: FULL" in premerge
+    assert "Run intraday fast-path behavior tests" in premerge
+    assert "execution_mode: INTRADAY_FAST" in selftest
+    assert "Run intraday fast-path behavior tests" in selftest
+    print("PASS intraday_fast_workflow_contract")
+
+
 def main():
     tests = [
         test_actions_are_sha_pinned,
@@ -114,6 +140,7 @@ def main():
         test_tencent_transport_never_downgrades_to_http,
         test_event_pdf_parser_is_version_and_hash_pinned,
         test_event_pdf_redirects_stay_on_official_host,
+        test_intraday_fast_workflow_contract,
     ]
     for test in tests:
         test()
