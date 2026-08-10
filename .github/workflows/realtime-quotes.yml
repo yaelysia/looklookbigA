@@ -2,6 +2,16 @@ name: Realtime A-share Quotes
 
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: "Execution mode: auto selects intraday fast only during the A-share market window"
+        required: false
+        default: auto
+        type: choice
+        options:
+          - auto
+          - intraday_fast
+          - full
   push:
     paths:
       - ".github/workflows/realtime-quotes.yml"
@@ -12,6 +22,7 @@ on:
       - "requirements-event-facts.txt"
       - "scripts/realtime_quotes_watchlist.py"
       - "scripts/realtime_quotes_watchlist_runner.py"
+      - "scripts/performance_fast_path.py"
       - "scripts/intraday_metrics.py"
       - "scripts/daily_k_context.py"
       - "scripts/history_store.py"
@@ -34,6 +45,7 @@ on:
       - "scripts/prepare_reusable_config.py"
       - "scripts/test_config_security.py"
       - "scripts/test_workflow_security.py"
+      - "scripts/test_intraday_fast.py"
       - "scripts/test_quote_resilience.py"
       - "scripts/test_market_environment.py"
       - "scripts/test_data_metadata.py"
@@ -59,7 +71,24 @@ jobs:
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
+      - name: Resolve execution mode
+        id: execution-mode
+        shell: bash
+        env:
+          REQUESTED_MODE: ${{ github.event.inputs.mode || 'AUTO' }}
+        run: |
+          mode="$(PYTHONPATH=scripts python3 - <<'PY'
+          import os
+          import performance_fast_path
+          import realtime_quotes_watchlist as base
+          print(performance_fast_path.resolve_mode(base, requested=os.environ.get("REQUESTED_MODE")))
+          PY
+          )"
+          echo "mode=${mode}" >> "$GITHUB_OUTPUT"
+          echo "EXECUTION_MODE_RESOLVED requested=${REQUESTED_MODE} mode=${mode}"
+
       - name: Install pinned event-fact parser
+        if: steps.execution-mode.outputs.mode == 'FULL'
         run: python3 -m pip install --disable-pip-version-check --no-deps --require-hashes -r requirements-event-facts.txt
 
       - name: Checkout persistent market history
@@ -74,6 +103,7 @@ jobs:
         shell: bash
         env:
           MARKET_HISTORY_DIR: .market-data/history
+          LOOKLOOK_EXECUTION_MODE: ${{ steps.execution-mode.outputs.mode }}
         run: python3 scripts/realtime_quotes_watchlist_runner.py
 
       - name: Upload realtime snapshot
