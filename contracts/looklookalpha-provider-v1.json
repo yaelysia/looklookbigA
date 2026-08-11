@@ -118,6 +118,26 @@
       "FAILED",
       "CANCELLED"
     ],
+    "status_contract": {
+      "state_field": "operation_state",
+      "source_field": "operation_state_source",
+      "states": [
+        "ACCEPTED",
+        "QUEUED",
+        "RUNNING",
+        "SUCCEEDED",
+        "FAILED",
+        "CANCELLED"
+      ],
+      "accepted_mapping": {
+        "dispatch_state": "RESERVED",
+        "workflow_run_id": null,
+        "operation_state": "ACCEPTED",
+        "operation_state_source": "DURABLE_RESERVATION"
+      },
+      "run_state_source": "GITHUB_ACTIONS_RUN_API_BY_EXACT_WORKFLOW_RUN_ID",
+      "latest_run_lookup_allowed": false
+    },
     "latest_run_fallback_allowed": false,
     "ambiguous_dispatch_recovery": "FRESH_CORRELATION_SCAN_WITH_FULL_PROVIDER_OPERATION_IDENTITY_BEFORE_REDISPATCH",
     "same_key_same_digest": "RECOVER_SAME_OPERATION",
