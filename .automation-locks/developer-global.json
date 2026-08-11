@@ -1,13 +1,11 @@
 {
   "kind": "looklookbigA-auto-worker-lease",
-  "state": "IDLE",
-  "token": null,
-  "work_item": "issue-50/controllers-control-holder",
-  "acquired_at": "2026-08-11T22:01:59+00:00",
-  "lease_until": "2026-08-11T22:51:59+00:00",
-  "released_at": "2026-08-11T22:08:30+00:00",
-  "last_token": "auto-20260811T220159Z-50-controllers-a6f3c8d2",
-  "last_checkpoint": "ISSUE_50_CONTROLLERS_SUBMITTED",
-  "last_head_sha": "61fed01920410d0a799e8363ac968c4adde680fb",
-  "note": "Previous share-structure exact-head CI passed. Completed only the controllers/control-holder slice with explicit Eastmoney relationship provenance, no largest-holder inference, isolated section failures, FAST no-network deferral, and 7 focused deterministic tests. Current Pre-merge Security Gate run 31541037630 is in progress; next run inspects that exact-head result before starting only the top_holders period-history slice."
+  "state": "ACTIVE",
+  "token": "auto-20260811T230145Z-50-top-holders-7b24d9c1",
+  "work_item": "issue-50/top-holders-history",
+  "acquired_at": "2026-08-11T23:01:45+00:00",
+  "lease_until": "2026-08-11T23:51:45+00:00",
+  "start_head_sha": "61fed01920410d0a799e8363ac968c4adde680fb",
+  "checkpoint_target": "ISSUE_50_TOP_HOLDERS_SUBMITTED",
+  "note": "Previous exact-head controllers CI passed. This lease is limited to the top_holders report-period/history slice and focused tests; do not start institutional holdings, shareholder counts, plans, unlocks, pledges, signals, changes integration, or docs in this run."
 }
