@@ -219,7 +219,48 @@ files:
   alpha-artifact-manifest.json
 ```
 
-`alpha-artifact-manifest.json` 由 provider 生成，至少记录：
+实际上传后的 GitHub Actions artifact 身份不能由上传前的 manifest 猜测。统一使用：
+
+```text
+scripts/alpha_primary_artifact.py
+```
+
+resolver 必须由已经持久化/恢复出的 exact `workflow_run_id` 出发，仅查询：
+
+```text
+/actions/runs/<exact-workflow-run-id>/artifacts
+```
+
+然后对期望的 `artifact_name` 强制 `EXACTLY_ONE`。它返回的机器身份至少包括：
+
+- exact `workflow_run_id`；
+- GitHub `artifact_id` / `artifact_name`；
+- artifact API URL；
+- exact archive download URL；
+- artifact size；
+- GitHub artifact digest（若 API 提供）及来源；
+- artifact created/updated/expiry timestamps。
+
+resolver 不允许查询 latest run 或 latest artifact，也不允许在零个或多个同名 primary 中猜测。expired artifact、artifact 自带的 workflow-run 身份与 exact run 不一致、缺失 API/download locator 都必须 fail closed。
+
+`alpha-artifact-manifest.json` 仍由 provider 在上传前生成，用于绑定下载内容内部的 snapshot provenance。consumer 下载 resolver 返回的 **那一个 exact artifact archive** 后，必须再调用 validator 校验：
+
+```text
+python3 scripts/alpha_primary_artifact.py verify-archive ...
+```
+
+validator 会要求：
+
+- archive 中存在唯一且安全路径的 `alpha-artifact-manifest.json`；
+- manifest `primary_artifact_count == 1`；
+- manifest artifact name 与 resolver 身份一致；
+- manifest `workflow_run_id` 与 exact run 一致；
+- manifest 指定的 `snapshot.json` 必须存在；
+- 重新计算下载后 `snapshot.json` 的 SHA-256 并与 manifest digest 比对；
+- snapshot size 与 manifest 一致；
+- producing commit SHA 与 produced timestamp 可审计。
+
+`alpha-artifact-manifest.json` 至少记录：
 
 - `primary_artifact_count = 1`；
 - artifact name；
@@ -231,13 +272,16 @@ files:
 - workflow ref / workflow SHA；
 - produced timestamp。
 
-consumer 应下载 snapshot 后重新计算 digest 并与 manifest 对比。以下情况都必须视为 invalid，而不是猜测：
+以下情况都必须视为 invalid，而不是猜测：
 
-- 没有 primary snapshot；
-- 有多个冲突 primary artifact；
-- manifest 缺失或身份不一致；
+- exact run 没有匹配 primary artifact：`PRIMARY_ARTIFACT_MISSING`；
+- exact run 有多个同名 primary：`PRIMARY_ARTIFACT_AMBIGUOUS`；
+- primary 已 expired：`PRIMARY_ARTIFACT_EXPIRED`；
+- artifact 身份属于错误 workflow run：`PRIMARY_ARTIFACT_WRONG_RUN`；
+- manifest 缺失/无效/与 exact run 身份不一致；
+- snapshot 缺失；
 - digest mismatch / corruption；
-- artifact 来自错误 workflow run。
+- snapshot size mismatch。
 
 ## Frozen fixtures
 
@@ -257,6 +301,7 @@ fixture 用于冻结 schema/capability、Trust tier、Freshness SLA、lag dimens
 ```bash
 python3 scripts/test_alpha_provider_contract.py
 python3 scripts/test_alpha_semantic_command_identity.py
+python3 scripts/test_alpha_primary_artifact.py
 ```
 
 其中 semantic-command 回归明确验证：
@@ -275,6 +320,13 @@ provider-contract 回归还验证：
 - exact run 状态覆盖 `QUEUED / RUNNING / SUCCEEDED / FAILED / CANCELLED`；
 - exact run id 不匹配时 fail closed；
 - primary artifact/digest 与 workflow identity 必须可审计。
+
+primary-artifact 回归明确验证：
+
+- exact run 唯一 primary 可解析为 artifact id/name/API/download locator/size/digest metadata；
+- zero primary / multiple conflicting primary / expired / wrong-run 全部 fail closed；
+- 下载 archive 的 manifest + snapshot digest 可验证；
+- missing manifest、wrong-run manifest、digest corruption 全部 fail closed。
 
 这些回归进入 pre-merge security gate、reusable selftest 和 v1 smoke。稳定发布还必须保留 live-price guard、provenance / trust / freshness 与原有完整 smoke。
 
