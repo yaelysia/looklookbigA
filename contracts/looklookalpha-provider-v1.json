@@ -151,6 +151,41 @@
     "snapshot_path": "snapshot.json",
     "manifest_path": "alpha-artifact-manifest.json",
     "cardinality": "EXACTLY_ONE",
+    "resolver_entrypoint": "scripts/alpha_primary_artifact.py",
+    "resolution_scope": "GITHUB_ACTIONS_ARTIFACTS_BY_EXACT_WORKFLOW_RUN_ID",
+    "latest_artifact_lookup_allowed": false,
+    "resolved_identity_fields": [
+      "workflow_run_id",
+      "artifact_id",
+      "artifact_name",
+      "artifact_api_url",
+      "archive_download_url",
+      "artifact_size_bytes",
+      "artifact_digest",
+      "artifact_created_at",
+      "artifact_expires_at"
+    ],
+    "archive_validation": {
+      "manifest_required": true,
+      "manifest_kind": "looklookbigA-primary-artifact-manifest",
+      "manifest_workflow_run_id_must_match_exact_run": true,
+      "snapshot_digest_algorithm": "SHA-256",
+      "downloaded_snapshot_digest_source": "DOWNLOADED_CONTENT_VERIFIED",
+      "require_producing_commit_sha": true,
+      "require_produced_at": true
+    },
+    "failure_codes": [
+      "PRIMARY_ARTIFACT_MISSING",
+      "PRIMARY_ARTIFACT_AMBIGUOUS",
+      "PRIMARY_ARTIFACT_EXPIRED",
+      "PRIMARY_ARTIFACT_WRONG_RUN",
+      "PRIMARY_ARTIFACT_MANIFEST_MISSING",
+      "PRIMARY_ARTIFACT_MANIFEST_INVALID",
+      "PRIMARY_ARTIFACT_MANIFEST_IDENTITY_MISMATCH",
+      "PRIMARY_ARTIFACT_SNAPSHOT_MISSING",
+      "PRIMARY_ARTIFACT_DIGEST_MISMATCH",
+      "PRIMARY_ARTIFACT_SIZE_MISMATCH"
+    ],
     "digest_algorithm": "SHA-256",
     "digest_source": "PROVIDER_COMPUTED_OR_CONSUMER_VERIFIED"
   },
