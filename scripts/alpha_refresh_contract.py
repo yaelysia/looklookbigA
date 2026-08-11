@@ -3,6 +3,7 @@ import json
 import re
 
 
+SEMANTIC_COMMAND_DOMAIN = "looklookAlpha.refresh-command.v1"
 IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 DIGEST_RE = re.compile(r"^[0-9a-f]{64}$")
 RUN_NAME_RE = re.compile(
@@ -39,19 +40,49 @@ def normalize_digest(value):
     return value
 
 
-def canonical_command_digest(workflow_identity, material_execution_inputs):
-    payload = {
-        "workflow_identity": str(workflow_identity),
-        "material_execution_inputs": material_execution_inputs,
-    }
-    encoded = json.dumps(
-        payload,
+def digest_from_canonical_jcs(command_schema_version, canonical_body_jcs):
+    """Reference digest for already-RFC8785-canonicalized command bodies.
+
+    looklookbigA does not need to implement JCS for production dispatch. Alpha may
+    compute the semantic digest and supply it. This helper exists for fixtures
+    and cross-contract test vectors only.
+    """
+    version = str(command_schema_version or "")
+    if not version:
+        raise RefreshContractError("command_schema_version is required")
+    if isinstance(canonical_body_jcs, str):
+        body = canonical_body_jcs.encode("utf-8")
+    elif isinstance(canonical_body_jcs, (bytes, bytearray)):
+        body = bytes(canonical_body_jcs)
+    else:
+        raise RefreshContractError("canonical_body_jcs must be UTF-8 text or bytes")
+    payload = (
+        SEMANTIC_COMMAND_DOMAIN.encode("utf-8")
+        + b"\x00"
+        + version.encode("utf-8")
+        + b"\x00"
+        + body
+    )
+    return hashlib.sha256(payload).hexdigest()
+
+
+def canonical_command_digest(command_schema_version, canonical_command_body):
+    """Deterministic fixture helper.
+
+    Production provider paths treat command_digest as caller-supplied semantic
+    identity and never recompute it from the limited workflow inputs visible to
+    looklookbigA. For simple JSON fixtures this helper serializes deterministically
+    and applies the domain-separated digest formula; Alpha remains authoritative
+    for RFC8785/JCS canonicalization.
+    """
+    canonical = json.dumps(
+        canonical_command_body,
         ensure_ascii=False,
         sort_keys=True,
         separators=(",", ":"),
         allow_nan=False,
-    ).encode("utf-8")
-    return hashlib.sha256(encoded).hexdigest()
+    )
+    return digest_from_canonical_jcs(command_schema_version, canonical)
 
 
 def idempotency_fingerprint(idempotency_key):
