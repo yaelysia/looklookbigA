@@ -1,11 +1,13 @@
 {
   "kind": "looklookbigA-auto-worker-lease",
-  "state": "ACTIVE",
-  "token": "auto-20260811T031320Z-5c81d29e",
+  "state": "IDLE",
+  "token": null,
   "work_item": "pr-55/issue-54",
   "acquired_at": "2026-08-11T03:13:20+00:00",
   "lease_until": "2026-08-11T04:03:20+00:00",
-  "start_head_sha": "6bcaecb3e626639114679d544e0e45540de7151c",
-  "checkpoint_target": "OPERATION_STATUS_CONTRACT_GAP",
-  "note": "Recovery identity checkpoint CI is green. This lease is only for machine-exposed ACCEPTED operation-status mapping and regression coverage."
+  "released_at": "2026-08-11T03:20:30+00:00",
+  "last_token": "auto-20260811T031320Z-5c81d29e",
+  "last_checkpoint": "FIX_OPERATION_STATUS_SUBMITTED",
+  "last_head_sha": "4651a5a6872cd1e290c2ee563c74c682540a62f0",
+  "note": "OPERATION_STATUS_CONTRACT_GAP implementation and regression coverage submitted. Current-head CI is in progress; next run inspects CI and, if green, performs final reconciliation and marks PR Ready for Review while retaining MANUAL_GATE_REQUIRED."
 }
