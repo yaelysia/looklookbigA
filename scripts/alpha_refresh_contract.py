@@ -4,11 +4,12 @@ import re
 
 
 SEMANTIC_COMMAND_DOMAIN = "looklookAlpha.refresh-command.v1"
+OPERATION_IDENTITY_DOMAIN = "looklookbigA.refresh-operation-identity.v1"
 IDENTIFIER_RE = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 DIGEST_RE = re.compile(r"^[0-9a-f]{64}$")
 RUN_NAME_RE = re.compile(
     r"^alpha-refresh corr=(?P<corr>[A-Za-z0-9._:-]{1,128}) "
-    r"cmd=(?P<cmd>[0-9a-f]{64})$"
+    r"op=(?P<op>[0-9a-f]{64}) cmd=(?P<cmd>[0-9a-f]{64})$"
 )
 
 
@@ -90,12 +91,46 @@ def idempotency_fingerprint(idempotency_key):
     return hashlib.sha256(key.encode("utf-8")).hexdigest()[:16]
 
 
-def build_run_name(dispatch_correlation_id, idempotency_key_or_digest, command_digest=None):
+def operation_identity_fingerprint(
+    idempotency_key,
+    command_digest,
+    workflow_identity,
+    material_execution_inputs,
+):
+    """Hash the complete provider-visible dispatch identity without exposing the key.
+
+    This is intentionally distinct from the Alpha semantic command digest. It is
+    only a provider-side recovery discriminator proving that a candidate run was
+    dispatched with the same idempotency identity, semantic digest, exact workflow
+    identity and material provider-visible inputs as the durable reservation.
+    """
+    if not isinstance(material_execution_inputs, dict):
+        raise RefreshContractError("material_execution_inputs must be a JSON object")
+    payload = {
+        "idempotency_fingerprint": idempotency_fingerprint(idempotency_key),
+        "command_digest": normalize_digest(command_digest),
+        "workflow_identity": str(workflow_identity or ""),
+        "material_execution_inputs": material_execution_inputs,
+    }
+    if not payload["workflow_identity"]:
+        raise RefreshContractError("workflow_identity is required")
+    encoded = json.dumps(
+        payload,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+    return hashlib.sha256(
+        OPERATION_IDENTITY_DOMAIN.encode("utf-8") + b"\x00" + encoded
+    ).hexdigest()
+
+
+def build_run_name(dispatch_correlation_id, operation_fingerprint, command_digest):
     correlation = validate_identifier(dispatch_correlation_id, "dispatch_correlation_id")
-    digest = normalize_digest(
-        idempotency_key_or_digest if command_digest is None else command_digest
-    )
-    return f"alpha-refresh corr={correlation} cmd={digest}"
+    operation_fingerprint = normalize_digest(operation_fingerprint)
+    digest = normalize_digest(command_digest)
+    return f"alpha-refresh corr={correlation} op={operation_fingerprint} cmd={digest}"
 
 
 def parse_run_name(value):
@@ -117,15 +152,34 @@ def operation_state(run):
     return "FAILED"
 
 
+def _workflow_sha(workflow_identity):
+    value = str(workflow_identity or "")
+    if "@" not in value:
+        raise RefreshContractError("workflow_identity must include an exact @<sha> suffix")
+    sha = value.rsplit("@", 1)[1].lower()
+    if len(sha) != 40 or any(ch not in "0123456789abcdef" for ch in sha):
+        raise RefreshContractError("workflow_identity must end with an exact 40-hex SHA")
+    return sha
+
+
 def resolve_operation_by_correlation(
     runs,
     dispatch_correlation_id,
     idempotency_key,
     command_digest,
+    workflow_identity,
+    material_execution_inputs,
 ):
     correlation = validate_identifier(dispatch_correlation_id, "dispatch_correlation_id")
     idem = idempotency_fingerprint(idempotency_key)
     digest = normalize_digest(command_digest)
+    operation_fingerprint = operation_identity_fingerprint(
+        idempotency_key,
+        digest,
+        workflow_identity,
+        material_execution_inputs,
+    )
+    workflow_sha = _workflow_sha(workflow_identity)
 
     exact = []
     correlation_conflicts = []
@@ -135,16 +189,19 @@ def resolve_operation_by_correlation(
         )
         if not marker:
             continue
-        same_corr = marker["corr"] == correlation
+        if marker["corr"] != correlation:
+            continue
         same_digest = marker["cmd"] == digest
-        if same_corr and same_digest:
+        same_operation = marker["op"] == operation_fingerprint
+        same_workflow_sha = str(run.get("head_sha") or "").lower() == workflow_sha
+        if same_digest and same_operation and same_workflow_sha:
             exact.append(run)
-        elif same_corr and not same_digest:
+        else:
             correlation_conflicts.append(run)
 
     if correlation_conflicts:
         raise RefreshIdentityConflict(
-            "dispatch_correlation_id is already associated with a different command_digest"
+            "dispatch_correlation_id matched a run with contradictory provider operation identity"
         )
     if len(exact) > 1:
         raise RefreshOperationAmbiguous(
@@ -162,5 +219,8 @@ def resolve_operation_by_correlation(
         "status": operation_state(run),
         "dispatch_correlation_id": correlation,
         "idempotency_fingerprint": idem,
+        "operation_identity_fingerprint": operation_fingerprint,
         "command_digest": digest,
+        "workflow_identity": workflow_identity,
+        "material_execution_inputs": material_execution_inputs,
     }
