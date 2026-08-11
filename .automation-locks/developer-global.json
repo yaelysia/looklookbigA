@@ -1,13 +1,12 @@
 {
   "kind": "looklookbigA-auto-worker-lease",
-  "state": "IDLE",
-  "token": null,
-  "work_item": "pr-55/issue-54",
-  "acquired_at": "2026-08-11T10:04:37+00:00",
-  "lease_until": "2026-08-11T10:54:37+00:00",
-  "released_at": "2026-08-11T10:05:30+00:00",
-  "last_token": "auto-20260811T100437Z-9f7c2a18",
-  "last_checkpoint": "MANUAL_GATE_REQUIRED",
-  "last_head_sha": "81155b24a3ec8e6b4596b899af550b3b6b0918a7",
-  "note": "Exact-head independent review found no remaining code/CI blocker but requires manual handling because workflows and the stable provider/release boundary changed. PR #55 remains Ready and open; development automation must not merge or start another Issue until the manual gate is handled."
+  "state": "ACTIVE",
+  "token": "auto-20260811T132000Z-4d3f9a27",
+  "work_item": "issue-54/master-to-v1-promotion",
+  "acquired_at": "2026-08-11T13:20:00+00:00",
+  "lease_until": "2026-08-11T14:10:00+00:00",
+  "start_master_sha": "555213ea5ece24628b9e0acd550c9fd28e539a1e",
+  "start_v1_sha": "90aa41aa2990930d2046879bdb8907f4823b1787",
+  "checkpoint_target": "CREATE_V1_PROMOTION_PR",
+  "note": "Create only the master-to-v1 promotion PR for Issue #54, verify CI triggers, then release. Final promotion merge remains MANUAL_GATE_REQUIRED."
 }
