@@ -1,0 +1,207 @@
+{
+  "contract_name": "looklookalpha-provider",
+  "contract_version": 1,
+  "stable_ref": "v1",
+  "snapshot": {
+    "minimum_schema_version": 16,
+    "required_features": {
+      "intraday_structure_metrics": "v1",
+      "daily_k_context": "v1",
+      "live_price_guard": "v1",
+      "market_environment": "v1",
+      "data_provenance": "v1",
+      "changes_since_previous": "v1",
+      "company_events": "v1",
+      "capital_flow": "v1",
+      "fundamentals": "v1",
+      "alpha_provider_contract": "v1"
+    },
+    "required_top_level_objects": [
+      "detail_stocks",
+      "groups",
+      "indices",
+      "live_price_guard",
+      "market_environment",
+      "data_quality",
+      "changes_since_previous",
+      "company_events",
+      "capital_flow_summary",
+      "fundamentals_summary",
+      "provider_contract"
+    ],
+    "required_detail_objects": [
+      "quote",
+      "intraday",
+      "daily_context",
+      "events",
+      "capital_flow",
+      "fundamentals"
+    ]
+  },
+  "workflows": {
+    "realtime": ".github/workflows/realtime-quotes.yml",
+    "reusable": ".github/workflows/reusable-a-share-quotes.yml",
+    "engine_revision_binding": "EXACT_40_HEX_SHA_OR_CALLED_WORKFLOW_SHA"
+  },
+  "refresh_operation": {
+    "contract_version": 1,
+    "start_or_recover_entrypoint": "scripts/alpha_start_or_recover.py",
+    "registry_branch": "provider-operations",
+    "registry_path": ".provider-operations/refresh-registry-v1.json",
+    "dispatch_protocol": "DURABLE_RESERVATION_BEFORE_DISPATCH",
+    "semantic_command_digest": {
+      "domain": "looklookAlpha.refresh-command.v1",
+      "command_schema_version_field": "command_schema_version",
+      "canonicalization": "RFC8785_JCS",
+      "formula": "SHA256(domain || 0x00 || command_schema_version || 0x00 || RFC8785_JCS(canonical_command_body))",
+      "authority": "CALLER",
+      "provider_behavior": "VALIDATE_64_HEX_AND_PRESERVE",
+      "provider_runtime_recomputes_digest": false,
+      "fixture_helper_scope": "TEST_VECTORS_ONLY",
+      "canonical_body_fields": [
+        "provider_workflow_identity",
+        "requirements",
+        "subjects",
+        "temporal",
+        "execution_mode",
+        "material_provider_workflow_inputs",
+        "requested_payload_versions"
+      ],
+      "excluded_dispatch_fields": [
+        "dispatch_correlation_id",
+        "idempotency_key",
+        "deadline",
+        "submitted_time",
+        "caller_local_job_id",
+        "retry_attempt",
+        "local_persistence_object_id",
+        "local_persistence_revision",
+        "local_persistence_created_at"
+      ]
+    },
+    "provider_operation_identity": {
+      "domain": "looklookbigA.refresh-operation-identity.v1",
+      "purpose": "CRASH_RECOVERY_DISCRIMINATOR_NOT_SEMANTIC_COMMAND_IDENTITY",
+      "algorithm": "SHA-256",
+      "authority": "PROVIDER",
+      "returned_by": "start_or_recover",
+      "workflow_input": "operation_identity_fingerprint",
+      "fields": [
+        "idempotency_fingerprint",
+        "command_digest",
+        "workflow_identity",
+        "material_execution_inputs"
+      ],
+      "raw_idempotency_key_exposed": false,
+      "run_name_marker": "alpha-refresh corr=<correlation> op=<operation_identity_fingerprint> cmd=<command_digest>",
+      "recovery_requires_exact_workflow_head_sha": true,
+      "unverified_run_binding_allowed": false
+    },
+    "identity_fields": [
+      "dispatch_correlation_id",
+      "idempotency_key",
+      "operation_identity_fingerprint",
+      "command_digest",
+      "workflow_identity",
+      "material_execution_inputs"
+    ],
+    "terminal_states": [
+      "SUCCEEDED",
+      "FAILED",
+      "CANCELLED"
+    ],
+    "states": [
+      "ACCEPTED",
+      "QUEUED",
+      "RUNNING",
+      "SUCCEEDED",
+      "FAILED",
+      "CANCELLED"
+    ],
+    "status_contract": {
+      "state_field": "operation_state",
+      "source_field": "operation_state_source",
+      "states": [
+        "ACCEPTED",
+        "QUEUED",
+        "RUNNING",
+        "SUCCEEDED",
+        "FAILED",
+        "CANCELLED"
+      ],
+      "accepted_mapping": {
+        "dispatch_state": "RESERVED",
+        "workflow_run_id": null,
+        "operation_state": "ACCEPTED",
+        "operation_state_source": "DURABLE_RESERVATION"
+      },
+      "run_state_source": "GITHUB_ACTIONS_RUN_API_BY_EXACT_WORKFLOW_RUN_ID",
+      "latest_run_lookup_allowed": false
+    },
+    "latest_run_fallback_allowed": false,
+    "ambiguous_dispatch_recovery": "FRESH_CORRELATION_SCAN_WITH_FULL_PROVIDER_OPERATION_IDENTITY_BEFORE_REDISPATCH",
+    "same_key_same_digest": "RECOVER_SAME_OPERATION",
+    "same_key_different_digest": "CONFLICT",
+    "same_correlation_different_digest": "CORRELATION_MISMATCH",
+    "same_correlation_digest_wrong_operation_identity": "CONFLICT",
+    "material_inputs_mismatch_with_same_digest": "CONFLICT"
+  },
+  "primary_artifact": {
+    "name": "realtime-snapshot",
+    "snapshot_path": "snapshot.json",
+    "manifest_path": "alpha-artifact-manifest.json",
+    "cardinality": "EXACTLY_ONE",
+    "resolver_entrypoint": "scripts/alpha_primary_artifact.py",
+    "resolution_scope": "GITHUB_ACTIONS_ARTIFACTS_BY_EXACT_WORKFLOW_RUN_ID",
+    "exact_run_provenance_source": "GITHUB_ACTIONS_RUN_API_BY_EXACT_WORKFLOW_RUN_ID",
+    "latest_artifact_lookup_allowed": false,
+    "resolved_identity_fields": [
+      "workflow_run_id",
+      "workflow_run_head_sha",
+      "workflow_run_attempt",
+      "workflow_run_head_branch",
+      "workflow_path",
+      "artifact_id",
+      "artifact_name",
+      "artifact_api_url",
+      "archive_download_url",
+      "artifact_size_bytes",
+      "artifact_digest",
+      "artifact_created_at",
+      "artifact_expires_at"
+    ],
+    "archive_validation": {
+      "manifest_required": true,
+      "manifest_kind": "looklookbigA-primary-artifact-manifest",
+      "manifest_workflow_run_id_must_match_exact_run": true,
+      "manifest_producing_commit_sha_must_equal_exact_run_head_sha": true,
+      "manifest_workflow_run_attempt_must_equal_exact_run_attempt": true,
+      "manifest_producing_ref_name_must_match_exact_run_head_branch_when_present": true,
+      "manifest_workflow_ref_must_match_exact_run_workflow_path_when_present": true,
+      "snapshot_digest_algorithm": "SHA-256",
+      "downloaded_snapshot_digest_source": "DOWNLOADED_CONTENT_VERIFIED",
+      "require_producing_commit_sha": true,
+      "require_produced_at": true
+    },
+    "failure_codes": [
+      "PRIMARY_ARTIFACT_MISSING",
+      "PRIMARY_ARTIFACT_AMBIGUOUS",
+      "PRIMARY_ARTIFACT_EXPIRED",
+      "PRIMARY_ARTIFACT_WRONG_RUN",
+      "PRIMARY_ARTIFACT_RUN_PROVENANCE_MISSING",
+      "PRIMARY_ARTIFACT_PROVENANCE_MISMATCH",
+      "PRIMARY_ARTIFACT_MANIFEST_MISSING",
+      "PRIMARY_ARTIFACT_MANIFEST_INVALID",
+      "PRIMARY_ARTIFACT_MANIFEST_IDENTITY_MISMATCH",
+      "PRIMARY_ARTIFACT_SNAPSHOT_MISSING",
+      "PRIMARY_ARTIFACT_DIGEST_MISMATCH",
+      "PRIMARY_ARTIFACT_SIZE_MISMATCH"
+    ],
+    "digest_algorithm": "SHA-256",
+    "digest_source": "PROVIDER_COMPUTED_OR_CONSUMER_VERIFIED"
+  },
+  "fixtures": {
+    "snapshot": "fixtures/looklookalpha/provider-v1-snapshot.json",
+    "raw_metadata": "fixtures/looklookalpha/provider-v1-metadata.json"
+  }
+}

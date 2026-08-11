@@ -1,0 +1,80 @@
+{
+  "fixture_kind": "looklookalpha-provider-raw-metadata",
+  "schema_version": 1,
+  "source_trust": {
+    "tiers": {
+      "TIER_1": {
+        "meaning": "official_or_primary",
+        "example_source": "CONTRACT_FIXTURE_OFFICIAL"
+      },
+      "TIER_2": {
+        "meaning": "reliable_secondary",
+        "example_source": "CONTRACT_FIXTURE_SECONDARY"
+      },
+      "TIER_3": {
+        "meaning": "fallback_or_weak_secondary",
+        "example_source": "CONTRACT_FIXTURE_FALLBACK"
+      }
+    }
+  },
+  "freshness_sla": {
+    "states": {
+      "MET": {
+        "meaning": "measurement_available_and_within_sla"
+      },
+      "UNMEASURED": {
+        "meaning": "sla_dimension_not_measured"
+      },
+      "NOT_APPLICABLE": {
+        "meaning": "sla_dimension_not_applicable"
+      }
+    }
+  },
+  "lag_dimensions": {
+    "DATA_LAG": {
+      "value_seconds": 0,
+      "state": "MET"
+    },
+    "DISCOVERY_LAG": {
+      "value_seconds": null,
+      "state": "UNMEASURED"
+    },
+    "SESSION_COMPLETENESS": {
+      "value": null,
+      "state": "NOT_APPLICABLE"
+    }
+  },
+  "provider": {
+    "selected": "CONTRACT_FIXTURE_OFFICIAL",
+    "fallback_used": false,
+    "fallback_chain": [
+      "CONTRACT_FIXTURE_OFFICIAL",
+      "CONTRACT_FIXTURE_SECONDARY"
+    ],
+    "consensus": {
+      "state": "EXPLICIT",
+      "sources": [
+        "CONTRACT_FIXTURE_OFFICIAL"
+      ]
+    }
+  },
+  "current_price_guard": {
+    "historical_sources_allowed_for_current_price": false,
+    "cached_price_allowed_for_current_price": false,
+    "status": "PASS"
+  },
+  "artifact": {
+    "cardinality": "EXACTLY_ONE",
+    "digest_algorithm": "SHA-256",
+    "digest_source": "PROVIDER_COMPUTED_OR_CONSUMER_VERIFIED"
+  },
+  "operation": {
+    "latest_run_fallback_allowed": false,
+    "correlation_recovery_required_before_redispatch": true,
+    "terminal_states": [
+      "SUCCEEDED",
+      "FAILED",
+      "CANCELLED"
+    ]
+  }
+}

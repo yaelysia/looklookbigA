@@ -13,18 +13,72 @@ jobs:
   safety-tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Run live-price guard fault-injection tests
         run: python3 scripts/test_live_price_guard.py
       - name: Run quote resilience selection tests
         run: python3 scripts/test_quote_resilience.py
+      - name: Run watchlist/config boundary tests
+        run: python3 scripts/test_config_security.py
+      - name: Run workflow supply-chain and transport tests
+        run: python3 scripts/test_workflow_security.py
+      - name: Run Alpha provider contract regression tests
+        run: python3 scripts/test_alpha_provider_contract.py
+      - name: Run Alpha semantic command identity tests
+        run: python3 scripts/test_alpha_semantic_command_identity.py
+      - name: Run Alpha exact primary artifact tests
+        run: python3 scripts/test_alpha_primary_artifact.py
+      - name: Run market environment summary tests
+        run: python3 scripts/test_market_environment.py
+      - name: Run provenance/freshness/quality metadata tests
+        run: python3 scripts/test_data_metadata.py
+      - name: Run source trust and freshness SLA tests
+        run: python3 scripts/test_data_policy.py
+      - name: Run intraday fast-path behavior tests
+        run: python3 scripts/test_intraday_fast.py
+      - name: Run capital-flow context tests
+        run: python3 scripts/test_capital_flow_context.py
+      - name: Run margin provider query tests
+        run: python3 scripts/test_capital_flow_margin_provider.py
+      - name: Run capital-flow review hardening tests
+        run: python3 scripts/test_capital_flow_review_hardening.py
+      - name: Run fundamentals normalization tests
+        run: python3 scripts/test_fundamentals_context.py
+      - name: Run fundamentals normalized-period tests
+        run: python3 scripts/test_fundamentals_period.py
+      - name: Run fundamentals quality tests
+        run: python3 scripts/test_fundamentals_quality.py
+      - name: Run fundamentals LLM schema tests
+        run: python3 scripts/test_fundamentals_schema.py
+      - name: Run fundamentals cache continuity tests
+        run: python3 scripts/test_fundamentals_cache_continuity.py
+      - name: Run fundamentals review hardening tests
+        run: python3 scripts/test_fundamentals_review_hardening.py
+      - name: Run event fact continuity tests
+        run: python3 scripts/test_event_fact_continuity.py
+      - name: Run history read-after-write continuity tests
+        run: python3 scripts/test_history_continuity.py
+      - name: Run changes-since-previous tests
+        run: python3 scripts/test_changes_since_previous.py
+      - name: Run changes comparability regression tests
+        run: python3 scripts/test_changes_comparability.py
+      - name: Run structured company event tests
+        run: python3 scripts/test_company_events.py
+      - name: Run company event coverage/backfill tests
+        run: python3 scripts/test_company_event_coverage.py
+      - name: Run official PDF event fact tests
+        run: python3 scripts/test_company_event_facts.py
+      - name: Run company event metadata tests
+        run: python3 scripts/test_company_event_metadata.py
+      - name: Run public quote abuse-protection tests
+        run: node --test tests/worker-abuse-protection.test.mjs
 
   stable-reusable-smoke:
     uses: ./.github/workflows/reusable-a-share-quotes.yml
     with:
-      source_ref: ${{ github.sha }}
+      execution_mode: FULL
       enable_history_cache: false
       snapshot_artifact_name: v1-smoke-snapshot
       retention_days: 1
       config_json: >-
-        {"detail_codes":["002558"],"light_codes":["002555","002517"],"groups":{"v1_game_smoke":{"label":"v1稳定版游戏股冒烟测试","target_code":"002558","member_codes":["002555","002517"]}},"max_total_codes":10}
+        {"detail_codes":["002558"],"light_codes":["002555","002517"],"groups":{"v1_game_smoke":{"label":"v1稳定版游戏股冒烟测试","target_code":"002558","member_codes":["002555","002517"]}},"max_total_codes":10,"event_lookback_days":7}

@@ -1,99 +1,369 @@
 name: Realtime A-share Quotes
 
+run-name: >-
+  ${{ inputs.dispatch_correlation_id != '' && format('alpha-refresh corr={0} op={1} cmd={2}', inputs.dispatch_correlation_id, inputs.operation_identity_fingerprint, inputs.command_digest) || format('Realtime A-share Quotes #{0}', github.run_number) }}
+
 on:
   workflow_dispatch:
+    inputs:
+      mode:
+        description: "Execution mode: auto selects intraday fast only during the A-share market window"
+        required: false
+        default: auto
+        type: choice
+        options:
+          - auto
+          - intraday_fast
+          - full
+      dispatch_correlation_id:
+        description: "Optional Alpha refresh correlation id. Must be supplied together with idempotency_key, operation_identity_fingerprint, command_digest and workflow_identity."
+        required: false
+        default: ""
+        type: string
+      idempotency_key:
+        description: "Optional Alpha refresh idempotency key. Never emitted in logs."
+        required: false
+        default: ""
+        type: string
+      operation_identity_fingerprint:
+        description: "Provider-side non-secret fingerprint returned by start_or_recover; binds idempotency identity, semantic digest, exact workflow identity and material inputs for crash recovery."
+        required: false
+        default: ""
+        type: string
+      command_digest:
+        description: "Caller-supplied semantic refresh-command SHA-256 digest. The provider preserves it and does not reinterpret dispatch metadata as command identity."
+        required: false
+        default: ""
+        type: string
+      workflow_identity:
+        description: "Optional exact workflow identity: .github/workflows/realtime-quotes.yml@<40-hex workflow SHA>."
+        required: false
+        default: ""
+        type: string
   push:
     paths:
       - ".github/workflows/realtime-quotes.yml"
+      - ".github/workflows/persist-market-history.yml"
+      - ".github/workflows/reusable-a-share-quotes.yml"
+      - ".github/workflows/reusable-selftest.yml"
+      - ".github/workflows/pre-merge-security-gate.yml"
       - ".github/workflows/v1-smoke.yml"
+      - "requirements-event-facts.txt"
+      - "contracts/looklookalpha-provider-v1.json"
+      - "scripts/alpha_artifact_manifest.py"
+      - "scripts/alpha_capability_contract.py"
+      - "scripts/alpha_operation_registry.py"
+      - "scripts/alpha_provider_contract.py"
+      - "scripts/alpha_refresh_contract.py"
+      - "scripts/test_alpha_provider_contract.py"
+      - "scripts/test_alpha_semantic_command_identity.py"
       - "scripts/realtime_quotes_watchlist.py"
       - "scripts/realtime_quotes_watchlist_runner.py"
+      - "scripts/performance_fast_path.py"
+      - "scripts/intraday_fast_tail.py"
+      - "scripts/event_fact_continuity.py"
+      - "scripts/history_continuity.py"
+      - "scripts/resolve_previous_realtime_run.py"
       - "scripts/intraday_metrics.py"
       - "scripts/daily_k_context.py"
       - "scripts/history_store.py"
+      - "scripts/capital_flow_context.py"
+      - "scripts/capital_flow_changes.py"
+      - "scripts/capital_flow_history_bridge.py"
+      - "scripts/capital_flow_margin_bridge.py"
+      - "scripts/capital_flow_metadata_bridge.py"
+      - "scripts/capital_flow_review_hardening.py"
+      - "scripts/capital_flow_window_bridge.py"
+      - "scripts/fundamentals_context.py"
+      - "scripts/fundamentals_cache_continuity.py"
+      - "scripts/fundamentals_changes.py"
+      - "scripts/fundamentals_history_bridge.py"
+      - "scripts/fundamentals_metadata_bridge.py"
+      - "scripts/fundamentals_period_bridge.py"
+      - "scripts/fundamentals_policy_bridge.py"
+      - "scripts/fundamentals_quality_bridge.py"
+      - "scripts/fundamentals_schema_bridge.py"
+      - "scripts/fundamentals_review_hardening.py"
+      - "scripts/changes_summary_finalizer.py"
       - "scripts/live_price_guard.py"
       - "scripts/quote_resilience.py"
+      - "scripts/market_environment.py"
+      - "scripts/market_breadth_source.py"
+      - "scripts/data_metadata.py"
+      - "scripts/data_policy.py"
+      - "scripts/data_policy_bridge.py"
+      - "scripts/changes_metadata_bridge.py"
+      - "scripts/changes_since_previous.py"
+      - "scripts/changes_comparability.py"
+      - "scripts/company_events.py"
+      - "scripts/company_event_coverage.py"
+      - "scripts/company_event_facts.py"
+      - "scripts/company_event_metadata.py"
+      - "scripts/transport_security.py"
+      - "scripts/config_security.py"
+      - "scripts/prepare_reusable_config.py"
+      - "scripts/test_config_security.py"
+      - "scripts/test_workflow_security.py"
+      - "scripts/test_intraday_fast.py"
+      - "scripts/test_capital_flow_context.py"
+      - "scripts/test_capital_flow_margin_provider.py"
+      - "scripts/test_capital_flow_review_hardening.py"
+      - "scripts/test_fundamentals_context.py"
+      - "scripts/test_fundamentals_period.py"
+      - "scripts/test_fundamentals_quality.py"
+      - "scripts/test_fundamentals_schema.py"
+      - "scripts/test_fundamentals_cache_continuity.py"
+      - "scripts/test_fundamentals_review_hardening.py"
+      - "scripts/test_event_fact_continuity.py"
+      - "scripts/test_history_continuity.py"
       - "scripts/test_quote_resilience.py"
+      - "scripts/test_market_environment.py"
+      - "scripts/test_data_metadata.py"
+      - "scripts/test_data_policy.py"
+      - "scripts/test_changes_since_previous.py"
+      - "scripts/test_changes_comparability.py"
+      - "scripts/test_company_events.py"
+      - "scripts/test_company_event_coverage.py"
+      - "scripts/test_company_event_facts.py"
+      - "scripts/test_company_event_metadata.py"
       - "config/quote_watchlist.json"
 
 permissions:
   contents: read
 
+concurrency:
+  group: realtime-a-share-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
+  claim-alpha-refresh:
+    if: >-
+      ${{ github.event_name == 'workflow_dispatch' &&
+          (inputs.dispatch_correlation_id != '' ||
+           inputs.idempotency_key != '' ||
+           inputs.operation_identity_fingerprint != '' ||
+           inputs.command_digest != '' ||
+           inputs.workflow_identity != '') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Validate Alpha refresh identity
+        shell: bash
+        env:
+          DISPATCH_CORRELATION_ID: ${{ inputs.dispatch_correlation_id }}
+          IDEMPOTENCY_KEY: ${{ inputs.idempotency_key }}
+          OPERATION_IDENTITY_FINGERPRINT: ${{ inputs.operation_identity_fingerprint }}
+          COMMAND_DIGEST: ${{ inputs.command_digest }}
+          WORKFLOW_IDENTITY: ${{ inputs.workflow_identity }}
+          REQUESTED_MODE: ${{ inputs.mode }}
+        run: |
+          set -euo pipefail
+          PYTHONPATH=scripts python3 - <<'PY'
+          import os
+          import alpha_refresh_contract
+
+          values = {
+              "dispatch_correlation_id": os.environ.get("DISPATCH_CORRELATION_ID") or "",
+              "idempotency_key": os.environ.get("IDEMPOTENCY_KEY") or "",
+              "operation_identity_fingerprint": (os.environ.get("OPERATION_IDENTITY_FINGERPRINT") or "").lower(),
+              "command_digest": (os.environ.get("COMMAND_DIGEST") or "").lower(),
+              "workflow_identity": os.environ.get("WORKFLOW_IDENTITY") or "",
+          }
+          if not all(values.values()):
+              raise SystemExit(
+                  "Alpha refresh identity must supply correlation, idempotency key, operation identity fingerprint, command digest and workflow identity together"
+              )
+
+          actual_workflow_sha = (os.environ.get("GITHUB_WORKFLOW_SHA") or "").lower()
+          expected_identity = f".github/workflows/realtime-quotes.yml@{actual_workflow_sha}"
+          if values["workflow_identity"] != expected_identity:
+              raise SystemExit(
+                  f"workflow_identity mismatch: expected={expected_identity} provided={values['workflow_identity']}"
+              )
+
+          alpha_refresh_contract.validate_identifier(
+              values["dispatch_correlation_id"], "dispatch_correlation_id"
+          )
+          alpha_refresh_contract.validate_identifier(
+              values["idempotency_key"], "idempotency_key"
+          )
+          digest = alpha_refresh_contract.normalize_digest(values["command_digest"])
+          supplied_operation_fingerprint = alpha_refresh_contract.normalize_digest(
+              values["operation_identity_fingerprint"]
+          )
+          material = {"mode": (os.environ.get("REQUESTED_MODE") or "auto").lower()}
+          expected_operation_fingerprint = alpha_refresh_contract.operation_identity_fingerprint(
+              values["idempotency_key"],
+              digest,
+              values["workflow_identity"],
+              material,
+          )
+          if supplied_operation_fingerprint != expected_operation_fingerprint:
+              raise SystemExit(
+                  "operation_identity_fingerprint mismatch: dispatch inputs do not match the durable provider operation identity"
+              )
+          print(
+              "ALPHA_REFRESH_IDENTITY status=PASS "
+              f"correlation={values['dispatch_correlation_id']} "
+              f"operation_identity_fingerprint={supplied_operation_fingerprint} "
+              f"workflow_identity={values['workflow_identity']} "
+              f"command_digest={digest} "
+              f"requested_mode={material['mode']}"
+          )
+          PY
+
+      - name: Claim exact workflow run in durable Alpha registry
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DISPATCH_CORRELATION_ID: ${{ inputs.dispatch_correlation_id }}
+          IDEMPOTENCY_KEY: ${{ inputs.idempotency_key }}
+          COMMAND_DIGEST: ${{ inputs.command_digest }}
+          WORKFLOW_IDENTITY: ${{ inputs.workflow_identity }}
+          REQUESTED_MODE: ${{ inputs.mode }}
+        run: |
+          set -euo pipefail
+          material="$(
+            python3 - <<'PY'
+          import json
+          import os
+          print(json.dumps({"mode": (os.environ.get("REQUESTED_MODE") or "auto").lower()}, separators=(",", ":")))
+          PY
+          )"
+          PYTHONPATH=scripts python3 scripts/alpha_operation_registry.py claim-run \
+            --correlation "$DISPATCH_CORRELATION_ID" \
+            --idempotency-key "$IDEMPOTENCY_KEY" \
+            --command-digest "$COMMAND_DIGEST" \
+            --workflow-identity "$WORKFLOW_IDENTITY" \
+            --material-inputs-json "$material" \
+            --base-sha "$GITHUB_SHA" \
+            --run-id "$GITHUB_RUN_ID" \
+            --run-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            --head-sha "$GITHUB_SHA" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT"
+
   fetch-quotes:
+    needs:
+      - claim-alpha-refresh
+    if: >-
+      ${{ always() &&
+          (needs.claim-alpha-refresh.result == 'success' ||
+           needs.claim-alpha-refresh.result == 'skipped') }}
     runs-on: ubuntu-latest
     timeout-minutes: 3
     permissions:
+      actions: read
       contents: read
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - name: Checkout persistent market history
-        uses: actions/checkout@v4
+      - name: Resolve execution mode
+        id: execution-mode
+        shell: bash
+        env:
+          REQUESTED_MODE: ${{ github.event.inputs.mode || 'AUTO' }}
+        run: |
+          mode="$(PYTHONPATH=scripts python3 - <<'PY'
+          import os
+          import performance_fast_path
+          import realtime_quotes_watchlist as base
+          print(performance_fast_path.resolve_mode(base, requested=os.environ.get("REQUESTED_MODE")))
+          PY
+          )"
+          echo "mode=${mode}" >> "$GITHUB_OUTPUT"
+          echo "EXECUTION_MODE_RESOLVED requested=${REQUESTED_MODE} mode=${mode}"
+
+      - name: Install pinned event-fact parser
+        if: steps.execution-mode.outputs.mode == 'FULL'
+        run: python3 -m pip install --disable-pip-version-check --no-deps --require-hashes -r requirements-event-facts.txt
+
+      - name: Resolve exact previous successful master run
+        id: previous-realtime
+        if: github.ref_name == 'master'
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 scripts/resolve_previous_realtime_run.py
+
+      - name: Restore exact previous successful history artifact
+        id: previous-history-artifact
+        if: github.ref_name == 'master' && steps.previous-realtime.outputs.run_id != ''
+        continue-on-error: true
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: market-history-state
+          path: .previous-realtime-history
+          run-id: ${{ steps.previous-realtime.outputs.run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Checkout persistent market history fallback
+        if: github.ref_name != 'master' || steps.previous-realtime.outputs.run_id == '' || steps.previous-history-artifact.outcome != 'success'
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: market-data
           path: .market-data
           fetch-depth: 1
           persist-credentials: false
 
+      - name: Hydrate exact previous successful baseline
+        if: github.ref_name == 'master' && steps.previous-realtime.outputs.run_id != '' && steps.previous-history-artifact.outcome == 'success'
+        shell: bash
+        run: >-
+          python3 scripts/history_continuity.py hydrate
+          --current .market-data/history
+          --incoming .previous-realtime-history
+          --expected-run-id '${{ steps.previous-realtime.outputs.run_id }}'
+
+      - name: Verify fallback baseline is not behind previous success
+        if: github.ref_name == 'master' && steps.previous-realtime.outputs.run_id != '' && steps.previous-history-artifact.outcome != 'success'
+        shell: bash
+        run: >-
+          python3 scripts/history_continuity.py verify
+          --current .market-data/history
+          --expected-run-id '${{ steps.previous-realtime.outputs.run_id }}'
+          --expected-started-at '${{ steps.previous-realtime.outputs.started_at }}'
+
       - name: Fetch realtime A-share watchlist
         shell: bash
         env:
           MARKET_HISTORY_DIR: .market-data/history
+          LOOKLOOK_EXECUTION_MODE: ${{ steps.execution-mode.outputs.mode }}
+          LOOKLOOK_SNAPSHOT_ARTIFACT_NAME: realtime-snapshot
+          LOOKLOOK_DISPATCH_CORRELATION_ID: ${{ inputs.dispatch_correlation_id }}
+          LOOKLOOK_IDEMPOTENCY_KEY: ${{ inputs.idempotency_key }}
+          LOOKLOOK_COMMAND_DIGEST: ${{ inputs.command_digest }}
         run: python3 scripts/realtime_quotes_watchlist_runner.py
+
+      - name: Generate Alpha primary artifact manifest
+        if: ${{ success() }}
+        shell: bash
+        run: >-
+          python3 scripts/alpha_artifact_manifest.py
+          --snapshot snapshot.json
+          --output alpha-artifact-manifest.json
+          --artifact-name realtime-snapshot
 
       - name: Upload realtime snapshot
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: realtime-snapshot
-          path: snapshot.json
+          path: |
+            snapshot.json
+            alpha-artifact-manifest.json
           if-no-files-found: error
           retention-days: 1
 
       - name: Upload market history state
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: market-history-state
           path: .market-data/history
           if-no-files-found: error
           retention-days: 1
-
-  persist-history:
-    if: github.ref_name == 'master' && github.event_name != 'pull_request'
-    needs: fetch-quotes
-    runs-on: ubuntu-latest
-    timeout-minutes: 2
-    permissions:
-      contents: write
-    concurrency:
-      group: market-history-persist
-      cancel-in-progress: false
-
-    steps:
-      - name: Checkout market-data branch
-        uses: actions/checkout@v4
-        with:
-          ref: market-data
-          fetch-depth: 1
-
-      - name: Restore generated history state
-        uses: actions/download-artifact@v4
-        with:
-          name: market-history-state
-          path: history
-
-      - name: Persist market history
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add history
-          if git diff --cached --quiet; then
-            echo "HISTORY_PERSIST no changes"
-            exit 0
-          fi
-          git commit -m "Persist market history run ${GITHUB_RUN_ID}"
-          git push origin HEAD:market-data

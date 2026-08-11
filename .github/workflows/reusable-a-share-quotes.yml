@@ -4,12 +4,12 @@ on:
   workflow_call:
     inputs:
       source_ref:
-        description: Ref of yaelysia/looklookbigA to execute (master, v1, tag, or commit SHA).
+        description: Optional immutable 40-character engine commit SHA override. Empty binds to the exact commit that defines this reusable workflow.
         required: false
         type: string
-        default: master
+        default: ""
       config_path:
-        description: Quote watchlist JSON path in the caller repository. Used when config_json is empty.
+        description: Quote watchlist JSON path inside the caller repository. Used when config_json is empty.
         required: false
         type: string
         default: config/quote_watchlist.json
@@ -18,6 +18,11 @@ on:
         required: false
         type: string
         default: ""
+      execution_mode:
+        description: AUTO, INTRADAY_FAST/FAST, or FULL. AUTO selects fast only during the A-share market window.
+        required: false
+        type: string
+        default: AUTO
       enable_history_cache:
         description: Reuse daily-K history through the caller repository's GitHub Actions cache.
         required: false
@@ -29,7 +34,7 @@ on:
         type: string
         default: default
       snapshot_artifact_name:
-        description: Artifact name containing snapshot.json.
+        description: Artifact name containing snapshot.json and alpha-artifact-manifest.json.
         required: false
         type: string
         default: realtime-snapshot
@@ -47,88 +52,139 @@ jobs:
       contents: read
 
     steps:
+      - name: Resolve immutable engine revision
+        id: engine-ref
+        shell: bash
+        env:
+          SOURCE_REF: ${{ inputs.source_ref }}
+          WORKFLOW_SHA: ${{ job.workflow_sha }}
+        run: |
+          set -euo pipefail
+          if [[ -n "$SOURCE_REF" ]]; then
+            if [[ ! "$SOURCE_REF" =~ ^[0-9a-fA-F]{40}$ ]]; then
+              echo "source_ref must be an immutable 40-character commit SHA when explicitly provided" >&2
+              exit 1
+            fi
+            engine_ref="${SOURCE_REF,,}"
+            mode="explicit-sha"
+          else
+            if [[ ! "$WORKFLOW_SHA" =~ ^[0-9a-fA-F]{40}$ ]]; then
+              echo "job.workflow_sha is unavailable or invalid" >&2
+              exit 1
+            fi
+            engine_ref="${WORKFLOW_SHA,,}"
+            mode="called-workflow-sha"
+          fi
+          echo "ref=$engine_ref" >> "$GITHUB_OUTPUT"
+          echo "ENGINE_REVISION mode=$mode sha=$engine_ref"
+
       - name: Checkout caller repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           path: .caller
           persist-credentials: false
 
       - name: Checkout looklookbigA engine
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: yaelysia/looklookbigA
-          ref: ${{ inputs.source_ref }}
+          ref: ${{ steps.engine-ref.outputs.ref }}
           path: .engine
           fetch-depth: 1
           persist-credentials: false
 
+      - name: Verify engine revision
+        shell: bash
+        env:
+          EXPECTED_SHA: ${{ steps.engine-ref.outputs.ref }}
+        run: |
+          set -euo pipefail
+          actual="$(git -C .engine rev-parse HEAD)"
+          if [[ "$actual" != "$EXPECTED_SHA" ]]; then
+            echo "engine checkout mismatch: expected=$EXPECTED_SHA actual=$actual" >&2
+            exit 1
+          fi
+          echo "ENGINE_REVISION_VERIFIED sha=$actual"
+
+      - name: Resolve execution mode
+        id: execution-mode
+        shell: bash
+        env:
+          REQUESTED_MODE: ${{ inputs.execution_mode }}
+        run: |
+          mode="$(cd .engine && PYTHONPATH=scripts python3 - <<'PY'
+          import os
+          import performance_fast_path
+          import realtime_quotes_watchlist as base
+          print(performance_fast_path.resolve_mode(base, requested=os.environ.get("REQUESTED_MODE")))
+          PY
+          )"
+          echo "mode=${mode}" >> "$GITHUB_OUTPUT"
+          echo "EXECUTION_MODE_RESOLVED requested=${REQUESTED_MODE} mode=${mode}"
+
+      - name: Install pinned event-fact parser
+        if: steps.execution-mode.outputs.mode == 'FULL'
+        shell: bash
+        run: python3 -m pip install --disable-pip-version-check --no-deps --require-hashes -r .engine/requirements-event-facts.txt
+
       - name: Restore reusable daily-K cache
         if: ${{ inputs.enable_history_cache }}
         id: history-cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .engine/.reusable-history/history
           key: looklookbigA-${{ runner.os }}-${{ github.repository_id }}-${{ inputs.cache_namespace }}-${{ github.run_id }}
           restore-keys: |
             looklookbigA-${{ runner.os }}-${{ github.repository_id }}-${{ inputs.cache_namespace }}-
 
-      - name: Resolve watchlist configuration
+      - name: Resolve and validate watchlist configuration
         shell: bash
         env:
           CONFIG_JSON: ${{ inputs.config_json }}
           CONFIG_PATH: ${{ inputs.config_path }}
-        run: |
-          python3 - <<'PY'
-          import json
-          import os
-          import shutil
-          from pathlib import Path
-
-          engine_config = Path('.engine/config/quote_watchlist.json')
-          inline = os.environ.get('CONFIG_JSON', '').strip()
-          caller_path = Path('.caller') / os.environ.get('CONFIG_PATH', 'config/quote_watchlist.json')
-
-          if inline:
-              parsed = json.loads(inline)
-              engine_config.parent.mkdir(parents=True, exist_ok=True)
-              engine_config.write_text(json.dumps(parsed, ensure_ascii=False, indent=2), encoding='utf-8')
-              print('REUSABLE_CONFIG source=inline-json')
-          elif caller_path.is_file():
-              engine_config.parent.mkdir(parents=True, exist_ok=True)
-              shutil.copy2(caller_path, engine_config)
-              print(f'REUSABLE_CONFIG source=caller path={caller_path}')
-          else:
-              print('REUSABLE_CONFIG source=engine-default')
-
-          parsed = json.loads(engine_config.read_text(encoding='utf-8'))
-          print(
-              'REUSABLE_CONFIG_READY '
-              f"detail={len(parsed.get('detail_codes', []))} "
-              f"light={len(parsed.get('light_codes', []))} "
-              f"groups={len(parsed.get('groups', {}) or {})}"
-          )
-          PY
+          CALLER_ROOT: ${{ github.workspace }}/.caller
+          ENGINE_CONFIG: ${{ github.workspace }}/.engine/config/quote_watchlist.json
+        run: python3 .engine/scripts/prepare_reusable_config.py
 
       - name: Generate realtime snapshot
         shell: bash
         env:
           MARKET_HISTORY_DIR: ${{ github.workspace }}/.engine/.reusable-history/history
+          LOOKLOOK_EXECUTION_MODE: ${{ steps.execution-mode.outputs.mode }}
+          LOOKLOOK_SNAPSHOT_ARTIFACT_NAME: ${{ inputs.snapshot_artifact_name }}
         run: |
           cd .engine
           python3 scripts/realtime_quotes_watchlist_runner.py
 
+      - name: Generate Alpha primary artifact manifest
+        if: ${{ success() }}
+        shell: bash
+        env:
+          LOOKLOOK_PRODUCING_REF: ${{ steps.engine-ref.outputs.ref }}
+          LOOKLOOK_PRODUCING_REF_NAME: ${{ steps.engine-ref.outputs.ref }}
+          LOOKLOOK_PRODUCING_COMMIT_SHA: ${{ steps.engine-ref.outputs.ref }}
+          LOOKLOOK_WORKFLOW_REF: yaelysia/looklookbigA/.github/workflows/reusable-a-share-quotes.yml@${{ steps.engine-ref.outputs.ref }}
+          LOOKLOOK_WORKFLOW_SHA: ${{ steps.engine-ref.outputs.ref }}
+        run: >-
+          python3 .engine/scripts/alpha_artifact_manifest.py
+          --snapshot .engine/snapshot.json
+          --output .engine/alpha-artifact-manifest.json
+          --artifact-name '${{ inputs.snapshot_artifact_name }}'
+
       - name: Upload realtime snapshot
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ${{ inputs.snapshot_artifact_name }}
-          path: .engine/snapshot.json
+          path: |
+            .engine/snapshot.json
+            .engine/alpha-artifact-manifest.json
           if-no-files-found: error
           retention-days: ${{ inputs.retention_days }}
 
       - name: Save reusable daily-K cache
         if: ${{ inputs.enable_history_cache && success() }}
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .engine/.reusable-history/history
           key: looklookbigA-${{ runner.os }}-${{ github.repository_id }}-${{ inputs.cache_namespace }}-${{ github.run_id }}

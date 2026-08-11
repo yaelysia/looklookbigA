@@ -14,6 +14,17 @@ const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
 const localBindingConfig = {
   main: "./worker/index.ts",
   compatibility_flags: ["nodejs_compat"],
+  ratelimits: [
+    {
+      name: "PUBLIC_QUOTE_RATE_LIMITER",
+      // Repository-local namespace for the anonymous public quote routes.
+      namespace_id: "20260807",
+      simple: {
+        limit: 60,
+        period: 60,
+      },
+    },
+  ],
   d1_databases: d1
     ? [
         {

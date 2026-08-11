@@ -3,18 +3,112 @@ name: Reusable Workflow Selftest
 on:
   push:
     paths:
+      - "README.md"
+      - "docs/STABLE_V1.md"
+      - "docs/SECURITY_BRANCH_PROTECTION.md"
+      - "docs/DATA_PROVENANCE.md"
+      - "docs/SOURCE_TRUST_MODEL.md"
+      - "docs/FRESHNESS_SLA.md"
+      - "docs/CHANGES_SINCE_PREVIOUS.md"
+      - "docs/COMPANY_EVENTS.md"
+      - "docs/INTRADAY_FAST.md"
+      - "docs/CAPITAL_FLOW.md"
+      - "docs/FUNDAMENTALS.md"
+      - "docs/LOOKLOOKALPHA_PROVIDER.md"
+      - "contracts/looklookalpha-provider-v1.json"
+      - "requirements-event-facts.txt"
+      - "vite.config.ts"
       - ".github/workflows/reusable-a-share-quotes.yml"
       - ".github/workflows/reusable-selftest.yml"
+      - ".github/workflows/pre-merge-security-gate.yml"
+      - ".github/workflows/realtime-quotes.yml"
+      - ".github/workflows/persist-market-history.yml"
       - ".github/workflows/v1-smoke.yml"
+      - ".github/dependabot.yml"
+      - "config/quote_watchlist.json"
+      - "scripts/alpha_artifact_manifest.py"
+      - "scripts/alpha_primary_artifact.py"
+      - "scripts/alpha_capability_contract.py"
+      - "scripts/alpha_operation_registry.py"
+      - "scripts/alpha_provider_contract.py"
+      - "scripts/alpha_refresh_contract.py"
+      - "scripts/test_alpha_provider_contract.py"
+      - "scripts/test_alpha_semantic_command_identity.py"
+      - "scripts/test_alpha_primary_artifact.py"
       - "scripts/realtime_quotes_watchlist.py"
       - "scripts/realtime_quotes_watchlist_runner.py"
+      - "scripts/performance_fast_path.py"
+      - "scripts/intraday_fast_tail.py"
+      - "scripts/event_fact_continuity.py"
+      - "scripts/history_continuity.py"
+      - "scripts/resolve_previous_realtime_run.py"
       - "scripts/intraday_metrics.py"
       - "scripts/daily_k_context.py"
       - "scripts/history_store.py"
+      - "scripts/capital_flow_context.py"
+      - "scripts/capital_flow_changes.py"
+      - "scripts/capital_flow_history_bridge.py"
+      - "scripts/capital_flow_margin_bridge.py"
+      - "scripts/capital_flow_metadata_bridge.py"
+      - "scripts/capital_flow_review_hardening.py"
+      - "scripts/capital_flow_window_bridge.py"
+      - "scripts/fundamentals_context.py"
+      - "scripts/fundamentals_cache_continuity.py"
+      - "scripts/fundamentals_changes.py"
+      - "scripts/fundamentals_history_bridge.py"
+      - "scripts/fundamentals_metadata_bridge.py"
+      - "scripts/fundamentals_period_bridge.py"
+      - "scripts/fundamentals_policy_bridge.py"
+      - "scripts/fundamentals_quality_bridge.py"
+      - "scripts/fundamentals_schema_bridge.py"
+      - "scripts/fundamentals_review_hardening.py"
+      - "scripts/changes_summary_finalizer.py"
       - "scripts/live_price_guard.py"
       - "scripts/quote_resilience.py"
+      - "scripts/market_environment.py"
+      - "scripts/market_breadth_source.py"
+      - "scripts/data_metadata.py"
+      - "scripts/data_policy.py"
+      - "scripts/data_policy_bridge.py"
+      - "scripts/changes_metadata_bridge.py"
+      - "scripts/changes_since_previous.py"
+      - "scripts/changes_comparability.py"
+      - "scripts/company_events.py"
+      - "scripts/company_event_coverage.py"
+      - "scripts/company_event_facts.py"
+      - "scripts/company_event_metadata.py"
+      - "scripts/transport_security.py"
+      - "scripts/config_security.py"
+      - "scripts/prepare_reusable_config.py"
       - "scripts/test_live_price_guard.py"
       - "scripts/test_quote_resilience.py"
+      - "scripts/test_market_environment.py"
+      - "scripts/test_data_metadata.py"
+      - "scripts/test_data_policy.py"
+      - "scripts/test_intraday_fast.py"
+      - "scripts/test_capital_flow_context.py"
+      - "scripts/test_capital_flow_margin_provider.py"
+      - "scripts/test_capital_flow_review_hardening.py"
+      - "scripts/test_fundamentals_context.py"
+      - "scripts/test_fundamentals_period.py"
+      - "scripts/test_fundamentals_quality.py"
+      - "scripts/test_fundamentals_schema.py"
+      - "scripts/test_fundamentals_cache_continuity.py"
+      - "scripts/test_fundamentals_review_hardening.py"
+      - "scripts/test_event_fact_continuity.py"
+      - "scripts/test_history_continuity.py"
+      - "scripts/test_changes_since_previous.py"
+      - "scripts/test_changes_comparability.py"
+      - "scripts/test_company_events.py"
+      - "scripts/test_company_event_coverage.py"
+      - "scripts/test_company_event_facts.py"
+      - "scripts/test_company_event_metadata.py"
+      - "scripts/test_config_security.py"
+      - "scripts/test_workflow_security.py"
+      - "worker/index.ts"
+      - "worker/abuse-protection.js"
+      - "worker/stock-quote.js"
+      - "tests/worker-abuse-protection.test.mjs"
 
 permissions:
   contents: read
@@ -23,19 +117,73 @@ jobs:
   safety-tests:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Run live-price guard fault-injection tests
         run: python3 scripts/test_live_price_guard.py
       - name: Run quote resilience selection tests
         run: python3 scripts/test_quote_resilience.py
+      - name: Run watchlist/config boundary tests
+        run: python3 scripts/test_config_security.py
+      - name: Run workflow supply-chain and transport tests
+        run: python3 scripts/test_workflow_security.py
+      - name: Run Alpha provider contract regression tests
+        run: python3 scripts/test_alpha_provider_contract.py
+      - name: Run Alpha semantic command identity tests
+        run: python3 scripts/test_alpha_semantic_command_identity.py
+      - name: Run Alpha exact primary artifact tests
+        run: python3 scripts/test_alpha_primary_artifact.py
+      - name: Run market environment summary tests
+        run: python3 scripts/test_market_environment.py
+      - name: Run provenance/freshness/quality metadata tests
+        run: python3 scripts/test_data_metadata.py
+      - name: Run source trust and freshness SLA tests
+        run: python3 scripts/test_data_policy.py
+      - name: Run intraday fast-path behavior tests
+        run: python3 scripts/test_intraday_fast.py
+      - name: Run capital-flow context tests
+        run: python3 scripts/test_capital_flow_context.py
+      - name: Run margin provider query tests
+        run: python3 scripts/test_capital_flow_margin_provider.py
+      - name: Run capital-flow review hardening tests
+        run: python3 scripts/test_capital_flow_review_hardening.py
+      - name: Run fundamentals normalization tests
+        run: python3 scripts/test_fundamentals_context.py
+      - name: Run fundamentals normalized-period tests
+        run: python3 scripts/test_fundamentals_period.py
+      - name: Run fundamentals quality tests
+        run: python3 scripts/test_fundamentals_quality.py
+      - name: Run fundamentals LLM schema tests
+        run: python3 scripts/test_fundamentals_schema.py
+      - name: Run fundamentals cache continuity tests
+        run: python3 scripts/test_fundamentals_cache_continuity.py
+      - name: Run fundamentals review hardening tests
+        run: python3 scripts/test_fundamentals_review_hardening.py
+      - name: Run event fact continuity tests
+        run: python3 scripts/test_event_fact_continuity.py
+      - name: Run history read-after-write continuity tests
+        run: python3 scripts/test_history_continuity.py
+      - name: Run changes-since-previous tests
+        run: python3 scripts/test_changes_since_previous.py
+      - name: Run changes comparability regression tests
+        run: python3 scripts/test_changes_comparability.py
+      - name: Run structured company event tests
+        run: python3 scripts/test_company_events.py
+      - name: Run company event coverage/backfill tests
+        run: python3 scripts/test_company_event_coverage.py
+      - name: Run official PDF event fact tests
+        run: python3 scripts/test_company_event_facts.py
+      - name: Run company event metadata tests
+        run: python3 scripts/test_company_event_metadata.py
+      - name: Run public quote abuse-protection tests
+        run: node --test tests/worker-abuse-protection.test.mjs
 
   reusable-selftest:
     uses: ./.github/workflows/reusable-a-share-quotes.yml
     with:
-      source_ref: ${{ github.sha }}
+      execution_mode: INTRADAY_FAST
       enable_history_cache: true
       cache_namespace: reusable-selftest
       snapshot_artifact_name: reusable-selftest-snapshot
       retention_days: 1
       config_json: >-
-        {"detail_codes":["002558"],"light_codes":["002555","002517"],"groups":{"game_smoke":{"label":"游戏股复用工作流冒烟测试","target_code":"002558","member_codes":["002555","002517"]}},"max_total_codes":10}
+        {"detail_codes":["002558"],"light_codes":["002555","002517"],"groups":{"game_smoke":{"label":"游戏股复用工作流冒烟测试","target_code":"002558","member_codes":["002555","002517"]}},"max_total_codes":10,"event_lookback_days":7}
