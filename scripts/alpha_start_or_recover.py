@@ -146,11 +146,32 @@ def _operation_fingerprint(identity):
     )
 
 
-def _expose_dispatch_identity(record, identity, *, repository, token):
+def _verified_run_for_record(record, verified_runs):
+    try:
+        expected_id = int(record["workflow_run_id"])
+    except (KeyError, TypeError, ValueError) as exc:
+        raise StartOrRecoverError(
+            "recovered operation is missing its exact workflow_run_id"
+        ) from exc
+    matches = []
+    for run in verified_runs:
+        try:
+            run_id = int(run.get("id"))
+        except (TypeError, ValueError):
+            continue
+        if run_id == expected_id:
+            matches.append(run)
+    if len(matches) != 1:
+        raise StartOrRecoverError(
+            f"recovered operation expected one verified run id={expected_id}, got {len(matches)}"
+        )
+    return matches[0]
+
+
+def _expose_dispatch_identity(record, identity, *, repository, token, run=None):
     exposed = dict(record)
     exposed["operation_identity_fingerprint"] = _operation_fingerprint(identity)
-    run = None
-    if exposed.get("workflow_run_id") is not None:
+    if exposed.get("workflow_run_id") is not None and run is None:
         run = fetch_workflow_run(repository, token, exposed["workflow_run_id"])
     state, source = external_operation_state(exposed, run=run)
     exposed["operation_state"] = state
@@ -204,7 +225,11 @@ def start_or_recover(
     if record.get("workflow_run_id") is not None:
         return (
             _expose_dispatch_identity(
-                record, identity, repository=repository, token=token
+                record,
+                identity,
+                repository=repository,
+                token=token,
+                run=_verified_run_for_record(record, verified_runs),
             ),
             "RECOVERED",
         )
