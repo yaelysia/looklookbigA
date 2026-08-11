@@ -58,7 +58,19 @@ jobs:
 6. 如果修改了 snapshot schema、配置格式或 reusable workflow，README 已同步更新；
 7. 创建 `master → v1` 的发布 PR，检查差异后再合并。
 
+如果本次晋升包含 looklookAlpha provider contract，还必须额外满足：
+
+8. `contracts/looklookalpha-provider-v1.json` 与目标 `master` SHA 对应的 snapshot capability 验证通过；
+9. `fixtures/looklookalpha/provider-v1-snapshot.json` 与 `provider-v1-metadata.json` 的 frozen compatibility regression 通过；
+10. `scripts/test_alpha_provider_contract.py` 在 required pre-merge gate、reusable selftest 和 v1 smoke 中均通过，覆盖 correlation recovery、idempotency/conflict、并发隔离、exact run claim、failure/cancel 与 primary-artifact digest；
+11. 成功 operation 的 primary artifact 明确包含 `snapshot.json` 与 `alpha-artifact-manifest.json`，且 manifest 表示恰好一个 primary snapshot 并给出可复核 SHA-256 digest、producing commit/workflow/run identity；
+12. consumer 端稳定身份必须冻结为 `v1` + 精确 commit SHA + capability manifest/workflow identity，禁止以 `master` 独有字段、latest run 或 latest artifact 作为 production contract。
+
+详细 provider 语义见 `docs/LOOKLOOKALPHA_PROVIDER.md`。
+
 `v1` 不采用“master 每次提交自动同步”的方式，以免实验性功能在未经验证时影响外部使用者。
+
+对于跨越 `master` 实现和 `v1` 稳定晋升的 Issue（例如 looklookAlpha provider contract），功能 PR 合入 `master` 只表示实现阶段完成。相关 Issue 应保持 open，直到单独的 `master → v1` 发布 PR 合并且稳定分支自检通过后才关闭。
 
 ## 分支保护要求
 
@@ -76,6 +88,8 @@ jobs:
 
 `master → v1` 的发布 PR 应使用普通 **merge commit**，不要 squash。这样 `v1` 会保留 `master` 的提交祖先关系，下一次发布时 GitHub 可以准确计算仅新增的差异。
 
+涉及 stable `v1` promotion 的发布 PR 属于稳定发布边界，应在最终合并前进行人工检查，不由自动开发/自动审核流水线直接合并。
+
 ## v1 自检
 
 `.github/workflows/v1-smoke.yml` 会在 `v1` 收到新提交时运行：
@@ -83,8 +97,9 @@ jobs:
 - live current-price guard 故障注入测试；
 - quote resilience、配置边界、Action SHA / HTTPS transport 测试；
 - Web 公共行情接口滥用防护测试；
+- looklookAlpha provider capability / frozen fixture / operation / artifact contract regressions；
 - 通过 reusable workflow 自己运行一组小型 A 股观察列表；
-- 生成 `v1-smoke-snapshot` artifact。
+- 生成 `v1-smoke-snapshot` artifact（provider contract 启用时同时包含可验证的 Alpha artifact manifest）。
 
 因此每次稳定版晋升都有单独的 CI 记录。
 
@@ -96,4 +111,7 @@ jobs:
 - reusable workflow 现有输入参数兼容；
 - `snapshot.json` 已有字段尽量只增不删；
 - realtime/current price 永远不得从历史 cache / snapshot / daily K 回填；
+- looklookAlpha consumer 通过 capability manifest 与 frozen fixtures 判断兼容性，不能只看 schema number；
+- refresh operation 必须通过 correlation/idempotency identity 恢复 exact run，禁止退化为 `latest` 启发式；
+- primary artifact 必须通过 exact operation identity 与 digest 验证，缺失/多份冲突/digest mismatch 时显式失败；
 - 必须进行破坏性修改时，应考虑新的稳定主版本分支，而不是直接破坏 `v1` 使用者。
