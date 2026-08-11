@@ -56,6 +56,8 @@
       "formula": "SHA256(domain || 0x00 || command_schema_version || 0x00 || RFC8785_JCS(canonical_command_body))",
       "authority": "CALLER",
       "provider_behavior": "VALIDATE_64_HEX_AND_PRESERVE",
+      "provider_runtime_recomputes_digest": false,
+      "fixture_helper_scope": "TEST_VECTORS_ONLY",
       "canonical_body_fields": [
         "provider_workflow_identity",
         "requirements",
