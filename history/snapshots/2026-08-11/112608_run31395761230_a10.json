@@ -1,7 +1,7 @@
 {
   "schema_version": 15,
-  "runner_time_cst": "2026-08-11 11:10:21.364",
-  "runner_time_utc": "2026-08-11T03:10:21.364579+00:00",
+  "runner_time_cst": "2026-08-11 11:26:08.707",
+  "runner_time_utc": "2026-08-11T03:26:08.707943+00:00",
   "market_window": true,
   "features": {
     "intraday_structure_metrics": "v1",
@@ -30,19 +30,19 @@
         "name": "巨人网络",
         "market": "SZ",
         "source": "Eastmoney",
-        "latest": 29.3,
+        "latest": 29.37,
         "open": 29.5,
         "high": 30.1,
         "low": 29.25,
-        "average": 29.65,
+        "average": 29.64,
         "previous_close": 29.79,
-        "change": -0.49,
-        "change_percent": -1.64,
+        "change": -0.42,
+        "change_percent": -1.41,
         "amplitude_percent": 2.85,
-        "volume_raw": 451082,
-        "amount_raw": 1337541656.57,
-        "amount_1e8": 13.3754,
-        "market_time_cst": "2026-08-11 11:10:21",
+        "volume_raw": 468591,
+        "amount_raw": 1388915066.57,
+        "amount_1e8": 13.8892,
+        "market_time_cst": "2026-08-11 11:26:09",
         "lag_seconds": 0,
         "freshness": "LIVE",
         "resilience": {
@@ -53,15 +53,15 @@
           "selection_reason": "PRIMARY_USABLE",
           "consensus": {
             "status": "CONSISTENT",
-            "price_gap": 0.0,
-            "price_gap_percent": 0.0
+            "price_gap": 0.01,
+            "price_gap_percent": 0.0341
           },
           "providers": {
             "Eastmoney": {
               "status": "OK",
               "usable": true,
-              "latest": 29.3,
-              "market_time_cst": "2026-08-11 11:10:21",
+              "latest": 29.37,
+              "market_time_cst": "2026-08-11 11:26:09",
               "lag_seconds": 0,
               "freshness": "LIVE",
               "error": null
@@ -69,9 +69,9 @@
             "Tencent": {
               "status": "OK",
               "usable": true,
-              "latest": 29.3,
-              "market_time_cst": "2026-08-11 11:10:21",
-              "lag_seconds": 0,
+              "latest": 29.36,
+              "market_time_cst": "2026-08-11 11:26:06",
+              "lag_seconds": 2,
               "freshness": "LIVE",
               "error": null
             }
@@ -81,8 +81,8 @@
           "source": "Eastmoney",
           "source_type": "API",
           "source_tier": "PRIMARY_PROVIDER",
-          "fetched_at": "2026-08-11T11:10:21+08:00",
-          "data_time": "2026-08-11T11:10:21+08:00",
+          "fetched_at": "2026-08-11T11:26:08+08:00",
+          "data_time": "2026-08-11T11:26:09+08:00",
           "lag_seconds": 0,
           "freshness": "LIVE",
           "freshness_policy": "REALTIME_QUOTE",
@@ -118,19 +118,19 @@
         "source": "Tencent",
         "date": "20260811",
         "freshness": "LIVE",
-        "count": 102,
-        "last_time": "1111",
-        "last_price": 29.29,
-        "trend_5m_percent": -0.3402517863218879,
-        "trend_15m_percent": -0.5095108695652217,
-        "market_time_cst": "2026-08-11 11:11:00",
+        "count": 118,
+        "last_time": "1127",
+        "last_price": 29.36,
+        "trend_5m_percent": 0.03407155025552111,
+        "trend_15m_percent": 0.17059024223815555,
+        "market_time_cst": "2026-08-11 11:27:00",
         "lag_seconds": 0,
         "metadata": {
           "source": "Tencent",
           "source_type": "API",
           "source_tier": "SECONDARY_PROVIDER",
-          "fetched_at": "2026-08-11T11:10:21+08:00",
-          "data_time": "2026-08-11T11:11:00+08:00",
+          "fetched_at": "2026-08-11T11:26:08+08:00",
+          "data_time": "2026-08-11T11:27:00+08:00",
           "lag_seconds": 0,
           "freshness": "LIVE",
           "freshness_policy": "MINUTE_SERIES",
@@ -164,63 +164,63 @@
       },
       "intraday": {
         "status": "OK",
-        "minute_count": 102,
-        "minute_last_time": "1111",
+        "minute_count": 118,
+        "minute_last_time": "1127",
         "quote_available": true,
-        "price": 29.3,
+        "price": 29.37,
         "price_source": "quote",
-        "minute_price": 29.29,
+        "minute_price": 29.36,
         "quote_minute_price_gap_percent": 0.0341,
-        "vwap": 29.65,
+        "vwap": 29.64,
         "vwap_source": "quote_average",
-        "price_vs_vwap_percent": -1.1804,
+        "price_vs_vwap_percent": -0.9109,
         "above_vwap": false,
         "day_high": 30.1,
         "day_low": 29.25,
         "day_extrema_source": "quote",
-        "from_day_high_percent": -2.6578,
-        "from_day_low_percent": 0.1709,
-        "day_range_position_percent": 5.88,
-        "trend_5m_percent": -0.3403,
-        "trend_15m_percent": -0.5095,
-        "trend_30m_percent": -0.8127,
-        "recent_15m_high": 29.45,
-        "recent_15m_low": 29.26,
-        "distance_to_recent_15m_high_percent": -0.5093,
-        "from_recent_15m_low_percent": 0.1367,
-        "recent_30m_high": 29.51,
+        "from_day_high_percent": -2.4252,
+        "from_day_low_percent": 0.4103,
+        "day_range_position_percent": 14.12,
+        "trend_5m_percent": 0.0341,
+        "trend_15m_percent": 0.1706,
+        "trend_30m_percent": -0.3056,
+        "recent_15m_high": 29.43,
+        "recent_15m_low": 29.29,
+        "distance_to_recent_15m_high_percent": -0.2039,
+        "from_recent_15m_low_percent": 0.2731,
+        "recent_30m_high": 29.43,
         "recent_30m_low": 29.26,
-        "distance_to_recent_30m_high_percent": -0.7116,
-        "from_recent_30m_low_percent": 0.1367,
-        "reference_time": "1110",
-        "volume_spike_ratio_1m": 0.823,
-        "amount_spike_ratio_1m": 0.819,
-        "volume_strength_ratio_5m": 1.08,
-        "amount_strength_ratio_5m": 1.076,
+        "distance_to_recent_30m_high_percent": -0.2039,
+        "from_recent_30m_low_percent": 0.3759,
+        "reference_time": "1126",
+        "volume_spike_ratio_1m": 0.695,
+        "amount_spike_ratio_1m": 0.695,
+        "volume_strength_ratio_5m": 0.465,
+        "amount_strength_ratio_5m": 0.465,
         "baseline_minutes": 20,
         "structure_window_minutes": 60,
-        "structure": "LOWER_HIGH_LOWER_LOW",
+        "structure": "LOWER_HIGH_FLAT_LOW",
         "bias": "DOWNTREND",
         "swing_high_direction": "LOWER",
-        "swing_low_direction": "LOWER",
+        "swing_low_direction": "FLAT",
         "last_swing_highs": [
           {
-            "time": "1053",
-            "price": 29.51
+            "time": "1120",
+            "price": 29.43
           },
           {
-            "time": "1106",
-            "price": 29.39
+            "time": "1125",
+            "price": 29.36
           }
         ],
         "last_swing_lows": [
           {
-            "time": "1102",
+            "time": "1118",
             "price": 29.33
           },
           {
-            "time": "1109",
-            "price": 29.26
+            "time": "1123",
+            "price": 29.32
           }
         ],
         "current_price_valid": true,
@@ -238,8 +238,8 @@
           "source": "DERIVED",
           "source_type": "DERIVED",
           "source_tier": "DERIVED",
-          "fetched_at": "2026-08-11T11:10:21+08:00",
-          "data_time": "2026-08-11T11:11:00+08:00",
+          "fetched_at": "2026-08-11T11:26:08+08:00",
+          "data_time": "2026-08-11T11:27:00+08:00",
           "lag_seconds": null,
           "freshness": "DERIVED_CURRENT",
           "freshness_policy": "DERIVED",
@@ -279,7 +279,7 @@
         "completed_bar_count": 60,
         "latest_completed_date": "2026-08-10",
         "current_partial_bar": null,
-        "current_price": 29.3,
+        "current_price": 29.37,
         "previous_day": {
           "date": "2026-08-10",
           "open": 29.03,
@@ -298,7 +298,7 @@
         },
         "ma_alignment": "BULLISH_STACK",
         "atr14": 1.8286,
-        "atr14_percent_of_price": 6.241,
+        "atr14_percent_of_price": 6.226,
         "range_5d": {
           "window": 5,
           "high": 30.81,
@@ -323,13 +323,13 @@
         "return_20d_percent": 4.5997,
         "previous_volume_vs_20d_mean": 0.601,
         "current_vs_context": {
-          "ma5_percent": -1.2803,
-          "ma10_percent": 2.4619,
-          "ma20_percent": 3.9339,
-          "ma60_percent": 8.5877,
-          "prev_close_percent": -1.6448,
-          "20d_high_percent": -6.4197,
-          "20d_low_percent": 24.1
+          "ma5_percent": -1.0445,
+          "ma10_percent": 2.7067,
+          "ma20_percent": 4.1822,
+          "ma60_percent": 8.8471,
+          "prev_close_percent": -1.4099,
+          "20d_high_percent": -6.1961,
+          "20d_low_percent": 24.3964
         },
         "daily_swings": {
           "last_swing_highs": [
@@ -375,8 +375,8 @@
           "supports": [
             {
               "price": 28.83,
-              "distance_percent": -1.604,
-              "distance_atr": -0.257,
+              "distance_percent": -1.839,
+              "distance_atr": -0.295,
               "score": 1.0,
               "strength": "WEAK",
               "confluence_count": 1,
@@ -387,8 +387,8 @@
             },
             {
               "price": 28.598,
-              "distance_percent": -2.396,
-              "distance_atr": -0.384,
+              "distance_percent": -2.629,
+              "distance_atr": -0.422,
               "score": 2.2,
               "strength": "MEDIUM",
               "confluence_count": 2,
@@ -400,8 +400,8 @@
             },
             {
               "price": 28.191,
-              "distance_percent": -3.785,
-              "distance_atr": -0.606,
+              "distance_percent": -4.014,
+              "distance_atr": -0.645,
               "score": 1.3,
               "strength": "WEAK",
               "confluence_count": 1,
@@ -412,8 +412,8 @@
             },
             {
               "price": 26.869,
-              "distance_percent": -8.296,
-              "distance_atr": -1.329,
+              "distance_percent": -8.514,
+              "distance_atr": -1.368,
               "score": 2.9,
               "strength": "MEDIUM",
               "confluence_count": 2,
@@ -425,8 +425,8 @@
             },
             {
               "price": 25.52,
-              "distance_percent": -12.901,
-              "distance_atr": -2.067,
+              "distance_percent": -13.109,
+              "distance_atr": -2.105,
               "score": 1.8,
               "strength": "WEAK",
               "confluence_count": 1,
@@ -439,8 +439,8 @@
           "resistances": [
             {
               "price": 29.756,
-              "distance_percent": 1.556,
-              "distance_atr": 0.249,
+              "distance_percent": 1.313,
+              "distance_atr": 0.211,
               "score": 2.6,
               "strength": "MEDIUM",
               "confluence_count": 3,
@@ -453,8 +453,8 @@
             },
             {
               "price": 30.81,
-              "distance_percent": 5.154,
-              "distance_atr": 0.826,
+              "distance_percent": 4.903,
+              "distance_atr": 0.787,
               "score": 2.9,
               "strength": "MEDIUM",
               "confluence_count": 2,
@@ -466,8 +466,8 @@
             },
             {
               "price": 31.258,
-              "distance_percent": 6.681,
-              "distance_atr": 1.071,
+              "distance_percent": 6.427,
+              "distance_atr": 1.032,
               "score": 6.5,
               "strength": "STRONG",
               "confluence_count": 4,
@@ -497,7 +497,7 @@
           "source": "History fast cache (Tencent qfq)",
           "source_type": "CACHE",
           "source_tier": "CACHE",
-          "fetched_at": "2026-08-11T11:10:21+08:00",
+          "fetched_at": "2026-08-11T11:26:08+08:00",
           "data_time": "2026-08-10",
           "lag_seconds": null,
           "freshness": "COMPLETED_BAR_UNVERIFIED",
@@ -525,7 +525,7 @@
             "max_completed_session_age": 1,
             "required_state": "LATEST_COMPLETED_BAR",
             "observed_data_time": "2026-08-10",
-            "evaluated_at": "2026-08-11T11:10:21+08:00",
+            "evaluated_at": "2026-08-11T11:26:08+08:00",
             "session_verified": false,
             "observed_completed_session_age": null,
             "session_validation_state": "FAST_REUSE_UNVERIFIED",
@@ -600,7 +600,7 @@
         "lookback_days": 30,
         "window_start_date": "2026-07-12",
         "window_end_date": "2026-08-11",
-        "fetched_at": "2026-08-11T11:10:21+08:00",
+        "fetched_at": "2026-08-11T11:26:08+08:00",
         "latest": {
           "event_id": "cninfo:1225464064",
           "code": "002558",
@@ -622,7 +622,7 @@
             "dates": []
           },
           "freshness": "RECENT_7D",
-          "fetched_at": "2026-08-11T11:10:21+08:00",
+          "fetched_at": "2026-08-11T11:26:08+08:00",
           "status": "OPEN",
           "related_event_id": null,
           "supersedes_event_id": null,
@@ -630,7 +630,7 @@
             "source": "CNINFO",
             "source_type": "API",
             "source_tier": "OFFICIAL",
-            "fetched_at": "2026-08-11T11:10:21+08:00",
+            "fetched_at": "2026-08-11T11:26:08+08:00",
             "data_time": "2026-08-08T00:00:00+08:00",
             "lag_seconds": null,
             "freshness": "RECENT_7D",
@@ -687,7 +687,7 @@
               "dates": []
             },
             "freshness": "RECENT_7D",
-            "fetched_at": "2026-08-11T11:10:21+08:00",
+            "fetched_at": "2026-08-11T11:26:08+08:00",
             "status": "OPEN",
             "related_event_id": null,
             "supersedes_event_id": null,
@@ -695,7 +695,7 @@
               "source": "CNINFO",
               "source_type": "API",
               "source_tier": "OFFICIAL",
-              "fetched_at": "2026-08-11T11:10:21+08:00",
+              "fetched_at": "2026-08-11T11:26:08+08:00",
               "data_time": "2026-08-08T00:00:00+08:00",
               "lag_seconds": null,
               "freshness": "RECENT_7D",
@@ -783,7 +783,7 @@
           "source": "CNINFO",
           "source_type": "API",
           "source_tier": "OFFICIAL",
-          "fetched_at": "2026-08-11T11:10:21+08:00",
+          "fetched_at": "2026-08-11T11:26:08+08:00",
           "data_time": "2026-08-08T00:00:00+08:00",
           "lag_seconds": null,
           "freshness": "CURRENT_QUERY",
@@ -829,8 +829,8 @@
         "source": "DERIVED",
         "source_type": "DERIVED",
         "source_tier": "DERIVED",
-        "fetched_at": "2026-08-11T11:10:21+08:00",
-        "data_time": "2026-08-11T11:10:21+08:00",
+        "fetched_at": "2026-08-11T11:26:08+08:00",
+        "data_time": "2026-08-11T11:26:09+08:00",
         "lag_seconds": null,
         "freshness": "DERIVED_CURRENT",
         "freshness_policy": "DERIVED",
@@ -876,26 +876,26 @@
         },
         "observed": {
           "turnover": {
-            "amount_today": 1335339813.79,
-            "volume_today": 450330.0,
-            "amount_today_minute": 1335339813.79,
-            "amount_today_quote": 1337541656.57,
-            "amount_source_gap_percent": -0.165,
-            "amount_1m": 4805505.99,
-            "amount_5m": 35456926.93,
-            "amount_15m": 104826327.85,
-            "amount_30m": 212756614.62,
-            "volume_1m": 1642.0,
-            "volume_5m": 12094.0,
-            "volume_15m": 35703.0,
-            "volume_30m": 72337.0,
-            "amount_rate_1m": 4805505.99,
-            "amount_rate_5m": 7091385.39,
-            "amount_rate_15m": 6988421.86,
-            "amount_rate_30m": 7091887.15,
-            "amount_rate_baseline_20m": 6590747.64,
-            "amount_rate_vs_baseline": 1.076,
-            "turnover_acceleration": 0.915,
+            "amount_today": 1388800782.69,
+            "volume_today": 468552.0,
+            "amount_today_minute": 1388800782.69,
+            "amount_today_quote": 1388915066.57,
+            "amount_source_gap_percent": -0.008,
+            "amount_1m": 2365818.99,
+            "amount_5m": 12656963.98,
+            "amount_15m": 47912858.91,
+            "amount_30m": 154579019.75,
+            "volume_1m": 806.0,
+            "volume_5m": 4312.0,
+            "volume_15m": 16328.0,
+            "volume_30m": 52666.0,
+            "amount_rate_1m": 2365818.99,
+            "amount_rate_5m": 2531392.8,
+            "amount_rate_15m": 3194190.59,
+            "amount_rate_30m": 5152633.99,
+            "amount_rate_baseline_20m": 5443767.64,
+            "amount_rate_vs_baseline": 0.465,
+            "turnover_acceleration": 0.774,
             "amount_rate_vs_previous_snapshot": null,
             "baseline_minutes": 20,
             "previous_snapshot_comparable": false,
@@ -903,7 +903,7 @@
               "source": "Tencent",
               "source_type": "API",
               "source_tier": "SECONDARY_PROVIDER",
-              "fetched_at": "2026-08-11T11:10:21+08:00",
+              "fetched_at": "2026-08-11T11:26:08+08:00",
               "data_time": null,
               "lag_seconds": 0,
               "freshness": "LIVE",
@@ -948,64 +948,64 @@
           },
           "volume_structure": {
             "full_session": {
-              "classified_minutes": 100,
-              "up_amount": 631350282.2,
-              "down_amount": 657185849.61,
-              "flat_amount": 42340331.98,
-              "up_volume": 212757.0,
-              "down_volume": 221798.0,
-              "flat_volume": 14262.0,
-              "up_amount_share": 0.4744,
-              "down_amount_share": 0.4938,
-              "flat_amount_share": 0.0318,
-              "up_volume_share": 0.474,
-              "down_volume_share": 0.4942,
-              "flat_volume_share": 0.0318,
-              "up_amount_vs_down_amount": 0.961,
-              "up_volume_vs_down_volume": 0.959,
+              "classified_minutes": 116,
+              "up_amount": 658904597.15,
+              "down_amount": 680726684.57,
+              "flat_amount": 44706150.97,
+              "up_volume": 222152.0,
+              "down_volume": 229819.0,
+              "flat_volume": 15068.0,
+              "up_amount_share": 0.476,
+              "down_amount_share": 0.4917,
+              "flat_amount_share": 0.0323,
+              "up_volume_share": 0.4757,
+              "down_volume_share": 0.4921,
+              "flat_volume_share": 0.0323,
+              "up_amount_vs_down_amount": 0.968,
+              "up_volume_vs_down_volume": 0.967,
               "semantic_note": "Price-change-associated turnover; not true active buy/sell flow."
             },
             "last_30m": {
               "classified_minutes": 30,
-              "up_amount": 67714386.64,
-              "down_amount": 133814297.0,
-              "flat_amount": 11227930.98,
-              "up_volume": 23017.0,
-              "down_volume": 45503.0,
-              "flat_volume": 3817.0,
-              "up_amount_share": 0.3183,
-              "down_amount_share": 0.629,
-              "flat_amount_share": 0.0528,
-              "up_volume_share": 0.3182,
-              "down_volume_share": 0.629,
-              "flat_volume_share": 0.0528,
-              "up_amount_vs_down_amount": 0.506,
-              "up_volume_vs_down_volume": 0.506,
+              "up_amount": 60827084.66,
+              "down_amount": 86673856.11,
+              "flat_amount": 7078078.98,
+              "up_volume": 20727.0,
+              "down_volume": 29528.0,
+              "flat_volume": 2411.0,
+              "up_amount_share": 0.3935,
+              "down_amount_share": 0.5607,
+              "flat_amount_share": 0.0458,
+              "up_volume_share": 0.3936,
+              "down_volume_share": 0.5607,
+              "flat_volume_share": 0.0458,
+              "up_amount_vs_down_amount": 0.702,
+              "up_volume_vs_down_volume": 0.702,
               "semantic_note": "Price-change-associated turnover; not true active buy/sell flow."
             },
             "last_15m": {
               "classified_minutes": 15,
-              "up_amount": 33272769.71,
-              "down_amount": 66841298.15,
-              "flat_amount": 4712259.99,
-              "up_volume": 11332.0,
-              "down_volume": 22766.0,
-              "flat_volume": 1605.0,
-              "up_amount_share": 0.3174,
-              "down_amount_share": 0.6376,
-              "flat_amount_share": 0.045,
-              "up_volume_share": 0.3174,
-              "down_volume_share": 0.6376,
-              "flat_volume_share": 0.045,
-              "up_amount_vs_down_amount": 0.498,
-              "up_volume_vs_down_volume": 0.498,
+              "up_amount": 22006204.96,
+              "down_amount": 23540834.96,
+              "flat_amount": 2365818.99,
+              "up_volume": 7501.0,
+              "down_volume": 8021.0,
+              "flat_volume": 806.0,
+              "up_amount_share": 0.4593,
+              "down_amount_share": 0.4913,
+              "flat_amount_share": 0.0494,
+              "up_volume_share": 0.4594,
+              "down_volume_share": 0.4912,
+              "flat_volume_share": 0.0494,
+              "up_amount_vs_down_amount": 0.935,
+              "up_volume_vs_down_volume": 0.935,
               "semantic_note": "Price-change-associated turnover; not true active buy/sell flow."
             },
             "metadata": {
               "source": "Tencent",
               "source_type": "API",
               "source_tier": "SECONDARY_PROVIDER",
-              "fetched_at": "2026-08-11T11:10:21+08:00",
+              "fetched_at": "2026-08-11T11:26:08+08:00",
               "data_time": null,
               "lag_seconds": 0,
               "freshness": "LIVE",
@@ -1043,19 +1043,19 @@
           },
           "vwap_distribution": {
             "status": "OK",
-            "vwap": 29.65,
+            "vwap": 29.64,
             "near_tolerance_percent": 0.1,
-            "above_amount": 550576315.19,
-            "below_amount": 671576447.9,
-            "near_amount": 113187050.7,
-            "above_amount_share": 0.4123,
-            "below_amount_share": 0.5029,
-            "near_amount_share": 0.0848,
+            "above_amount": 571454238.19,
+            "below_amount": 725037416.8,
+            "near_amount": 92309127.7,
+            "above_amount_share": 0.4115,
+            "below_amount_share": 0.5221,
+            "near_amount_share": 0.0665,
             "metadata": {
               "source": "Tencent",
               "source_type": "API",
               "source_tier": "SECONDARY_PROVIDER",
-              "fetched_at": "2026-08-11T11:10:21+08:00",
+              "fetched_at": "2026-08-11T11:26:08+08:00",
               "data_time": null,
               "lag_seconds": 0,
               "freshness": "LIVE",
@@ -1095,22 +1095,23 @@
         },
         "derived": {
           "price_volume_confirmation": {
-            "state": "NEUTRAL",
-            "price_change_15m_percent": -0.611,
-            "amount_rate_vs_baseline": 1.076,
+            "state": "UP_VOLUME_CONTRACTION",
+            "price_change_15m_percent": 0.2048,
+            "amount_rate_vs_baseline": 0.465,
             "thresholds": {
               "price_move_percent": 0.15,
               "volume_expansion_ratio": 1.2,
               "volume_contraction_ratio": 0.8
             },
             "reason_codes": [
-              "TURNOVER_RATE_WITHIN_NORMAL_BAND"
+              "PRICE_UP",
+              "TURNOVER_RATE_CONTRACTED"
             ],
             "metadata": {
               "source": "DERIVED",
               "source_type": "DERIVED",
               "source_tier": "DERIVED",
-              "fetched_at": "2026-08-11T11:10:21+08:00",
+              "fetched_at": "2026-08-11T11:26:08+08:00",
               "data_time": null,
               "lag_seconds": null,
               "freshness": "DERIVED_CURRENT",
@@ -1144,32 +1145,32 @@
             }
           },
           "pressure": {
-            "buying": 24.59,
-            "selling": 75.41,
+            "buying": 39.27,
+            "selling": 60.73,
             "net_bias": "SELL",
             "confidence": "HIGH",
             "components": {
-              "directional_amount_share_delta": -0.3107,
-              "price_vs_vwap_percent": -1.1804,
-              "trend_15m_percent": -0.5095
+              "directional_amount_share_delta": -0.1672,
+              "price_vs_vwap_percent": -0.9109,
+              "trend_15m_percent": 0.1706
             },
             "formula": "50 + 25*(up_amount_share-down_amount_share) + 10*clip(price_vs_vwap/1%) + 15*clip(trend15/1%)",
             "evidence": [
               {
                 "metric": "up_amount_share",
-                "value": 0.3183
+                "value": 0.3935
               },
               {
                 "metric": "down_amount_share",
-                "value": 0.629
+                "value": 0.5607
               },
               {
                 "metric": "price_vs_vwap_percent",
-                "value": -1.1804
+                "value": -0.9109
               },
               {
                 "metric": "trend_15m_percent",
-                "value": -0.5095
+                "value": 0.1706
               }
             ],
             "reason_codes": [
@@ -1181,7 +1182,7 @@
               "source": "DERIVED",
               "source_type": "DERIVED",
               "source_tier": "DERIVED",
-              "fetched_at": "2026-08-11T11:10:21+08:00",
+              "fetched_at": "2026-08-11T11:26:08+08:00",
               "data_time": null,
               "lag_seconds": null,
               "freshness": "DERIVED_CURRENT",
@@ -1215,17 +1216,41 @@
             }
           },
           "absorption": {
-            "state": "NONE",
-            "score": 0.0,
-            "evidence": [],
-            "reason_codes": [
-              "NO_COMPLETED_DOWN_THEN_RECOVERY_SEQUENCE"
+            "state": "MODERATE",
+            "score": 56.32,
+            "evidence": [
+              {
+                "metric": "drawdown_to_local_low_percent",
+                "value": 0.6452
+              },
+              {
+                "metric": "recovery_ratio",
+                "value": 0.5263
+              },
+              {
+                "metric": "low_area_amount_vs_prior_median",
+                "value": 2.671
+              },
+              {
+                "metric": "no_new_low_after_local_low",
+                "value": true
+              },
+              {
+                "metric": "above_vwap",
+                "value": false
+              }
             ],
+            "reason_codes": [
+              "POST_LOW_RECOVERY",
+              "LOW_AREA_TURNOVER_EXPANSION",
+              "NO_NEW_LOW_AFTER_LOCAL_LOW"
+            ],
+            "semantic_note": "Pattern-based absorption context; does not assert hidden institutional activity.",
             "metadata": {
               "source": "DERIVED",
               "source_type": "DERIVED",
               "source_tier": "DERIVED",
-              "fetched_at": "2026-08-11T11:10:21+08:00",
+              "fetched_at": "2026-08-11T11:26:08+08:00",
               "data_time": null,
               "lag_seconds": null,
               "freshness": "DERIVED_CURRENT",
@@ -1263,15 +1288,15 @@
             "evidence": [
               {
                 "metric": "above_amount_share",
-                "value": 0.4123
+                "value": 0.4115
               },
               {
                 "metric": "below_amount_share",
-                "value": 0.5029
+                "value": 0.5221
               },
               {
                 "metric": "price_vs_vwap_percent",
-                "value": -1.1804
+                "value": -0.9109
               },
               {
                 "metric": "last_10_above_vwap_minutes",
@@ -1289,7 +1314,7 @@
               "source": "DERIVED",
               "source_type": "DERIVED",
               "source_tier": "DERIVED",
-              "fetched_at": "2026-08-11T11:10:21+08:00",
+              "fetched_at": "2026-08-11T11:26:08+08:00",
               "data_time": null,
               "lag_seconds": null,
               "freshness": "DERIVED_CURRENT",
@@ -1460,7 +1485,7 @@
                 "configured_universe_same": true,
                 "available_set_same": false
               },
-              "interval_minutes": 1025.316,
+              "interval_minutes": 1041.105,
               "relative_capital_strength": null,
               "target_amount_rate_since_previous": null,
               "peer_median_amount_rate_since_previous": null,
@@ -1525,7 +1550,7 @@
               "configured_universe_same": true,
               "available_set_same": false
             },
-            "interval_minutes": 1025.316,
+            "interval_minutes": 1041.105,
             "relative_capital_strength": null,
             "target_amount_rate_since_previous": null,
             "peer_median_amount_rate_since_previous": null,
@@ -1542,7 +1567,7 @@
             "source": "DERIVED",
             "source_type": "DERIVED",
             "source_tier": "DERIVED",
-            "fetched_at": "2026-08-11T11:10:21+08:00",
+            "fetched_at": "2026-08-11T11:26:08+08:00",
             "data_time": null,
             "lag_seconds": null,
             "freshness": "DERIVED_CURRENT",
@@ -1580,7 +1605,7 @@
           "source": "DERIVED",
           "source_type": "DERIVED",
           "source_tier": "DERIVED",
-          "fetched_at": "2026-08-11T11:10:21+08:00",
+          "fetched_at": "2026-08-11T11:26:08+08:00",
           "data_time": null,
           "lag_seconds": null,
           "freshness": "DERIVED_CURRENT",
@@ -1754,7 +1779,7 @@
           "source": "Eastmoney",
           "source_type": "API",
           "source_tier": "PRIMARY_PROVIDER",
-          "fetched_at": "2026-08-11T11:10:21+08:00",
+          "fetched_at": "2026-08-11T11:26:08+08:00",
           "data_time": null,
           "lag_seconds": null,
           "freshness": "UNAVAILABLE",
@@ -1916,19 +1941,19 @@
         "name": "国电电力",
         "market": "SH",
         "source": "Eastmoney",
-        "latest": 5.06,
+        "latest": 5.09,
         "open": 5.03,
         "high": 5.1,
         "low": 5.02,
         "average": 5.07,
         "previous_close": 5.02,
-        "change": 0.04,
-        "change_percent": 0.8,
+        "change": 0.07,
+        "change_percent": 1.39,
         "amplitude_percent": 1.59,
-        "volume_raw": 571964,
-        "amount_raw": 289942907.0,
-        "amount_1e8": 2.8994,
-        "market_time_cst": "2026-08-11 11:10:23",
+        "volume_raw": 660838,
+        "amount_raw": 335096749.0,
+        "amount_1e8": 3.351,
+        "market_time_cst": "2026-08-11 11:26:08",
         "lag_seconds": 0,
         "freshness": "LIVE",
         "resilience": {
@@ -1946,8 +1971,8 @@
             "Eastmoney": {
               "status": "OK",
               "usable": true,
-              "latest": 5.06,
-              "market_time_cst": "2026-08-11 11:10:23",
+              "latest": 5.09,
+              "market_time_cst": "2026-08-11 11:26:08",
               "lag_seconds": 0,
               "freshness": "LIVE",
               "error": null
@@ -1955,9 +1980,9 @@
             "Tencent": {
               "status": "OK",
               "usable": true,
-              "latest": 5.06,
-              "market_time_cst": "2026-08-11 11:10:20",
-              "lag_seconds": 1,
+              "latest": 5.09,
+              "market_time_cst": "2026-08-11 11:26:08",
+              "lag_seconds": 0,
               "freshness": "LIVE",
               "error": null
             }
@@ -1967,8 +1992,8 @@
           "source": "Eastmoney",
           "source_type": "API",
           "source_tier": "PRIMARY_PROVIDER",
-          "fetched_at": "2026-08-11T11:10:21+08:00",
-          "data_time": "2026-08-11T11:10:23+08:00",
+          "fetched_at": "2026-08-11T11:26:08+08:00",
+          "data_time": "2026-08-11T11:26:08+08:00",
           "lag_seconds": 0,
           "freshness": "LIVE",
           "freshness_policy": "REALTIME_QUOTE",
@@ -2004,19 +2029,19 @@
         "source": "Tencent",
         "date": "20260811",
         "freshness": "LIVE",
-        "count": 102,
-        "last_time": "1111",
-        "last_price": 5.06,
-        "trend_5m_percent": -0.19723865877713243,
-        "trend_15m_percent": -0.19723865877713243,
-        "market_time_cst": "2026-08-11 11:11:00",
+        "count": 118,
+        "last_time": "1127",
+        "last_price": 5.09,
+        "trend_5m_percent": 0.0,
+        "trend_15m_percent": 0.5928853754940677,
+        "market_time_cst": "2026-08-11 11:27:00",
         "lag_seconds": 0,
         "metadata": {
           "source": "Tencent",
           "source_type": "API",
           "source_tier": "SECONDARY_PROVIDER",
-          "fetched_at": "2026-08-11T11:10:21+08:00",
-          "data_time": "2026-08-11T11:11:00+08:00",
+          "fetched_at": "2026-08-11T11:26:08+08:00",
+          "data_time": "2026-08-11T11:27:00+08:00",
           "lag_seconds": 0,
           "freshness": "LIVE",
           "freshness_policy": "MINUTE_SERIES",
@@ -2050,63 +2075,63 @@
       },
       "intraday": {
         "status": "OK",
-        "minute_count": 102,
-        "minute_last_time": "1111",
+        "minute_count": 118,
+        "minute_last_time": "1127",
         "quote_available": true,
-        "price": 5.06,
+        "price": 5.09,
         "price_source": "quote",
-        "minute_price": 5.06,
+        "minute_price": 5.09,
         "quote_minute_price_gap_percent": 0.0,
         "vwap": 5.07,
         "vwap_source": "quote_average",
-        "price_vs_vwap_percent": -0.1972,
-        "above_vwap": false,
+        "price_vs_vwap_percent": 0.3945,
+        "above_vwap": true,
         "day_high": 5.1,
         "day_low": 5.02,
         "day_extrema_source": "quote",
-        "from_day_high_percent": -0.7843,
-        "from_day_low_percent": 0.7968,
-        "day_range_position_percent": 50.0,
-        "trend_5m_percent": -0.1972,
-        "trend_15m_percent": -0.1972,
-        "trend_30m_percent": 0.0,
-        "recent_15m_high": 5.07,
+        "from_day_high_percent": -0.1961,
+        "from_day_low_percent": 1.3944,
+        "day_range_position_percent": 87.5,
+        "trend_5m_percent": 0.0,
+        "trend_15m_percent": 0.5929,
+        "trend_30m_percent": 0.3945,
+        "recent_15m_high": 5.09,
         "recent_15m_low": 5.06,
-        "distance_to_recent_15m_high_percent": -0.1972,
-        "from_recent_15m_low_percent": 0.0,
-        "recent_30m_high": 5.07,
+        "distance_to_recent_15m_high_percent": 0.0,
+        "from_recent_15m_low_percent": 0.5929,
+        "recent_30m_high": 5.09,
         "recent_30m_low": 5.06,
-        "distance_to_recent_30m_high_percent": -0.1972,
-        "from_recent_30m_low_percent": 0.0,
-        "reference_time": "1110",
-        "volume_spike_ratio_1m": 0.66,
-        "amount_spike_ratio_1m": 0.66,
-        "volume_strength_ratio_5m": 1.048,
-        "amount_strength_ratio_5m": 1.048,
+        "distance_to_recent_30m_high_percent": 0.0,
+        "from_recent_30m_low_percent": 0.5929,
+        "reference_time": "1126",
+        "volume_spike_ratio_1m": 4.55,
+        "amount_spike_ratio_1m": 4.563,
+        "volume_strength_ratio_5m": 0.812,
+        "amount_strength_ratio_5m": 0.814,
         "baseline_minutes": 20,
         "structure_window_minutes": 60,
-        "structure": "RANGE_OR_FLAT",
-        "bias": "RANGE",
-        "swing_high_direction": "FLAT",
+        "structure": "HIGHER_HIGH_FLAT_LOW",
+        "bias": "UPTREND",
+        "swing_high_direction": "HIGHER",
         "swing_low_direction": "FLAT",
         "last_swing_highs": [
           {
-            "time": "1043",
+            "time": "1054",
             "price": 5.07
           },
           {
-            "time": "1054",
-            "price": 5.07
+            "time": "1118",
+            "price": 5.09
           }
         ],
         "last_swing_lows": [
           {
-            "time": "1058",
-            "price": 5.06
+            "time": "1120",
+            "price": 5.08
           },
           {
-            "time": "1108",
-            "price": 5.06
+            "time": "1123",
+            "price": 5.08
           }
         ],
         "current_price_valid": true,
@@ -2124,8 +2149,8 @@
           "source": "DERIVED",
           "source_type": "DERIVED",
           "source_tier": "DERIVED",
-          "fetched_at": "2026-08-11T11:10:21+08:00",
-          "data_time": "2026-08-11T11:11:00+08:00",
+          "fetched_at": "2026-08-11T11:26:08+08:00",
+          "data_time": "2026-08-11T11:27:00+08:00",
           "lag_seconds": null,
           "freshness": "DERIVED_CURRENT",
           "freshness_policy": "DERIVED",
@@ -2165,7 +2190,7 @@
         "completed_bar_count": 60,
         "latest_completed_date": "2026-08-10",
         "current_partial_bar": null,
-        "current_price": 5.06,
+        "current_price": 5.09,
         "previous_day": {
           "date": "2026-08-10",
           "open": 4.98,
@@ -2184,7 +2209,7 @@
         },
         "ma_alignment": "BULLISH_STACK",
         "atr14": 0.1,
-        "atr14_percent_of_price": 1.976,
+        "atr14_percent_of_price": 1.965,
         "range_5d": {
           "window": 5,
           "high": 5.15,
@@ -2209,13 +2234,13 @@
         "return_20d_percent": 7.4946,
         "previous_volume_vs_20d_mean": 0.604,
         "current_vs_context": {
-          "ma5_percent": 0.9174,
-          "ma10_percent": 0.998,
-          "ma20_percent": 2.7307,
-          "ma60_percent": 5.0904,
-          "prev_close_percent": 0.7968,
-          "20d_high_percent": -1.7476,
-          "20d_low_percent": 8.8172
+          "ma5_percent": 1.5158,
+          "ma10_percent": 1.5968,
+          "ma20_percent": 3.3398,
+          "ma60_percent": 5.7135,
+          "prev_close_percent": 1.3944,
+          "20d_high_percent": -1.165,
+          "20d_low_percent": 9.4624
         },
         "daily_swings": {
           "last_swing_highs": [
@@ -2257,12 +2282,12 @@
         },
         "key_levels": {
           "status": "OK",
-          "cluster_tolerance": 0.0177,
+          "cluster_tolerance": 0.0178,
           "supports": [
             {
               "price": 5.046,
-              "distance_percent": -0.268,
-              "distance_atr": -0.136,
+              "distance_percent": -0.856,
+              "distance_atr": -0.436,
               "score": 2.8,
               "strength": "MEDIUM",
               "confluence_count": 2,
@@ -2274,8 +2299,8 @@
             },
             {
               "price": 5.014,
-              "distance_percent": -0.911,
-              "distance_atr": -0.461,
+              "distance_percent": -1.495,
+              "distance_atr": -0.761,
               "score": 2.7,
               "strength": "MEDIUM",
               "confluence_count": 3,
@@ -2288,8 +2313,8 @@
             },
             {
               "price": 4.97,
-              "distance_percent": -1.779,
-              "distance_atr": -0.9,
+              "distance_percent": -2.358,
+              "distance_atr": -1.2,
               "score": 1.0,
               "strength": "WEAK",
               "confluence_count": 1,
@@ -2300,8 +2325,8 @@
             },
             {
               "price": 4.95,
-              "distance_percent": -2.174,
-              "distance_atr": -1.1,
+              "distance_percent": -2.75,
+              "distance_atr": -1.4,
               "score": 2.9,
               "strength": "MEDIUM",
               "confluence_count": 2,
@@ -2313,8 +2338,8 @@
             },
             {
               "price": 4.926,
-              "distance_percent": -2.658,
-              "distance_atr": -1.345,
+              "distance_percent": -3.232,
+              "distance_atr": -1.645,
               "score": 1.3,
               "strength": "WEAK",
               "confluence_count": 1,
@@ -2327,8 +2352,8 @@
           "resistances": [
             {
               "price": 5.15,
-              "distance_percent": 1.779,
-              "distance_atr": 0.9,
+              "distance_percent": 1.179,
+              "distance_atr": 0.6,
               "score": 5.8,
               "strength": "STRONG",
               "confluence_count": 4,
@@ -2358,7 +2383,7 @@
           "source": "History fast cache (Tencent qfq)",
           "source_type": "CACHE",
           "source_tier": "CACHE",
-          "fetched_at": "2026-08-11T11:10:21+08:00",
+          "fetched_at": "2026-08-11T11:26:08+08:00",
           "data_time": "2026-08-10",
           "lag_seconds": null,
           "freshness": "COMPLETED_BAR_UNVERIFIED",
@@ -2386,7 +2411,7 @@
             "max_completed_session_age": 1,
             "required_state": "LATEST_COMPLETED_BAR",
             "observed_data_time": "2026-08-10",
-            "evaluated_at": "2026-08-11T11:10:21+08:00",
+            "evaluated_at": "2026-08-11T11:26:08+08:00",
             "session_verified": false,
             "observed_completed_session_age": null,
             "session_validation_state": "FAST_REUSE_UNVERIFIED",
@@ -2461,7 +2486,7 @@
         "lookback_days": 30,
         "window_start_date": "2026-07-12",
         "window_end_date": "2026-08-11",
-        "fetched_at": "2026-08-11T11:10:21+08:00",
+        "fetched_at": "2026-08-11T11:26:08+08:00",
         "latest": {
           "event_id": "cninfo:1225436704",
           "code": "600795",
@@ -2481,7 +2506,7 @@
             "dates": []
           },
           "freshness": "RECENT_30D",
-          "fetched_at": "2026-08-11T11:10:21+08:00",
+          "fetched_at": "2026-08-11T11:26:08+08:00",
           "status": "OPEN",
           "related_event_id": null,
           "supersedes_event_id": null,
@@ -2489,7 +2514,7 @@
             "source": "CNINFO",
             "source_type": "API",
             "source_tier": "OFFICIAL",
-            "fetched_at": "2026-08-11T11:10:21+08:00",
+            "fetched_at": "2026-08-11T11:26:08+08:00",
             "data_time": "2026-07-23T00:00:00+08:00",
             "lag_seconds": null,
             "freshness": "RECENT_30D",
@@ -2544,7 +2569,7 @@
               "dates": []
             },
             "freshness": "RECENT_30D",
-            "fetched_at": "2026-08-11T11:10:21+08:00",
+            "fetched_at": "2026-08-11T11:26:08+08:00",
             "status": "OPEN",
             "related_event_id": null,
             "supersedes_event_id": null,
@@ -2552,7 +2577,7 @@
               "source": "CNINFO",
               "source_type": "API",
               "source_tier": "OFFICIAL",
-              "fetched_at": "2026-08-11T11:10:21+08:00",
+              "fetched_at": "2026-08-11T11:26:08+08:00",
               "data_time": "2026-07-23T00:00:00+08:00",
               "lag_seconds": null,
               "freshness": "RECENT_30D",
@@ -2606,7 +2631,7 @@
               "dates": []
             },
             "freshness": "RECENT_30D",
-            "fetched_at": "2026-08-11T11:10:21+08:00",
+            "fetched_at": "2026-08-11T11:26:08+08:00",
             "status": "OPEN",
             "related_event_id": null,
             "supersedes_event_id": null,
@@ -2614,7 +2639,7 @@
               "source": "CNINFO",
               "source_type": "API",
               "source_tier": "OFFICIAL",
-              "fetched_at": "2026-08-11T11:10:21+08:00",
+              "fetched_at": "2026-08-11T11:26:08+08:00",
               "data_time": "2026-07-20T00:00:00+08:00",
               "lag_seconds": null,
               "freshness": "RECENT_30D",
@@ -2702,7 +2727,7 @@
           "source": "CNINFO",
           "source_type": "API",
           "source_tier": "OFFICIAL",
-          "fetched_at": "2026-08-11T11:10:21+08:00",
+          "fetched_at": "2026-08-11T11:26:08+08:00",
           "data_time": "2026-07-23T00:00:00+08:00",
           "lag_seconds": null,
           "freshness": "CURRENT_QUERY",
@@ -2748,8 +2773,8 @@
         "source": "DERIVED",
         "source_type": "DERIVED",
         "source_tier": "DERIVED",
-        "fetched_at": "2026-08-11T11:10:21+08:00",
-        "data_time": "2026-08-11T11:10:23+08:00",
+        "fetched_at": "2026-08-11T11:26:08+08:00",
+        "data_time": "2026-08-11T11:26:08+08:00",
         "lag_seconds": null,
         "freshness": "DERIVED_CURRENT",
         "freshness_policy": "DERIVED",
@@ -2795,26 +2820,26 @@
         },
         "observed": {
           "turnover": {
-            "amount_today": 289755429.52,
-            "volume_today": 571594.0,
-            "amount_today_minute": 289755429.52,
-            "amount_today_quote": 289942907.0,
-            "amount_source_gap_percent": -0.065,
-            "amount_1m": 363159.0,
-            "amount_5m": 3922352.01,
-            "amount_15m": 10341576.01,
-            "amount_30m": 25167056.01,
-            "volume_1m": 717.0,
-            "volume_5m": 7746.0,
-            "volume_15m": 20414.0,
-            "volume_30m": 49693.0,
-            "amount_rate_1m": 363159.0,
-            "amount_rate_5m": 784470.4,
-            "amount_rate_15m": 689438.4,
-            "amount_rate_30m": 838901.87,
-            "amount_rate_baseline_20m": 748885.85,
-            "amount_rate_vs_baseline": 1.048,
-            "turnover_acceleration": 0.893,
+            "amount_today": 330519719.59,
+            "volume_today": 651846.0,
+            "amount_today_minute": 330519719.59,
+            "amount_today_quote": 335096749.0,
+            "amount_source_gap_percent": -1.366,
+            "amount_1m": 3168395.0,
+            "amount_5m": 8269985.99,
+            "amount_15m": 40040134.07,
+            "amount_30m": 50699575.08,
+            "volume_1m": 6225.0,
+            "volume_5m": 16255.0,
+            "volume_15m": 78822.0,
+            "volume_30m": 99864.0,
+            "amount_rate_1m": 3168395.0,
+            "amount_rate_5m": 1653997.2,
+            "amount_rate_15m": 2669342.27,
+            "amount_rate_30m": 1689985.84,
+            "amount_rate_baseline_20m": 2030832.1,
+            "amount_rate_vs_baseline": 0.814,
+            "turnover_acceleration": 0.406,
             "amount_rate_vs_previous_snapshot": null,
             "baseline_minutes": 20,
             "previous_snapshot_comparable": false,
@@ -2822,7 +2847,7 @@
               "source": "Tencent",
               "source_type": "API",
               "source_tier": "SECONDARY_PROVIDER",
-              "fetched_at": "2026-08-11T11:10:21+08:00",
+              "fetched_at": "2026-08-11T11:26:08+08:00",
               "data_time": null,
               "lag_seconds": 0,
               "freshness": "LIVE",
@@ -2867,64 +2892,64 @@
           },
           "volume_structure": {
             "full_session": {
-              "classified_minutes": 100,
-              "up_amount": 144930588.02,
-              "down_amount": 61864614.55,
-              "flat_amount": 81698702.95,
-              "up_volume": 285881.0,
-              "down_volume": 121919.0,
-              "flat_volume": 161286.0,
-              "up_amount_share": 0.5024,
-              "down_amount_share": 0.2144,
-              "flat_amount_share": 0.2832,
-              "up_volume_share": 0.5024,
-              "down_volume_share": 0.2142,
-              "flat_volume_share": 0.2834,
-              "up_amount_vs_down_amount": 2.343,
-              "up_volume_vs_down_volume": 2.345,
+              "classified_minutes": 116,
+              "up_amount": 176656548.1,
+              "down_amount": 66886176.54,
+              "flat_amount": 85715470.95,
+              "up_volume": 348344.0,
+              "down_volume": 131797.0,
+              "flat_volume": 169197.0,
+              "up_amount_share": 0.5365,
+              "down_amount_share": 0.2031,
+              "flat_amount_share": 0.2603,
+              "up_volume_share": 0.5365,
+              "down_volume_share": 0.203,
+              "flat_volume_share": 0.2606,
+              "up_amount_vs_down_amount": 2.641,
+              "up_volume_vs_down_volume": 2.643,
               "semantic_note": "Price-change-associated turnover; not true active buy/sell flow."
             },
             "last_30m": {
               "classified_minutes": 30,
-              "up_amount": 7104727.0,
-              "down_amount": 6082211.0,
-              "flat_amount": 11980118.01,
-              "up_volume": 14032.0,
-              "down_volume": 12011.0,
-              "flat_volume": 23650.0,
-              "up_amount_share": 0.2823,
-              "down_amount_share": 0.2417,
-              "flat_amount_share": 0.476,
-              "up_volume_share": 0.2824,
-              "down_volume_share": 0.2417,
-              "flat_volume_share": 0.4759,
-              "up_amount_vs_down_amount": 1.168,
-              "up_volume_vs_down_volume": 1.168,
+              "up_amount": 33743010.08,
+              "down_amount": 6547232.99,
+              "flat_amount": 10409332.01,
+              "up_volume": 66445.0,
+              "down_volume": 12890.0,
+              "flat_volume": 20529.0,
+              "up_amount_share": 0.6655,
+              "down_amount_share": 0.1291,
+              "flat_amount_share": 0.2053,
+              "up_volume_share": 0.6654,
+              "down_volume_share": 0.1291,
+              "flat_volume_share": 0.2056,
+              "up_amount_vs_down_amount": 5.154,
+              "up_volume_vs_down_volume": 5.155,
               "semantic_note": "Price-change-associated turnover; not true active buy/sell flow."
             },
             "last_15m": {
               "classified_minutes": 15,
-              "up_amount": 2423341.0,
-              "down_amount": 1525671.0,
-              "flat_amount": 6392564.01,
-              "up_volume": 4784.0,
-              "down_volume": 3012.0,
-              "flat_volume": 12618.0,
-              "up_amount_share": 0.2343,
-              "down_amount_share": 0.1475,
-              "flat_amount_share": 0.6181,
-              "up_volume_share": 0.2343,
-              "down_volume_share": 0.1475,
-              "flat_volume_share": 0.6181,
-              "up_amount_vs_down_amount": 1.588,
-              "up_volume_vs_down_volume": 1.588,
+              "up_amount": 31725960.08,
+              "down_amount": 5021561.99,
+              "flat_amount": 3292612.0,
+              "up_volume": 62463.0,
+              "down_volume": 9878.0,
+              "flat_volume": 6481.0,
+              "up_amount_share": 0.7924,
+              "down_amount_share": 0.1254,
+              "flat_amount_share": 0.0822,
+              "up_volume_share": 0.7925,
+              "down_volume_share": 0.1253,
+              "flat_volume_share": 0.0822,
+              "up_amount_vs_down_amount": 6.318,
+              "up_volume_vs_down_volume": 6.323,
               "semantic_note": "Price-change-associated turnover; not true active buy/sell flow."
             },
             "metadata": {
               "source": "Tencent",
               "source_type": "API",
               "source_tier": "SECONDARY_PROVIDER",
-              "fetched_at": "2026-08-11T11:10:21+08:00",
+              "fetched_at": "2026-08-11T11:26:08+08:00",
               "data_time": null,
               "lag_seconds": 0,
               "freshness": "LIVE",
@@ -2964,17 +2989,17 @@
             "status": "OK",
             "vwap": 5.07,
             "near_tolerance_percent": 0.1,
-            "above_amount": 139719085.89,
-            "below_amount": 107875757.61,
-            "near_amount": 42160586.02,
-            "above_amount_share": 0.4822,
-            "below_amount_share": 0.3723,
-            "near_amount_share": 0.1455,
+            "above_amount": 178010298.96,
+            "below_amount": 108635575.61,
+            "near_amount": 43873845.02,
+            "above_amount_share": 0.5386,
+            "below_amount_share": 0.3287,
+            "near_amount_share": 0.1327,
             "metadata": {
               "source": "Tencent",
               "source_type": "API",
               "source_tier": "SECONDARY_PROVIDER",
-              "fetched_at": "2026-08-11T11:10:21+08:00",
+              "fetched_at": "2026-08-11T11:26:08+08:00",
               "data_time": null,
               "lag_seconds": 0,
               "freshness": "LIVE",
@@ -3015,8 +3040,8 @@
         "derived": {
           "price_volume_confirmation": {
             "state": "NEUTRAL",
-            "price_change_15m_percent": 0.1976,
-            "amount_rate_vs_baseline": 1.048,
+            "price_change_15m_percent": 0.3945,
+            "amount_rate_vs_baseline": 0.814,
             "thresholds": {
               "price_move_percent": 0.15,
               "volume_expansion_ratio": 1.2,
@@ -3029,7 +3054,7 @@
               "source": "DERIVED",
               "source_type": "DERIVED",
               "source_tier": "DERIVED",
-              "fetched_at": "2026-08-11T11:10:21+08:00",
+              "fetched_at": "2026-08-11T11:26:08+08:00",
               "data_time": null,
               "lag_seconds": null,
               "freshness": "DERIVED_CURRENT",
@@ -3063,36 +3088,36 @@
             }
           },
           "pressure": {
-            "buying": 46.09,
-            "selling": 53.91,
-            "net_bias": "BALANCED",
+            "buying": 76.25,
+            "selling": 23.75,
+            "net_bias": "BUY",
             "confidence": "HIGH",
             "components": {
-              "directional_amount_share_delta": 0.0406,
-              "price_vs_vwap_percent": -0.1972,
-              "trend_15m_percent": -0.1972
+              "directional_amount_share_delta": 0.5364,
+              "price_vs_vwap_percent": 0.3945,
+              "trend_15m_percent": 0.5929
             },
             "formula": "50 + 25*(up_amount_share-down_amount_share) + 10*clip(price_vs_vwap/1%) + 15*clip(trend15/1%)",
             "evidence": [
               {
                 "metric": "up_amount_share",
-                "value": 0.2823
+                "value": 0.6655
               },
               {
                 "metric": "down_amount_share",
-                "value": 0.2417
+                "value": 0.1291
               },
               {
                 "metric": "price_vs_vwap_percent",
-                "value": -0.1972
+                "value": 0.3945
               },
               {
                 "metric": "trend_15m_percent",
-                "value": -0.1972
+                "value": 0.5929
               }
             ],
             "reason_codes": [
-              "NET_BIAS_BALANCED",
+              "NET_BIAS_BUY",
               "CONFIDENCE_HIGH"
             ],
             "semantic_note": "Derived directional pressure, not observed capital net inflow.",
@@ -3100,7 +3125,7 @@
               "source": "DERIVED",
               "source_type": "DERIVED",
               "source_tier": "DERIVED",
-              "fetched_at": "2026-08-11T11:10:21+08:00",
+              "fetched_at": "2026-08-11T11:26:08+08:00",
               "data_time": null,
               "lag_seconds": null,
               "freshness": "DERIVED_CURRENT",
@@ -3144,7 +3169,7 @@
               "source": "DERIVED",
               "source_type": "DERIVED",
               "source_tier": "DERIVED",
-              "fetched_at": "2026-08-11T11:10:21+08:00",
+              "fetched_at": "2026-08-11T11:26:08+08:00",
               "data_time": null,
               "lag_seconds": null,
               "freshness": "DERIVED_CURRENT",
@@ -3182,23 +3207,23 @@
             "evidence": [
               {
                 "metric": "above_amount_share",
-                "value": 0.4822
+                "value": 0.5386
               },
               {
                 "metric": "below_amount_share",
-                "value": 0.3723
+                "value": 0.3287
               },
               {
                 "metric": "price_vs_vwap_percent",
-                "value": -0.1972
+                "value": 0.3945
               },
               {
                 "metric": "last_10_above_vwap_minutes",
-                "value": 0
+                "value": 10
               },
               {
                 "metric": "last_10_below_vwap_minutes",
-                "value": 2
+                "value": 0
               }
             ],
             "reason_codes": [
@@ -3208,7 +3233,7 @@
               "source": "DERIVED",
               "source_type": "DERIVED",
               "source_tier": "DERIVED",
-              "fetched_at": "2026-08-11T11:10:21+08:00",
+              "fetched_at": "2026-08-11T11:26:08+08:00",
               "data_time": null,
               "lag_seconds": null,
               "freshness": "DERIVED_CURRENT",
@@ -3333,7 +3358,7 @@
             "source": "DERIVED",
             "source_type": "DERIVED",
             "source_tier": "DERIVED",
-            "fetched_at": "2026-08-11T11:10:21+08:00",
+            "fetched_at": "2026-08-11T11:26:08+08:00",
             "data_time": null,
             "lag_seconds": null,
             "freshness": "DERIVED_CURRENT",
@@ -3371,7 +3396,7 @@
           "source": "DERIVED",
           "source_type": "DERIVED",
           "source_tier": "DERIVED",
-          "fetched_at": "2026-08-11T11:10:21+08:00",
+          "fetched_at": "2026-08-11T11:26:08+08:00",
           "data_time": null,
           "lag_seconds": null,
           "freshness": "DERIVED_CURRENT",
@@ -3545,7 +3570,7 @@
           "source": "Eastmoney",
           "source_type": "API",
           "source_tier": "PRIMARY_PROVIDER",
-          "fetched_at": "2026-08-11T11:10:21+08:00",
+          "fetched_at": "2026-08-11T11:26:08+08:00",
           "data_time": null,
           "lag_seconds": null,
           "freshness": "UNAVAILABLE",
@@ -3707,45 +3732,45 @@
       "target": {
         "code": "002558",
         "name": "巨人网络",
-        "change_percent": -1.64
+        "change_percent": -1.41
       },
       "requested_member_count": 12,
       "active_member_count": 12,
       "covered_member_count": 12,
       "coverage_percent": 100.0,
-      "mean_change_percent": -0.5533,
-      "median_change_percent": -0.725,
+      "mean_change_percent": -0.3958,
+      "median_change_percent": -0.46,
       "up_count": 3,
       "down_count": 9,
       "flat_count": 0,
       "breadth_score_percent": -50.0,
-      "target_vs_peer_mean_percent": -1.0867,
-      "target_vs_peer_median_percent": -0.915,
+      "target_vs_peer_mean_percent": -1.0142,
+      "target_vs_peer_median_percent": -0.95,
       "leaders": [
         {
           "code": "300113",
           "name": "顺网科技",
-          "latest": 18.51,
-          "change_percent": 1.2,
-          "amount_1e8": 2.4417,
+          "latest": 18.44,
+          "change_percent": 0.82,
+          "amount_1e8": 2.533,
           "freshness": "LIVE",
           "available": true
         },
         {
           "code": "002602",
           "name": "世纪华通",
-          "latest": 14.37,
-          "change_percent": 0.42,
-          "amount_1e8": 10.4274,
+          "latest": 14.4,
+          "change_percent": 0.63,
+          "amount_1e8": 10.9382,
           "freshness": "LIVE",
           "available": true
         },
         {
           "code": "002624",
           "name": "完美世界",
-          "latest": 11.75,
-          "change_percent": 0.17,
-          "amount_1e8": 3.6206,
+          "latest": 11.79,
+          "change_percent": 0.51,
+          "amount_1e8": 3.8191,
           "freshness": "LIVE",
           "available": true
         }
@@ -3756,16 +3781,16 @@
           "name": "游族网络",
           "latest": 11.79,
           "change_percent": -1.67,
-          "amount_1e8": 1.688,
+          "amount_1e8": 1.7627,
           "freshness": "LIVE",
           "available": true
         },
         {
           "code": "603444",
           "name": "吉比特",
-          "latest": 388.5,
-          "change_percent": -1.6,
-          "amount_1e8": 5.5702,
+          "latest": 390.47,
+          "change_percent": -1.1,
+          "amount_1e8": 5.8428,
           "freshness": "LIVE",
           "available": true
         },
@@ -3774,7 +3799,7 @@
           "name": "神州泰岳",
           "latest": 8.5,
           "change_percent": -1.05,
-          "amount_1e8": 1.8085,
+          "amount_1e8": 1.8976,
           "freshness": "LIVE",
           "available": true
         }
@@ -3783,45 +3808,45 @@
         {
           "code": "002602",
           "name": "世纪华通",
-          "latest": 14.37,
-          "change_percent": 0.42,
-          "amount_1e8": 10.4274,
+          "latest": 14.4,
+          "change_percent": 0.63,
+          "amount_1e8": 10.9382,
           "freshness": "LIVE",
           "available": true
         },
         {
           "code": "002555",
           "name": "三七互娱",
-          "latest": 19.77,
-          "change_percent": -1.05,
-          "amount_1e8": 5.0794,
+          "latest": 19.82,
+          "change_percent": -0.8,
+          "amount_1e8": 5.2942,
           "freshness": "LIVE",
           "available": true
         },
         {
           "code": "002517",
           "name": "恺英网络",
-          "latest": 18.17,
-          "change_percent": -0.76,
-          "amount_1e8": 7.9778,
+          "latest": 18.22,
+          "change_percent": -0.49,
+          "amount_1e8": 8.3163,
           "freshness": "LIVE",
           "available": true
         },
         {
           "code": "002624",
           "name": "完美世界",
-          "latest": 11.75,
-          "change_percent": 0.17,
-          "amount_1e8": 3.6206,
+          "latest": 11.79,
+          "change_percent": 0.51,
+          "amount_1e8": 3.8191,
           "freshness": "LIVE",
           "available": true
         },
         {
           "code": "603444",
           "name": "吉比特",
-          "latest": 388.5,
-          "change_percent": -1.6,
-          "amount_1e8": 5.5702,
+          "latest": 390.47,
+          "change_percent": -1.1,
+          "amount_1e8": 5.8428,
           "freshness": "LIVE",
           "available": true
         },
@@ -3830,7 +3855,7 @@
           "name": "神州泰岳",
           "latest": 8.5,
           "change_percent": -1.05,
-          "amount_1e8": 1.8085,
+          "amount_1e8": 1.8976,
           "freshness": "LIVE",
           "available": true
         },
@@ -3839,7 +3864,7 @@
           "name": "游族网络",
           "latest": 11.79,
           "change_percent": -1.67,
-          "amount_1e8": 1.688,
+          "amount_1e8": 1.7627,
           "freshness": "LIVE",
           "available": true
         },
@@ -3848,16 +3873,16 @@
           "name": "掌趣科技",
           "latest": 4.32,
           "change_percent": -0.69,
-          "amount_1e8": 1.3284,
+          "amount_1e8": 1.4021,
           "freshness": "LIVE",
           "available": true
         },
         {
           "code": "300113",
           "name": "顺网科技",
-          "latest": 18.51,
-          "change_percent": 1.2,
-          "amount_1e8": 2.4417,
+          "latest": 18.44,
+          "change_percent": 0.82,
+          "amount_1e8": 2.533,
           "freshness": "LIVE",
           "available": true
         },
@@ -3866,25 +3891,25 @@
           "name": "姚记科技",
           "latest": 18.47,
           "change_percent": -0.43,
-          "amount_1e8": 0.6713,
+          "amount_1e8": 0.6947,
           "freshness": "LIVE",
           "available": true
         },
         {
           "code": "300494",
           "name": "盛天网络",
-          "latest": 8.87,
-          "change_percent": -0.34,
-          "amount_1e8": 0.4835,
+          "latest": 8.88,
+          "change_percent": -0.22,
+          "amount_1e8": 0.4968,
           "freshness": "LIVE",
           "available": true
         },
         {
           "code": "300533",
           "name": "冰川网络",
-          "latest": 15.38,
-          "change_percent": -0.84,
-          "amount_1e8": 0.4904,
+          "latest": 15.47,
+          "change_percent": -0.26,
+          "amount_1e8": 0.5139,
           "freshness": "LIVE",
           "available": true
         }
@@ -3893,7 +3918,7 @@
         "source": "DERIVED",
         "source_type": "DERIVED",
         "source_tier": "DERIVED",
-        "fetched_at": "2026-08-11T11:10:21+08:00",
+        "fetched_at": "2026-08-11T11:26:08+08:00",
         "data_time": null,
         "lag_seconds": null,
         "freshness": "DERIVED_CURRENT",
@@ -3945,12 +3970,12 @@
       "status": "OK",
       "quote": {
         "source": "Tencent",
-        "latest": 3962.6,
-        "change_percent": -0.1,
+        "latest": 3962.89,
+        "change_percent": -0.09,
         "open": 3950.71,
         "high": 3965.91,
         "low": 3942.75,
-        "market_time_cst": "2026-08-11 11:10:21",
+        "market_time_cst": "2026-08-11 11:26:09",
         "lag_seconds": 0,
         "freshness": "LIVE",
         "resilience": {
@@ -3977,8 +4002,8 @@
             "Tencent": {
               "status": "OK",
               "usable": true,
-              "latest": 3962.6,
-              "market_time_cst": "2026-08-11 11:10:21",
+              "latest": 3962.89,
+              "market_time_cst": "2026-08-11 11:26:09",
               "lag_seconds": 0,
               "freshness": "LIVE",
               "error": null
@@ -3989,8 +4014,8 @@
           "source": "Tencent",
           "source_type": "API",
           "source_tier": "SECONDARY_PROVIDER",
-          "fetched_at": "2026-08-11T11:10:21+08:00",
-          "data_time": "2026-08-11T11:10:21+08:00",
+          "fetched_at": "2026-08-11T11:26:08+08:00",
+          "data_time": "2026-08-11T11:26:09+08:00",
           "lag_seconds": 0,
           "freshness": "LIVE",
           "freshness_policy": "REALTIME_QUOTE",
@@ -4029,8 +4054,8 @@
         "source": "DERIVED",
         "source_type": "DERIVED",
         "source_tier": "DERIVED",
-        "fetched_at": "2026-08-11T11:10:21+08:00",
-        "data_time": "2026-08-11T11:10:21+08:00",
+        "fetched_at": "2026-08-11T11:26:08+08:00",
+        "data_time": "2026-08-11T11:26:09+08:00",
         "lag_seconds": null,
         "freshness": "DERIVED_CURRENT",
         "freshness_policy": "DERIVED",
@@ -4064,13 +4089,13 @@
       "status": "OK",
       "quote": {
         "source": "Tencent",
-        "latest": 14415.34,
-        "change_percent": 0.69,
+        "latest": 14391.74,
+        "change_percent": 0.52,
         "open": 14266.44,
         "high": 14447.1,
         "low": 14201.29,
-        "market_time_cst": "2026-08-11 11:10:18",
-        "lag_seconds": 3,
+        "market_time_cst": "2026-08-11 11:26:06",
+        "lag_seconds": 2,
         "freshness": "LIVE",
         "resilience": {
           "primary_source": "Eastmoney",
@@ -4096,9 +4121,9 @@
             "Tencent": {
               "status": "OK",
               "usable": true,
-              "latest": 14415.34,
-              "market_time_cst": "2026-08-11 11:10:18",
-              "lag_seconds": 3,
+              "latest": 14391.74,
+              "market_time_cst": "2026-08-11 11:26:06",
+              "lag_seconds": 2,
               "freshness": "LIVE",
               "error": null
             }
@@ -4108,9 +4133,9 @@
           "source": "Tencent",
           "source_type": "API",
           "source_tier": "SECONDARY_PROVIDER",
-          "fetched_at": "2026-08-11T11:10:21+08:00",
-          "data_time": "2026-08-11T11:10:18+08:00",
-          "lag_seconds": 3,
+          "fetched_at": "2026-08-11T11:26:08+08:00",
+          "data_time": "2026-08-11T11:26:06+08:00",
+          "lag_seconds": 2,
           "freshness": "LIVE",
           "freshness_policy": "REALTIME_QUOTE",
           "confidence": "MEDIUM",
@@ -4139,7 +4164,7 @@
               "SHORT_TERM_T": 60,
               "GENERAL_INTRADAY": 180
             },
-            "observed_lag_seconds": 3
+            "observed_lag_seconds": 2
           }
         }
       },
@@ -4148,8 +4173,8 @@
         "source": "DERIVED",
         "source_type": "DERIVED",
         "source_tier": "DERIVED",
-        "fetched_at": "2026-08-11T11:10:21+08:00",
-        "data_time": "2026-08-11T11:10:18+08:00",
+        "fetched_at": "2026-08-11T11:26:08+08:00",
+        "data_time": "2026-08-11T11:26:06+08:00",
         "lag_seconds": null,
         "freshness": "DERIVED_CURRENT",
         "freshness_policy": "DERIVED",
@@ -4183,13 +4208,13 @@
       "status": "OK",
       "quote": {
         "source": "Tencent",
-        "latest": 3590.92,
-        "change_percent": 1.52,
+        "latest": 3579.23,
+        "change_percent": 1.19,
         "open": 3533.89,
         "high": 3601.59,
         "low": 3517.57,
-        "market_time_cst": "2026-08-11 11:10:18",
-        "lag_seconds": 3,
+        "market_time_cst": "2026-08-11 11:26:06",
+        "lag_seconds": 2,
         "freshness": "LIVE",
         "resilience": {
           "primary_source": "Eastmoney",
@@ -4215,9 +4240,9 @@
             "Tencent": {
               "status": "OK",
               "usable": true,
-              "latest": 3590.92,
-              "market_time_cst": "2026-08-11 11:10:18",
-              "lag_seconds": 3,
+              "latest": 3579.23,
+              "market_time_cst": "2026-08-11 11:26:06",
+              "lag_seconds": 2,
               "freshness": "LIVE",
               "error": null
             }
@@ -4227,9 +4252,9 @@
           "source": "Tencent",
           "source_type": "API",
           "source_tier": "SECONDARY_PROVIDER",
-          "fetched_at": "2026-08-11T11:10:21+08:00",
-          "data_time": "2026-08-11T11:10:18+08:00",
-          "lag_seconds": 3,
+          "fetched_at": "2026-08-11T11:26:08+08:00",
+          "data_time": "2026-08-11T11:26:06+08:00",
+          "lag_seconds": 2,
           "freshness": "LIVE",
           "freshness_policy": "REALTIME_QUOTE",
           "confidence": "MEDIUM",
@@ -4258,7 +4283,7 @@
               "SHORT_TERM_T": 60,
               "GENERAL_INTRADAY": 180
             },
-            "observed_lag_seconds": 3
+            "observed_lag_seconds": 2
           }
         }
       },
@@ -4267,8 +4292,8 @@
         "source": "DERIVED",
         "source_type": "DERIVED",
         "source_tier": "DERIVED",
-        "fetched_at": "2026-08-11T11:10:21+08:00",
-        "data_time": "2026-08-11T11:10:18+08:00",
+        "fetched_at": "2026-08-11T11:26:08+08:00",
+        "data_time": "2026-08-11T11:26:06+08:00",
         "lag_seconds": null,
         "freshness": "DERIVED_CURRENT",
         "freshness_policy": "DERIVED",
@@ -4302,12 +4327,12 @@
       "status": "OK",
       "quote": {
         "source": "Tencent",
-        "latest": 4707.34,
-        "change_percent": 0.11,
+        "latest": 4705.64,
+        "change_percent": 0.08,
         "open": 4689.45,
         "high": 4715.88,
         "low": 4679.16,
-        "market_time_cst": "2026-08-11 11:10:21",
+        "market_time_cst": "2026-08-11 11:26:09",
         "lag_seconds": 0,
         "freshness": "LIVE",
         "resilience": {
@@ -4334,8 +4359,8 @@
             "Tencent": {
               "status": "OK",
               "usable": true,
-              "latest": 4707.34,
-              "market_time_cst": "2026-08-11 11:10:21",
+              "latest": 4705.64,
+              "market_time_cst": "2026-08-11 11:26:09",
               "lag_seconds": 0,
               "freshness": "LIVE",
               "error": null
@@ -4346,8 +4371,8 @@
           "source": "Tencent",
           "source_type": "API",
           "source_tier": "SECONDARY_PROVIDER",
-          "fetched_at": "2026-08-11T11:10:21+08:00",
-          "data_time": "2026-08-11T11:10:21+08:00",
+          "fetched_at": "2026-08-11T11:26:08+08:00",
+          "data_time": "2026-08-11T11:26:09+08:00",
           "lag_seconds": 0,
           "freshness": "LIVE",
           "freshness_policy": "REALTIME_QUOTE",
@@ -4386,8 +4411,8 @@
         "source": "DERIVED",
         "source_type": "DERIVED",
         "source_tier": "DERIVED",
-        "fetched_at": "2026-08-11T11:10:21+08:00",
-        "data_time": "2026-08-11T11:10:21+08:00",
+        "fetched_at": "2026-08-11T11:26:08+08:00",
+        "data_time": "2026-08-11T11:26:09+08:00",
         "lag_seconds": null,
         "freshness": "DERIVED_CURRENT",
         "freshness_policy": "DERIVED",
@@ -4421,12 +4446,12 @@
       "status": "OK",
       "quote": {
         "source": "Tencent",
-        "latest": 7777.75,
-        "change_percent": 0.57,
+        "latest": 7765.6,
+        "change_percent": 0.41,
         "open": 7686.04,
         "high": 7789.21,
         "low": 7642.44,
-        "market_time_cst": "2026-08-11 11:10:21",
+        "market_time_cst": "2026-08-11 11:26:09",
         "lag_seconds": 0,
         "freshness": "LIVE",
         "resilience": {
@@ -4453,8 +4478,8 @@
             "Tencent": {
               "status": "OK",
               "usable": true,
-              "latest": 7777.75,
-              "market_time_cst": "2026-08-11 11:10:21",
+              "latest": 7765.6,
+              "market_time_cst": "2026-08-11 11:26:09",
               "lag_seconds": 0,
               "freshness": "LIVE",
               "error": null
@@ -4465,8 +4490,8 @@
           "source": "Tencent",
           "source_type": "API",
           "source_tier": "SECONDARY_PROVIDER",
-          "fetched_at": "2026-08-11T11:10:21+08:00",
-          "data_time": "2026-08-11T11:10:21+08:00",
+          "fetched_at": "2026-08-11T11:26:08+08:00",
+          "data_time": "2026-08-11T11:26:09+08:00",
           "lag_seconds": 0,
           "freshness": "LIVE",
           "freshness_policy": "REALTIME_QUOTE",
@@ -4505,8 +4530,8 @@
         "source": "DERIVED",
         "source_type": "DERIVED",
         "source_tier": "DERIVED",
-        "fetched_at": "2026-08-11T11:10:21+08:00",
-        "data_time": "2026-08-11T11:10:21+08:00",
+        "fetched_at": "2026-08-11T11:26:08+08:00",
+        "data_time": "2026-08-11T11:26:09+08:00",
         "lag_seconds": null,
         "freshness": "DERIVED_CURRENT",
         "freshness_policy": "DERIVED",
@@ -4540,12 +4565,12 @@
       "status": "OK",
       "quote": {
         "source": "Tencent",
-        "latest": 1746.8,
-        "change_percent": 0.52,
+        "latest": 1737.08,
+        "change_percent": -0.04,
         "open": 1713.26,
         "high": 1753.14,
         "low": 1699.92,
-        "market_time_cst": "2026-08-11 11:10:21",
+        "market_time_cst": "2026-08-11 11:26:09",
         "lag_seconds": 0,
         "freshness": "LIVE",
         "resilience": {
@@ -4572,8 +4597,8 @@
             "Tencent": {
               "status": "OK",
               "usable": true,
-              "latest": 1746.8,
-              "market_time_cst": "2026-08-11 11:10:21",
+              "latest": 1737.08,
+              "market_time_cst": "2026-08-11 11:26:09",
               "lag_seconds": 0,
               "freshness": "LIVE",
               "error": null
@@ -4584,8 +4609,8 @@
           "source": "Tencent",
           "source_type": "API",
           "source_tier": "SECONDARY_PROVIDER",
-          "fetched_at": "2026-08-11T11:10:21+08:00",
-          "data_time": "2026-08-11T11:10:21+08:00",
+          "fetched_at": "2026-08-11T11:26:08+08:00",
+          "data_time": "2026-08-11T11:26:09+08:00",
           "lag_seconds": 0,
           "freshness": "LIVE",
           "freshness_policy": "REALTIME_QUOTE",
@@ -4624,8 +4649,8 @@
         "source": "DERIVED",
         "source_type": "DERIVED",
         "source_tier": "DERIVED",
-        "fetched_at": "2026-08-11T11:10:21+08:00",
-        "data_time": "2026-08-11T11:10:21+08:00",
+        "fetched_at": "2026-08-11T11:26:08+08:00",
+        "data_time": "2026-08-11T11:26:09+08:00",
         "lag_seconds": null,
         "freshness": "DERIVED_CURRENT",
         "freshness_policy": "DERIVED",
@@ -4664,9 +4689,9 @@
       "expected_count": 6,
       "covered_count": 6,
       "coverage_percent": 100.0,
-      "mean_change_percent": 0.5517,
-      "median_change_percent": 0.545,
-      "broad_market_reference_percent": 0.2333,
+      "mean_change_percent": 0.345,
+      "median_change_percent": 0.245,
+      "broad_market_reference_percent": 0.17,
       "broad_market_reference_members": [
         "上证指数",
         "沪深300",
@@ -4675,71 +4700,71 @@
       "broad_market_reference_expected_count": 3,
       "broad_market_reference_covered_count": 3,
       "broad_market_reference_quality": "HIGH",
-      "dispersion_percent": 1.62,
-      "up_count": 5,
-      "down_count": 1,
+      "dispersion_percent": 1.28,
+      "up_count": 4,
+      "down_count": 2,
       "flat_count": 0,
-      "breadth_score_percent": 66.67,
+      "breadth_score_percent": 33.33,
       "bias": "BULLISH",
       "members": [
         {
           "name": "上证指数",
           "status": "OK",
           "source": "Tencent",
-          "latest": 3962.6,
-          "change_percent": -0.1,
+          "latest": 3962.89,
+          "change_percent": -0.09,
           "freshness": "LIVE",
-          "market_time_cst": "2026-08-11 11:10:21",
+          "market_time_cst": "2026-08-11 11:26:09",
           "available": true
         },
         {
           "name": "沪深300",
           "status": "OK",
           "source": "Tencent",
-          "latest": 4707.34,
-          "change_percent": 0.11,
+          "latest": 4705.64,
+          "change_percent": 0.08,
           "freshness": "LIVE",
-          "market_time_cst": "2026-08-11 11:10:21",
+          "market_time_cst": "2026-08-11 11:26:09",
           "available": true
         },
         {
           "name": "中证1000",
           "status": "OK",
           "source": "Tencent",
-          "latest": 7777.75,
-          "change_percent": 0.57,
+          "latest": 7765.6,
+          "change_percent": 0.41,
           "freshness": "LIVE",
-          "market_time_cst": "2026-08-11 11:10:21",
+          "market_time_cst": "2026-08-11 11:26:09",
           "available": true
         },
         {
           "name": "深证成指",
           "status": "OK",
           "source": "Tencent",
-          "latest": 14415.34,
-          "change_percent": 0.69,
+          "latest": 14391.74,
+          "change_percent": 0.52,
           "freshness": "LIVE",
-          "market_time_cst": "2026-08-11 11:10:18",
+          "market_time_cst": "2026-08-11 11:26:06",
           "available": true
         },
         {
           "name": "创业板指",
           "status": "OK",
           "source": "Tencent",
-          "latest": 3590.92,
-          "change_percent": 1.52,
+          "latest": 3579.23,
+          "change_percent": 1.19,
           "freshness": "LIVE",
-          "market_time_cst": "2026-08-11 11:10:18",
+          "market_time_cst": "2026-08-11 11:26:06",
           "available": true
         },
         {
           "name": "科创50",
           "status": "OK",
           "source": "Tencent",
-          "latest": 1746.8,
-          "change_percent": 0.52,
+          "latest": 1737.08,
+          "change_percent": -0.04,
           "freshness": "LIVE",
-          "market_time_cst": "2026-08-11 11:10:21",
+          "market_time_cst": "2026-08-11 11:26:09",
           "available": true
         }
       ]
@@ -4747,7 +4772,7 @@
     "breadth": {
       "status": "ERROR",
       "source": "market breadth source",
-      "collected_at_cst": "2026-08-11 11:10:21",
+      "collected_at_cst": "2026-08-11 11:26:08",
       "market_session_date": null,
       "freshness": "UNKNOWN",
       "freshness_basis": "SOURCE_FAILURE",
@@ -4758,24 +4783,24 @@
       "reason_codes": [
         "MARKET_BREADTH_MISSING"
       ],
-      "broad_market_reference_percent": 0.2333
+      "broad_market_reference_percent": 0.17
     },
     "style": {
-      "status": "GROWTH_LEADING",
+      "status": "BALANCED",
       "references": {
-        "large_cap_hs300_percent": 0.11,
-        "small_cap_csi1000_percent": 0.57,
-        "growth_proxy_percent": 1.02,
+        "large_cap_hs300_percent": 0.08,
+        "small_cap_csi1000_percent": 0.41,
+        "growth_proxy_percent": 0.575,
         "growth_proxy_covered_count": 2,
         "growth_proxy_expected_count": 2,
         "growth_proxy_quality": "HIGH",
-        "shanghai_percent": -0.1,
-        "shenzhen_percent": 0.69
+        "shanghai_percent": -0.09,
+        "shenzhen_percent": 0.52
       },
       "spreads": {
-        "small_vs_large_percent": 0.46,
-        "growth_vs_large_percent": 0.91,
-        "shenzhen_vs_shanghai_percent": 0.79
+        "small_vs_large_percent": 0.33,
+        "growth_vs_large_percent": 0.495,
+        "shenzhen_vs_shanghai_percent": 0.61
       }
     },
     "groups": {
@@ -4785,8 +4810,8 @@
         "requested_member_count": 12,
         "active_member_count": 12,
         "covered_member_count": 12,
-        "mean_change_percent": -0.5533,
-        "median_change_percent": -0.725,
+        "mean_change_percent": -0.3958,
+        "median_change_percent": -0.46,
         "breadth_score_percent": -50.0,
         "coverage_percent": 100.0,
         "reference_quality": {
@@ -4802,23 +4827,23 @@
         "target": {
           "code": "002558",
           "name": "巨人网络",
-          "change_percent": -1.64
+          "change_percent": -1.41
         },
-        "target_vs_peer_mean_percent": -1.0867
+        "target_vs_peer_mean_percent": -1.0142
       }
     },
     "targets": {
       "002558": {
         "name": "巨人网络",
-        "change_percent": -1.64,
+        "change_percent": -1.41,
         "freshness": "LIVE",
         "relative_strength": {
-          "market_reference_percent": 0.2333,
-          "vs_market_percent": -1.8733,
+          "market_reference_percent": 0.17,
+          "vs_market_percent": -1.58,
           "relative_to_market": "UNDERPERFORM",
           "group_id": "game_sector",
-          "group_reference_percent": -0.5533,
-          "vs_group_mean_percent": -1.0867,
+          "group_reference_percent": -0.3958,
+          "vs_group_mean_percent": -1.0142,
           "relative_to_group": "UNDERPERFORM",
           "style_reference_type": null,
           "style_reference_percent": null,
@@ -4861,21 +4886,21 @@
           },
           "classification_separation": {
             "quality": "MEDIUM",
-            "market_distance_percent": 1.8733,
-            "sector_distance_percent": 1.0867,
+            "market_distance_percent": 1.58,
+            "sector_distance_percent": 1.0142,
             "style_distance_percent": null,
-            "sector_advantage_over_market_percent": 0.7866,
+            "sector_advantage_over_market_percent": 0.5658,
             "style_advantage_over_market_percent": null
           },
           "evidence": {
-            "stock_change_percent": -1.64,
-            "market_reference_percent": 0.2333,
-            "sector_reference_percent": -0.5533,
+            "stock_change_percent": -1.41,
+            "market_reference_percent": 0.17,
+            "sector_reference_percent": -0.3958,
             "style_reference_percent": null,
-            "stock_vs_market_percent": -1.8733,
-            "stock_vs_sector_percent": -1.0867,
+            "stock_vs_market_percent": -1.58,
+            "stock_vs_sector_percent": -1.0142,
             "stock_vs_style_percent": null,
-            "sector_vs_market_percent": -0.7866
+            "sector_vs_market_percent": -0.5658
           },
           "reason_codes": [
             "STOCK_DIVERGES_FROM_MARKET",
@@ -4884,16 +4909,16 @@
         },
         "intraday_context": {
           "bias": "DOWNTREND",
-          "price_vs_vwap_percent": -1.1804
+          "price_vs_vwap_percent": -0.9109
         }
       },
       "600795": {
         "name": "国电电力",
-        "change_percent": 0.8,
+        "change_percent": 1.39,
         "freshness": "LIVE",
         "relative_strength": {
-          "market_reference_percent": 0.2333,
-          "vs_market_percent": 0.5667,
+          "market_reference_percent": 0.17,
+          "vs_market_percent": 1.22,
           "relative_to_market": "OUTPERFORM",
           "group_id": null,
           "group_reference_percent": null,
@@ -4905,7 +4930,7 @@
           "relative_to_style": "UNKNOWN"
         },
         "driver_attribution": {
-          "primary_driver": "MARKET",
+          "primary_driver": "IDIOSYNCRATIC",
           "confidence": "MEDIUM",
           "reference_availability": {
             "market": true,
@@ -4935,30 +4960,30 @@
             "reference_type": null
           },
           "classification_separation": {
-            "quality": "MEDIUM",
-            "market_distance_percent": 0.5667,
+            "quality": "HIGH",
+            "market_distance_percent": 1.22,
             "sector_distance_percent": null,
             "style_distance_percent": null,
             "sector_advantage_over_market_percent": null,
             "style_advantage_over_market_percent": null
           },
           "evidence": {
-            "stock_change_percent": 0.8,
-            "market_reference_percent": 0.2333,
+            "stock_change_percent": 1.39,
+            "market_reference_percent": 0.17,
             "sector_reference_percent": null,
             "style_reference_percent": null,
-            "stock_vs_market_percent": 0.5667,
+            "stock_vs_market_percent": 1.22,
             "stock_vs_sector_percent": null,
             "stock_vs_style_percent": null,
             "sector_vs_market_percent": null
           },
           "reason_codes": [
-            "STOCK_TRACKS_BROAD_MARKET"
+            "STOCK_DIVERGES_FROM_MARKET"
           ]
         },
         "intraday_context": {
-          "bias": "RANGE",
-          "price_vs_vwap_percent": -0.1972
+          "bias": "UPTREND",
+          "price_vs_vwap_percent": 0.3945
         }
       }
     },
@@ -4974,12 +4999,12 @@
       "breadth_sample_coverage_percent": null,
       "breadth_all_strata_covered": null
     },
-    "summary": "市场状态未知；宽基：上证指数 -0.10%、沪深300 +0.11%、中证1000 +0.57%、深证成指 +0.69%、创业板指 +1.52%、科创50 +0.52%；风格 GROWTH_LEADING；板块：A股游戏板块对照组 -0.55%；数据置信度 LOW。",
+    "summary": "市场状态未知；宽基：上证指数 -0.09%、沪深300 +0.08%、中证1000 +0.41%、深证成指 +0.52%、创业板指 +1.19%、科创50 -0.04%；风格 BALANCED；板块：A股游戏板块对照组 -0.40%；数据置信度 LOW。",
     "metadata": {
       "source": "DERIVED",
       "source_type": "DERIVED",
       "source_tier": "DERIVED",
-      "fetched_at": "2026-08-11T11:10:21+08:00",
+      "fetched_at": "2026-08-11T11:26:08+08:00",
       "data_time": null,
       "lag_seconds": null,
       "freshness": "UNKNOWN",
@@ -5033,7 +5058,7 @@
       "source": "DERIVED",
       "source_type": "DERIVED",
       "source_tier": "DERIVED",
-      "fetched_at": "2026-08-11T11:10:21+08:00",
+      "fetched_at": "2026-08-11T11:26:08+08:00",
       "data_time": null,
       "lag_seconds": null,
       "freshness": "DERIVED_CURRENT",
@@ -5117,7 +5142,7 @@
       "source": "DERIVED",
       "source_type": "DERIVED",
       "source_tier": "DERIVED",
-      "fetched_at": "2026-08-11T11:10:21+08:00",
+      "fetched_at": "2026-08-11T11:26:08+08:00",
       "data_time": null,
       "lag_seconds": null,
       "freshness": "DERIVED_CURRENT",
@@ -5495,96 +5520,96 @@
       "code": "002174",
       "quote": {
         "latest": 11.79,
-        "amount_raw": 168800000.0,
-        "market_time_cst": "2026-08-11 11:10:21"
+        "amount_raw": 176270000.0,
+        "market_time_cst": "2026-08-11 11:26:06"
       }
     },
     "002517": {
       "code": "002517",
       "quote": {
-        "latest": 18.17,
-        "amount_raw": 797780000.0,
-        "market_time_cst": "2026-08-11 11:10:21"
+        "latest": 18.22,
+        "amount_raw": 831630000.0,
+        "market_time_cst": "2026-08-11 11:26:06"
       }
     },
     "002555": {
       "code": "002555",
       "quote": {
-        "latest": 19.77,
-        "amount_raw": 507940000.0,
-        "market_time_cst": "2026-08-11 11:10:21"
+        "latest": 19.82,
+        "amount_raw": 529420000.0,
+        "market_time_cst": "2026-08-11 11:26:06"
       }
     },
     "002602": {
       "code": "002602",
       "quote": {
-        "latest": 14.37,
-        "amount_raw": 1042740000.0,
-        "market_time_cst": "2026-08-11 11:10:21"
+        "latest": 14.4,
+        "amount_raw": 1093820000.0,
+        "market_time_cst": "2026-08-11 11:26:06"
       }
     },
     "002605": {
       "code": "002605",
       "quote": {
         "latest": 18.47,
-        "amount_raw": 67130000.0,
-        "market_time_cst": "2026-08-11 11:10:18"
+        "amount_raw": 69470000.0,
+        "market_time_cst": "2026-08-11 11:26:06"
       }
     },
     "002624": {
       "code": "002624",
       "quote": {
-        "latest": 11.75,
-        "amount_raw": 362060000.0,
-        "market_time_cst": "2026-08-11 11:10:21"
+        "latest": 11.79,
+        "amount_raw": 381910000.0,
+        "market_time_cst": "2026-08-11 11:26:06"
       }
     },
     "300002": {
       "code": "300002",
       "quote": {
         "latest": 8.5,
-        "amount_raw": 180850000.0,
-        "market_time_cst": "2026-08-11 11:10:18"
+        "amount_raw": 189760000.0,
+        "market_time_cst": "2026-08-11 11:26:06"
       }
     },
     "300113": {
       "code": "300113",
       "quote": {
-        "latest": 18.51,
-        "amount_raw": 244170000.0,
-        "market_time_cst": "2026-08-11 11:10:18"
+        "latest": 18.44,
+        "amount_raw": 253300000.0,
+        "market_time_cst": "2026-08-11 11:26:06"
       }
     },
     "300315": {
       "code": "300315",
       "quote": {
         "latest": 4.32,
-        "amount_raw": 132840000.0,
-        "market_time_cst": "2026-08-11 11:10:18"
+        "amount_raw": 140210000.0,
+        "market_time_cst": "2026-08-11 11:26:06"
       }
     },
     "300494": {
       "code": "300494",
       "quote": {
-        "latest": 8.87,
-        "amount_raw": 48350000.0,
-        "market_time_cst": "2026-08-11 11:10:12"
+        "latest": 8.88,
+        "amount_raw": 49680000.0,
+        "market_time_cst": "2026-08-11 11:26:03"
       }
     },
     "300533": {
       "code": "300533",
       "quote": {
-        "latest": 15.38,
-        "amount_raw": 49040000.0,
-        "market_time_cst": "2026-08-11 11:10:18"
+        "latest": 15.47,
+        "amount_raw": 51390000.0,
+        "market_time_cst": "2026-08-11 11:26:06"
       }
     },
     "603444": {
       "code": "603444",
       "quote": {
-        "latest": 388.5,
-        "amount_raw": 557020000.0,
-        "market_time_cst": "2026-08-11 11:10:20"
+        "latest": 390.47,
+        "amount_raw": 584280000.0,
+        "market_time_cst": "2026-08-11 11:26:05"
       }
     }
   },
