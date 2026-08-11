@@ -1,12 +1,13 @@
 {
   "kind": "looklookbigA-auto-worker-lease",
-  "state": "ACTIVE",
-  "token": "auto-20260811T132000Z-4d3f9a27",
+  "state": "IDLE",
+  "token": null,
   "work_item": "issue-54/master-to-v1-promotion",
   "acquired_at": "2026-08-11T13:20:00+00:00",
   "lease_until": "2026-08-11T14:10:00+00:00",
-  "start_master_sha": "555213ea5ece24628b9e0acd550c9fd28e539a1e",
-  "start_v1_sha": "90aa41aa2990930d2046879bdb8907f4823b1787",
-  "checkpoint_target": "CREATE_V1_PROMOTION_PR",
-  "note": "Create only the master-to-v1 promotion PR for Issue #54, verify CI triggers, then release. Final promotion merge remains MANUAL_GATE_REQUIRED."
+  "released_at": "2026-08-11T13:25:30+00:00",
+  "last_token": "auto-20260811T132000Z-4d3f9a27",
+  "last_checkpoint": "V1_PROMOTION_PR_CREATED_WAITING_CI",
+  "last_head_sha": "555213ea5ece24628b9e0acd550c9fd28e539a1e",
+  "note": "Created Draft PR #56 for master-to-v1 promotion. PR is mergeable, full promotion diff has no automation lock files, and Pre-merge Security Gate run 31495953483 is in progress. Next run inspects exact-head CI; final v1 merge remains MANUAL_GATE_REQUIRED."
 }
