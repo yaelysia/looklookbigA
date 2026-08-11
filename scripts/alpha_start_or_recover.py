@@ -5,6 +5,7 @@ import urllib.request
 from datetime import timedelta
 
 import alpha_operation_registry
+import alpha_refresh_contract
 
 
 DEFAULT_WORKFLOW = ".github/workflows/realtime-quotes.yml"
@@ -68,6 +69,21 @@ def scan_workflow_runs(repository, token, workflow_path, not_before=None):
     return runs
 
 
+def _operation_fingerprint(identity):
+    return alpha_refresh_contract.operation_identity_fingerprint(
+        identity["idempotency_key"],
+        identity["command_digest"],
+        identity["workflow_identity"],
+        identity["material_execution_inputs"],
+    )
+
+
+def _expose_dispatch_identity(record, identity):
+    exposed = dict(record)
+    exposed["operation_identity_fingerprint"] = _operation_fingerprint(identity)
+    return exposed
+
+
 def start_or_recover(
     store,
     *,
@@ -80,9 +96,9 @@ def start_or_recover(
         store, **identity
     )
     if record.get("workflow_run_id"):
-        return record, "RECOVERED"
+        return _expose_dispatch_identity(record, identity), "RECOVERED"
     if should_dispatch:
-        return record, "DISPATCH_REQUIRED"
+        return _expose_dispatch_identity(record, identity), "DISPATCH_REQUIRED"
 
     runs = scan_workflow_runs(
         repository,
@@ -90,14 +106,25 @@ def start_or_recover(
         workflow_path,
         not_before=record.get("created_at"),
     )
+    verified_runs = alpha_refresh_contract.verify_scanned_runs(
+        runs,
+        record.get("correlation_ids") or [identity["dispatch_correlation_id"]],
+        identity["idempotency_key"],
+        identity["command_digest"],
+        identity["workflow_identity"],
+        identity["material_execution_inputs"],
+    )
     record, should_dispatch = alpha_operation_registry.recover_after_correlation_scan(
-        store, runs, **identity
+        store, verified_runs, **identity
     )
     if record.get("workflow_run_id"):
-        return record, "RECOVERED"
+        return _expose_dispatch_identity(record, identity), "RECOVERED"
     if should_dispatch:
-        return record, "REDISPATCH_REQUIRED_AFTER_EMPTY_SCAN"
-    return record, "WAITING_FOR_EXISTING_DISPATCH"
+        return (
+            _expose_dispatch_identity(record, identity),
+            "REDISPATCH_REQUIRED_AFTER_EMPTY_SCAN",
+        )
+    return _expose_dispatch_identity(record, identity), "WAITING_FOR_EXISTING_DISPATCH"
 
 
 def _material_inputs(raw):
