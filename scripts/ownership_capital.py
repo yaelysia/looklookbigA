@@ -10,6 +10,9 @@ SNAPSHOT_SCHEMA_VERSION = 17
 CAPITAL_STRUCTURE_ENDPOINT = (
     "https://emweb.securities.eastmoney.com/PC_HSF10/CapitalStockStructure/PageAjax"
 )
+SHAREHOLDER_RESEARCH_ENDPOINT = (
+    "https://emweb.securities.eastmoney.com/PC_HSF10/ShareholderResearch/PageAjax"
+)
 CST = timezone(timedelta(hours=8))
 
 
@@ -71,12 +74,23 @@ def _provider_code(base, code):
     return f"{market}{code}"
 
 
-def fetch_share_structure(base, code):
-    provider_code = _provider_code(base, code)
-    url = CAPITAL_STRUCTURE_ENDPOINT + "?" + urllib.parse.urlencode({"code": provider_code})
+def _fetch_json_object(base, endpoint, provider_code):
+    url = endpoint + "?" + urllib.parse.urlencode({"code": provider_code})
     payload = json.loads(base.http_get(url))
     if not isinstance(payload, dict):
-        raise RuntimeError("Eastmoney capital-structure response is not an object")
+        raise RuntimeError(f"Eastmoney response is not an object: {endpoint}")
+    return payload, url
+
+
+def fetch_share_structure(base, code):
+    provider_code = _provider_code(base, code)
+    payload, url = _fetch_json_object(base, CAPITAL_STRUCTURE_ENDPOINT, provider_code)
+    return payload, url, provider_code
+
+
+def fetch_controllers(base, code):
+    provider_code = _provider_code(base, code)
+    payload, url = _fetch_json_object(base, SHAREHOLDER_RESEARCH_ENDPOINT, provider_code)
     return payload, url, provider_code
 
 
@@ -181,6 +195,128 @@ def normalize_share_structure(payload, source_url, provider_code, fetched_at):
     }
 
 
+def _normalize_relationship_rows(rows):
+    normalized = []
+    if not isinstance(rows, list):
+        return normalized
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        name = str(row.get("HOLDER_NAME") or "").strip()
+        if not name:
+            continue
+        normalized.append(
+            {
+                "name": name,
+                "hold_ratio_percent": _as_float(row.get("HOLD_RATIO")),
+                "as_of_date": _date(
+                    row.get("END_DATE") or row.get("REPORT_DATE") or row.get("CHANGE_DATE")
+                ),
+            }
+        )
+    return normalized
+
+
+def _common_explicit_date(rows):
+    dates = sorted({row.get("as_of_date") for row in rows if row.get("as_of_date")})
+    return dates[-1] if dates else None
+
+
+def normalize_controllers(payload, source_url, provider_code, fetched_at):
+    actual_rows = _normalize_relationship_rows((payload or {}).get("sjkzr"))
+    controlling_rows = _normalize_relationship_rows((payload or {}).get("kggd"))
+    actual_date = _common_explicit_date(actual_rows)
+    controlling_date = _common_explicit_date(controlling_rows)
+
+    quality_flags = []
+    if not actual_rows:
+        quality_flags.append("ACTUAL_CONTROLLER_UNAVAILABLE")
+    elif actual_date is None:
+        quality_flags.append("ACTUAL_CONTROLLER_UNDATED")
+    if not controlling_rows:
+        quality_flags.append("CONTROLLING_SHAREHOLDER_NOT_IDENTIFIED_BY_PROVIDER")
+    elif controlling_date is None:
+        quality_flags.append("CONTROLLING_SHAREHOLDER_UNDATED")
+
+    if actual_rows and controlling_rows:
+        status = "OK"
+        quality = "PASS" if not quality_flags else "PARTIAL"
+    elif actual_rows or controlling_rows:
+        status = "PARTIAL"
+        quality = "PARTIAL"
+    else:
+        status = "UNAVAILABLE"
+        quality = "FAILED"
+
+    explicit_dates = [value for value in (actual_date, controlling_date) if value]
+    return {
+        "status": status,
+        "as_of_date": max(explicit_dates) if explicit_dates else None,
+        "actual_controller": {
+            "status": "OK" if actual_rows else "UNAVAILABLE",
+            "holders": actual_rows,
+            "as_of_date": actual_date,
+        },
+        "controlling_shareholder": {
+            "status": "OK" if controlling_rows else "UNAVAILABLE",
+            "holders": controlling_rows,
+            "as_of_date": controlling_date,
+            "inference_policy": "PROVIDER_DECLARED_ONLY; NEVER_INFER_FROM_LARGEST_HOLDER",
+        },
+        "metadata": {
+            "freshness": (
+                "CURRENT_PROVIDER_RELATIONSHIP"
+                if actual_rows or controlling_rows
+                else "UNAVAILABLE"
+            ),
+            "realtime": False,
+            "quality": quality,
+            "quality_flags": quality_flags,
+            "date_semantics": (
+                "RELATIONSHIP_DATE_IF_PROVIDER_EXPOSES_ONE; "
+                "UNDATED_PROVIDER_CURRENT_STATE_OTHERWISE"
+            ),
+        },
+        "provenance": {
+            "provider": "Eastmoney",
+            "source_tier": "PRIMARY_PROVIDER",
+            "endpoint": SHAREHOLDER_RESEARCH_ENDPOINT,
+            "source_url": source_url,
+            "provider_code": provider_code,
+            "fetched_at": fetched_at,
+            "field_mapping": {
+                "actual_controller": "sjkzr[].HOLDER_NAME/HOLD_RATIO",
+                "controlling_shareholder": "kggd[].HOLDER_NAME/HOLD_RATIO when provider exposes kggd",
+            },
+            "non_inference_guarantee": (
+                "sdgd rank-1/top-holder rows are not promoted to controlling_shareholder"
+            ),
+        },
+    }
+
+
+def _unavailable_section(endpoint, fetched_at, error):
+    return {
+        "status": "UNAVAILABLE",
+        "as_of_date": None,
+        "metadata": {
+            "freshness": "UNAVAILABLE",
+            "realtime": False,
+            "quality": "FAILED",
+            "quality_flags": ["PROVIDER_ERROR"],
+            "error": error,
+        },
+        "provenance": {
+            "provider": "Eastmoney",
+            "source_tier": "PRIMARY_PROVIDER",
+            "endpoint": endpoint,
+            "source_url": None,
+            "provider_code": None,
+            "fetched_at": fetched_at,
+        },
+    }
+
+
 def _deferred_context(fetched_at):
     return {
         "version": OWNERSHIP_CAPITAL_VERSION,
@@ -206,45 +342,82 @@ def _deferred_context(fetched_at):
                 "raw_row_index": None,
             },
         },
+        "controllers": {
+            "status": "DEFERRED",
+            "as_of_date": None,
+            "actual_controller": {"status": "DEFERRED", "holders": [], "as_of_date": None},
+            "controlling_shareholder": {
+                "status": "DEFERRED",
+                "holders": [],
+                "as_of_date": None,
+                "inference_policy": "PROVIDER_DECLARED_ONLY; NEVER_INFER_FROM_LARGEST_HOLDER",
+            },
+            "metadata": {
+                "freshness": "NOT_FETCHED_IN_INTRADAY_FAST",
+                "realtime": False,
+                "quality": "PARTIAL",
+                "quality_flags": ["FULL_ONLY_CONTROLLERS_SLICE"],
+            },
+            "provenance": {
+                "provider": "Eastmoney",
+                "source_tier": "PRIMARY_PROVIDER",
+                "endpoint": SHAREHOLDER_RESEARCH_ENDPOINT,
+                "source_url": None,
+                "provider_code": None,
+                "fetched_at": fetched_at,
+            },
+        },
     }
+
+
+def _overall_status(sections):
+    statuses = [section.get("status") for section in sections]
+    if statuses and all(status == "OK" for status in statuses):
+        return "OK"
+    if any(status in ("OK", "PARTIAL") for status in statuses):
+        return "PARTIAL"
+    return "UNAVAILABLE"
 
 
 def _fetch_one(base, code, fetched_at):
     try:
         payload, url, provider_code = fetch_share_structure(base, code)
         share_structure = normalize_share_structure(payload, url, provider_code, fetched_at)
-        return code, {
-            "version": OWNERSHIP_CAPITAL_VERSION,
-            "status": share_structure["status"],
-            "share_structure": share_structure,
-        }
     except Exception as exc:
-        return code, {
-            "version": OWNERSHIP_CAPITAL_VERSION,
+        share_structure = _unavailable_section(
+            CAPITAL_STRUCTURE_ENDPOINT,
+            fetched_at,
+            f"{type(exc).__name__}: {exc}",
+        )
+        share_structure["values"] = None
+
+    try:
+        payload, url, provider_code = fetch_controllers(base, code)
+        controllers = normalize_controllers(payload, url, provider_code, fetched_at)
+    except Exception as exc:
+        controllers = _unavailable_section(
+            SHAREHOLDER_RESEARCH_ENDPOINT,
+            fetched_at,
+            f"{type(exc).__name__}: {exc}",
+        )
+        controllers["actual_controller"] = {
             "status": "UNAVAILABLE",
-            "share_structure": {
-                "status": "UNAVAILABLE",
-                "as_of_date": None,
-                "values": None,
-                "metadata": {
-                    "freshness": "UNAVAILABLE",
-                    "realtime": False,
-                    "quality": "FAILED",
-                    "quality_flags": ["PROVIDER_ERROR"],
-                    "error": f"{type(exc).__name__}: {exc}",
-                },
-                "provenance": {
-                    "provider": "Eastmoney",
-                    "source_tier": "PRIMARY_PROVIDER",
-                    "endpoint": CAPITAL_STRUCTURE_ENDPOINT,
-                    "source_url": None,
-                    "provider_code": None,
-                    "fetched_at": fetched_at,
-                    "raw_section": None,
-                    "raw_row_index": None,
-                },
-            },
+            "holders": [],
+            "as_of_date": None,
         }
+        controllers["controlling_shareholder"] = {
+            "status": "UNAVAILABLE",
+            "holders": [],
+            "as_of_date": None,
+            "inference_policy": "PROVIDER_DECLARED_ONLY; NEVER_INFER_FROM_LARGEST_HOLDER",
+        }
+
+    return code, {
+        "version": OWNERSHIP_CAPITAL_VERSION,
+        "status": _overall_status((share_structure, controllers)),
+        "share_structure": share_structure,
+        "controllers": controllers,
+    }
 
 
 def finalize_snapshot(snapshot_path, base, execution_mode):
@@ -268,11 +441,17 @@ def finalize_snapshot(snapshot_path, base, execution_mode):
         detail[code]["ownership_and_capital"] = context
         share = context.get("share_structure") or {}
         values = share.get("values") or {}
+        controllers = context.get("controllers") or {}
+        actual = (controllers.get("actual_controller") or {}).get("holders") or []
+        controlling = (controllers.get("controlling_shareholder") or {}).get("holders") or []
         print(
             "OWNERSHIP_CAPITAL "
-            f"{code} status={share.get('status')} as_of={share.get('as_of_date')} "
+            f"{code} status={context.get('status')} "
+            f"share_status={share.get('status')} as_of={share.get('as_of_date')} "
             f"total={values.get('total_shares')} float_a={values.get('float_shares')} "
-            f"restricted={values.get('restricted_shares')}",
+            f"restricted={values.get('restricted_shares')} "
+            f"controllers_status={controllers.get('status')} "
+            f"actual_controller_count={len(actual)} controlling_holder_count={len(controlling)}",
             flush=True,
         )
 
@@ -290,8 +469,14 @@ def finalize_snapshot(snapshot_path, base, execution_mode):
         ),
         "detail_stock_count": len(results),
         "status_by_code": {code: value.get("status") for code, value in sorted(results.items())},
-        "implemented_sections": ["share_structure"],
-        "share_structure_contract": "DATED_PROVIDER_ROW; FLOAT_SHARES=LISTED_A_SHARES; RATIOS_DERIVED",
+        "implemented_sections": ["share_structure", "controllers"],
+        "share_structure_contract": (
+            "DATED_PROVIDER_ROW; FLOAT_SHARES=LISTED_A_SHARES; RATIOS_DERIVED"
+        ),
+        "controllers_contract": (
+            "ACTUAL_CONTROLLER=sjkzr; CONTROLLING_SHAREHOLDER=PROVIDER_DECLARED_kggd_ONLY; "
+            "NEVER_INFER_FROM_TOP_HOLDER"
+        ),
         "intraday_fast_policy": "DEFER_NETWORK_UNTIL_CACHE_CONTINUITY_SLICE",
     }
     path.write_text(json.dumps(snapshot, ensure_ascii=False, indent=2), encoding="utf-8")
