@@ -8,6 +8,7 @@ from pathlib import Path
 import alpha_operation_registry
 import alpha_provider_contract
 import alpha_refresh_contract
+import alpha_start_or_recover
 
 
 COMMAND_SCHEMA_VERSION = "1"
@@ -53,11 +54,32 @@ CANONICAL_JCS = (
 )
 
 
+class _MemoryStore:
+    def __init__(self):
+        self.registry = alpha_operation_registry.empty_registry()
+
+    def mutate(self, mutator):
+        new_registry, record, changed, flag = mutator(self.registry)
+        if changed:
+            self.registry = new_registry
+        return record, flag
+
+
 def semantic_digest(body=None, schema_version=COMMAND_SCHEMA_VERSION):
     return alpha_refresh_contract.canonical_command_digest(
         schema_version,
         CANONICAL_BODY if body is None else body,
     )
+
+
+def _status_identity():
+    return {
+        "dispatch_correlation_id": "corr-status-contract",
+        "idempotency_key": "idem-status-contract",
+        "command_digest": EXPECTED_VECTOR,
+        "workflow_identity": ".github/workflows/realtime-quotes.yml@" + "a" * 40,
+        "material_execution_inputs": {"mode": "full"},
+    }
 
 
 def test_domain_separated_digest_vector():
@@ -272,6 +294,98 @@ def test_machine_contract_and_workflow_do_not_redefine_digest():
     print("PASS alpha_provider_does_not_redefine_semantic_digest")
 
 
+def test_machine_operation_status_contract_exposes_full_state_set():
+    contract = json.loads(
+        Path("contracts/looklookalpha-provider-v1.json").read_text(encoding="utf-8")
+    )
+    refresh = contract["refresh_operation"]
+    status_contract = refresh["status_contract"]
+    assert tuple(refresh["states"]) == alpha_start_or_recover.EXTERNAL_OPERATION_STATES
+    assert status_contract["states"] == refresh["states"]
+    assert status_contract["state_field"] == "operation_state"
+    assert status_contract["source_field"] == "operation_state_source"
+    assert status_contract["accepted_mapping"] == {
+        "dispatch_state": "RESERVED",
+        "workflow_run_id": None,
+        "operation_state": "ACCEPTED",
+        "operation_state_source": "DURABLE_RESERVATION",
+    }
+    assert status_contract["run_state_source"] == (
+        "GITHUB_ACTIONS_RUN_API_BY_EXACT_WORKFLOW_RUN_ID"
+    )
+    assert status_contract["latest_run_lookup_allowed"] is False
+
+    identity = _status_identity()
+    store = _MemoryStore()
+    accepted, action = alpha_start_or_recover.start_or_recover(
+        store,
+        repository="owner/repo",
+        token="unused-before-run",
+        **identity,
+    )
+    assert action == "DISPATCH_REQUIRED"
+    assert accepted["workflow_run_id"] is None
+    assert accepted["operation_state"] == "ACCEPTED"
+    assert accepted["operation_state_source"] == "DURABLE_RESERVATION"
+
+    alpha_operation_registry.claim_run(
+        store,
+        workflow_run_id=701,
+        workflow_run_url="https://example.invalid/run/701",
+        workflow_head_sha="a" * 40,
+        workflow_run_attempt=1,
+        **identity,
+    )
+    original_fetch = alpha_start_or_recover.fetch_workflow_run
+    alpha_start_or_recover.fetch_workflow_run = lambda repository, token, run_id: {
+        "id": int(run_id),
+        "status": "in_progress",
+        "conclusion": None,
+    }
+    try:
+        recovered, action = alpha_start_or_recover.start_or_recover(
+            store,
+            repository="owner/repo",
+            token="unused-by-stub",
+            **identity,
+        )
+    finally:
+        alpha_start_or_recover.fetch_workflow_run = original_fetch
+    assert action == "RECOVERED"
+    assert recovered["workflow_run_id"] == 701
+    assert recovered["operation_state"] == "RUNNING"
+    assert recovered["operation_state_source"] == "GITHUB_ACTIONS_RUN_API"
+
+    bound = {"dispatch_state": "DISPATCHED", "workflow_run_id": 99}
+    run_cases = [
+        ({"id": 99, "status": "queued", "conclusion": None}, "QUEUED"),
+        ({"id": 99, "status": "in_progress", "conclusion": None}, "RUNNING"),
+        ({"id": 99, "status": "completed", "conclusion": "success"}, "SUCCEEDED"),
+        ({"id": 99, "status": "completed", "conclusion": "failure"}, "FAILED"),
+        ({"id": 99, "status": "completed", "conclusion": "cancelled"}, "CANCELLED"),
+    ]
+    observed = {accepted["operation_state"]}
+    for run, expected in run_cases:
+        state, source = alpha_start_or_recover.external_operation_state(
+            bound, run=run
+        )
+        assert state == expected
+        assert source == "GITHUB_ACTIONS_RUN_API"
+        observed.add(state)
+    assert observed == set(alpha_start_or_recover.EXTERNAL_OPERATION_STATES)
+
+    try:
+        alpha_start_or_recover.external_operation_state(
+            bound,
+            run={"id": 100, "status": "completed", "conclusion": "success"},
+        )
+    except alpha_start_or_recover.StartOrRecoverError:
+        pass
+    else:
+        raise AssertionError("operation status must never be read from a different run id")
+    print("PASS alpha_machine_operation_status_contract")
+
+
 def main():
     tests = [
         test_domain_separated_digest_vector,
@@ -280,6 +394,7 @@ def main():
         test_registry_preserves_caller_digest_and_fails_closed_on_mismatch,
         test_snapshot_preserves_caller_semantic_digest,
         test_machine_contract_and_workflow_do_not_redefine_digest,
+        test_machine_operation_status_contract_exposes_full_state_set,
     ]
     for test in tests:
         test()
