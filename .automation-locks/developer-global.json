@@ -1,13 +1,11 @@
 {
   "kind": "looklookbigA-auto-worker-lease",
-  "state": "IDLE",
-  "token": null,
-  "work_item": "issue-50/initialize-auto-wip",
-  "acquired_at": "2026-08-11T20:02:52+00:00",
-  "lease_until": "2026-08-11T20:52:52+00:00",
-  "released_at": "2026-08-11T20:05:20+00:00",
-  "last_token": "auto-20260811T200252Z-50a7c3e1",
-  "last_checkpoint": "ISSUE_50_DRAFT_CREATED",
-  "last_head_sha": "0c7b8b9b8b0e041cb1ec19c23cd6f453e24a6337",
-  "note": "Selected trusted upstream Issue #50, created auto/issue-50 from current master, persisted issue-50 work-lock metadata, opened Draft PR #58 with auto-state, and confirmed Pre-merge Security Gate run 31531099214 triggered. No product implementation was started in this checkpoint."
+  "state": "ACTIVE",
+  "token": "auto-20260811T210155Z-50-share-8c4f2a1d",
+  "work_item": "issue-50/share-structure-current-state",
+  "acquired_at": "2026-08-11T21:01:55+00:00",
+  "lease_until": "2026-08-11T21:51:55+00:00",
+  "start_head_sha": "0c7b8b9b8b0e041cb1ec19c23cd6f453e24a6337",
+  "checkpoint_target": "ISSUE_50_SHARE_STRUCTURE_SUBMITTED",
+  "note": "Resume Draft PR #58 and implement only the current share-structure/float-state slice with explicit dates, provenance, and focused tests. Do not begin controllers, top holders, institutional holdings, shareholder counts, plans, unlocks, or pledges."
 }
