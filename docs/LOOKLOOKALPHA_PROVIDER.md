@@ -101,6 +101,18 @@ caller-supplied semantic command_digest
 
 `workflow_identity` 和 `material_execution_inputs` 会在 provider registry 中单独审计，但它们不会被 provider 再次压缩成另一种“semantic digest”。
 
+为避免 crash-recovery 时只靠 `correlation + command_digest` 误绑定到错误 workflow run，provider 还会根据以下 provider-visible dispatch identity 计算独立的 `operation_identity_fingerprint`：
+
+```text
+idempotency_fingerprint
++ command_digest
++ exact workflow_identity
++ material_execution_inputs
+→ operation_identity_fingerprint
+```
+
+这个 fingerprint 只用于 provider operation/run 的恢复判别，不改变 Alpha 的 semantic `command_digest` 含义，也不会暴露原始 `idempotency_key`。`start_or_recover` 返回该 fingerprint，workflow dispatch 必须原样带回；workflow 会根据实际 dispatch inputs 重算并核对它，然后才允许 claim durable reservation。
+
 ## start_or_recover
 
 入口：
@@ -132,9 +144,11 @@ consumer durable canonical command + dispatch intent
 - 相同 `idempotency_key` + 相同 semantic `command_digest` + 一致 provider-visible material inputs：恢复同一个逻辑 operation；
 - 相同 key + 不同 semantic digest：冲突并拒绝；
 - 相同 correlation + 不同 semantic digest：correlation mismatch 并拒绝；
+- 相同 correlation + semantic digest 但 `operation_identity_fingerprint` 不匹配：冲突并拒绝；
 - 相同 digest 但实际 provider-visible material execution inputs 与已保存记录矛盾：视为调用方合同错误并拒绝；
 - 已有 reservation 但尚未绑定 run 时，lease 到期后也不能直接 redispatch；
 - 必须先按 correlation 对 GitHub Actions workflow runs 做 fresh scan；
+- scan candidate 必须同时满足 correlation、semantic digest、provider operation fingerprint 与 exact workflow head SHA；
 - scan 找到唯一精确 run 时恢复它；
 - 多个匹配 run 时视为 ambiguous，禁止猜测；
 - 只有 fresh scan 确认没有匹配 run，才允许重新获得 dispatch permit。
@@ -155,13 +169,15 @@ refresh → read latest workflow run / latest artifact
 mode
 dispatch_correlation_id
 idempotency_key
+operation_identity_fingerprint
 command_digest
 workflow_identity
 ```
 
-四个 identity 字段必须成组提供。workflow 会：
+五个 identity 字段必须成组提供。workflow 会：
 
 - 验证 correlation / idempotency identifier 格式；
+- 验证 `operation_identity_fingerprint` 为合法 64-hex，并根据实际 `idempotency_key + command_digest + workflow_identity + material_execution_inputs` 重算后精确匹配；
 - 验证 `command_digest` 为合法 64-hex semantic digest；
 - 验证 `workflow_identity` 指向当前 workflow 的精确 SHA；
 - **不会**从 `workflow_identity + mode` 重新计算或替换 caller 的 semantic digest；
@@ -172,7 +188,7 @@ workflow_identity
 
 ## Operation status
 
-对外状态统一为：
+对外状态统一使用机器字段 `operation_state`：
 
 ```text
 ACCEPTED
@@ -182,6 +198,13 @@ SUCCEEDED
 FAILED
 CANCELLED
 ```
+
+同时返回 `operation_state_source` 说明状态来源：
+
+- durable reservation 已存在但还没有绑定 exact `workflow_run_id` 时，`operation_state=ACCEPTED`，`operation_state_source=DURABLE_RESERVATION`；
+- 一旦绑定 run，状态只允许从该 exact `workflow_run_id` 的 GitHub Actions run API 获得，映射为 `QUEUED / RUNNING / SUCCEEDED / FAILED / CANCELLED`；
+- exact run id 查询若返回其他 run id，必须拒绝，不能把其他 run 的状态串到当前 operation；
+- 禁止通过 latest run 查询或成功 run fallback 生成 operation status。
 
 terminal 状态来自 exact GitHub Actions run，而不是另一个“最新成功 run”。调用方 timeout 与 provider 的 FAILED / CANCELLED 必须保持为不同语义。
 
@@ -244,6 +267,14 @@ python3 scripts/test_alpha_semantic_command_identity.py
 - provider registry 原样保存 caller digest，不以局部 workflow input 重定义它；
 - 同一 digest 与矛盾 provider-visible material inputs 同时出现时 fail closed；
 - snapshot audit metadata 原样携带 caller semantic digest。
+
+provider-contract 回归还验证：
+
+- crash recovery candidate 必须具备完整 provider operation identity，错误 idempotency identity 不得 cross-wire；
+- durable reservation 在 run 创建前机器暴露 `ACCEPTED`；
+- exact run 状态覆盖 `QUEUED / RUNNING / SUCCEEDED / FAILED / CANCELLED`；
+- exact run id 不匹配时 fail closed；
+- primary artifact/digest 与 workflow identity 必须可审计。
 
 这些回归进入 pre-merge security gate、reusable selftest 和 v1 smoke。稳定发布还必须保留 live-price guard、provenance / trust / freshness 与原有完整 smoke。
 
