@@ -66,7 +66,9 @@ SHA256(
 )
 ```
 
-生产路径中 Alpha / caller 是 canonicalization 与 semantic digest 的权威来源。`looklookbigA` **不需要也不应**根据 `workflow_identity + mode` 等局部信息重新计算该 digest；provider 只做：
+生产路径中 Alpha / caller 是 RFC8785/JCS canonicalization 与 semantic digest 的权威来源。`looklookbigA` **不需要也不应**根据 `workflow_identity + mode` 等局部信息重新计算该 digest。`scripts/alpha_refresh_contract.py` 中的 digest helper 只用于固定测试向量/跨合同 fixture；provider 的 workflow、registry 和 snapshot runtime 都只接受 caller 提供的 digest。
+
+provider runtime 只做：
 
 1. 校验 `command_digest` 是 64 位小写 hex；
 2. 原样持久化并用于 correlation / idempotency；
