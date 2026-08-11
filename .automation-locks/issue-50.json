@@ -1,0 +1,14 @@
+{
+  "kind": "looklookbigA-auto-issue-lock",
+  "issue": 50,
+  "issue_url": "https://github.com/yaelysia/looklookbigA/issues/50",
+  "issue_title": "【功能请求】股东结构 / 资本结构状态与趋势上下文",
+  "issue_author": "yaelysia",
+  "issue_updated_at": "2026-08-10T05:57:56Z",
+  "branch": "auto/issue-50",
+  "base_branch": "master",
+  "base_sha_at_lock": "555213ea5ece24628b9e0acd550c9fd28e539a1e",
+  "locked_at": "2026-08-11T20:02:52+00:00",
+  "state": "DEVELOPING",
+  "next_action": "Plan and implement the first narrow acceptance slice: share structure/current float state with provenance and tests; keep all later ownership/capital sections pending."
+}
