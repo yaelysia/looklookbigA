@@ -97,12 +97,12 @@ def operation_identity_fingerprint(
     workflow_identity,
     material_execution_inputs,
 ):
-    """Hash the complete provider-visible dispatch identity without exposing the key.
+    """Hash the provider-visible dispatch identity without exposing the key.
 
-    This is intentionally distinct from the Alpha semantic command digest. It is
-    only a provider-side recovery discriminator proving that a candidate run was
-    dispatched with the same idempotency identity, semantic digest, exact workflow
-    identity and material provider-visible inputs as the durable reservation.
+    This is intentionally distinct from the Alpha semantic command digest. It
+    exists only so crash recovery can prove that a candidate workflow run used
+    the same idempotency identity, semantic digest, exact workflow identity and
+    material provider-visible inputs as the durable reservation.
     """
     if not isinstance(material_execution_inputs, dict):
         raise RefreshContractError("material_execution_inputs must be a JSON object")
@@ -162,17 +162,27 @@ def _workflow_sha(workflow_identity):
     return sha
 
 
-def resolve_operation_by_correlation(
+def verify_scanned_runs(
     runs,
-    dispatch_correlation_id,
+    correlation_ids,
     idempotency_key,
     command_digest,
     workflow_identity,
     material_execution_inputs,
 ):
-    correlation = validate_identifier(dispatch_correlation_id, "dispatch_correlation_id")
-    idem = idempotency_fingerprint(idempotency_key)
+    """Attach proof that matching scan candidates have the full operation identity.
+
+    Recovery must never bind a raw workflow run selected only by correlation and
+    semantic digest. A candidate is admitted only when its run-name operation
+    fingerprint and head SHA prove the durable reservation's complete
+    provider-visible dispatch identity.
+    """
+    aliases = {
+        validate_identifier(value, "dispatch_correlation_id")
+        for value in (correlation_ids or [])
+    }
     digest = normalize_digest(command_digest)
+    idem = idempotency_fingerprint(idempotency_key)
     operation_fingerprint = operation_identity_fingerprint(
         idempotency_key,
         digest,
@@ -180,6 +190,49 @@ def resolve_operation_by_correlation(
         material_execution_inputs,
     )
     workflow_sha = _workflow_sha(workflow_identity)
+    verified = []
+    conflicts = []
+
+    for run in runs:
+        marker = parse_run_name(
+            run.get("display_title") or run.get("run_name") or run.get("name")
+        )
+        if not marker or marker["corr"] not in aliases:
+            continue
+        if (
+            marker["cmd"] != digest
+            or marker["op"] != operation_fingerprint
+            or str(run.get("head_sha") or "").lower() != workflow_sha
+        ):
+            conflicts.append(run)
+            continue
+        enriched = dict(run)
+        enriched["_looklook_verified_operation_identity"] = {
+            "verified": True,
+            "idempotency_fingerprint": idem,
+            "operation_identity_fingerprint": operation_fingerprint,
+            "command_digest": digest,
+            "workflow_identity": workflow_identity,
+            "material_execution_inputs": material_execution_inputs,
+        }
+        verified.append(enriched)
+
+    if conflicts:
+        raise RefreshIdentityConflict(
+            "correlation scan found a run with contradictory provider operation identity"
+        )
+    return verified
+
+
+def resolve_operation_by_correlation(
+    runs,
+    dispatch_correlation_id,
+    idempotency_key,
+    command_digest,
+):
+    correlation = validate_identifier(dispatch_correlation_id, "dispatch_correlation_id")
+    idem = idempotency_fingerprint(idempotency_key)
+    digest = normalize_digest(command_digest)
 
     exact = []
     correlation_conflicts = []
@@ -189,19 +242,23 @@ def resolve_operation_by_correlation(
         )
         if not marker:
             continue
-        if marker["corr"] != correlation:
-            continue
+        same_corr = marker["corr"] == correlation
         same_digest = marker["cmd"] == digest
-        same_operation = marker["op"] == operation_fingerprint
-        same_workflow_sha = str(run.get("head_sha") or "").lower() == workflow_sha
-        if same_digest and same_operation and same_workflow_sha:
+        evidence = run.get("_looklook_verified_operation_identity") or {}
+        verified_identity = (
+            evidence.get("verified") is True
+            and evidence.get("idempotency_fingerprint") == idem
+            and evidence.get("command_digest") == digest
+            and evidence.get("operation_identity_fingerprint") == marker["op"]
+        )
+        if same_corr and same_digest and verified_identity:
             exact.append(run)
-        else:
+        elif same_corr:
             correlation_conflicts.append(run)
 
     if correlation_conflicts:
         raise RefreshIdentityConflict(
-            "dispatch_correlation_id matched a run with contradictory provider operation identity"
+            "dispatch_correlation_id matched an unverified or contradictory workflow run"
         )
     if len(exact) > 1:
         raise RefreshOperationAmbiguous(
@@ -211,6 +268,7 @@ def resolve_operation_by_correlation(
         return None
 
     run = exact[0]
+    evidence = run["_looklook_verified_operation_identity"]
     return {
         "workflow_run_id": run.get("id"),
         "workflow_run_url": run.get("html_url") or run.get("url"),
@@ -219,8 +277,8 @@ def resolve_operation_by_correlation(
         "status": operation_state(run),
         "dispatch_correlation_id": correlation,
         "idempotency_fingerprint": idem,
-        "operation_identity_fingerprint": operation_fingerprint,
+        "operation_identity_fingerprint": evidence["operation_identity_fingerprint"],
         "command_digest": digest,
-        "workflow_identity": workflow_identity,
-        "material_execution_inputs": material_execution_inputs,
+        "workflow_identity": evidence["workflow_identity"],
+        "material_execution_inputs": evidence["material_execution_inputs"],
     }
