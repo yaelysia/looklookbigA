@@ -27,12 +27,14 @@ on:
       - ".github/dependabot.yml"
       - "config/quote_watchlist.json"
       - "scripts/alpha_artifact_manifest.py"
+      - "scripts/alpha_primary_artifact.py"
       - "scripts/alpha_capability_contract.py"
       - "scripts/alpha_operation_registry.py"
       - "scripts/alpha_provider_contract.py"
       - "scripts/alpha_refresh_contract.py"
       - "scripts/test_alpha_provider_contract.py"
       - "scripts/test_alpha_semantic_command_identity.py"
+      - "scripts/test_alpha_primary_artifact.py"
       - "scripts/realtime_quotes_watchlist.py"
       - "scripts/realtime_quotes_watchlist_runner.py"
       - "scripts/performance_fast_path.py"
@@ -128,6 +130,8 @@ jobs:
         run: python3 scripts/test_alpha_provider_contract.py
       - name: Run Alpha semantic command identity tests
         run: python3 scripts/test_alpha_semantic_command_identity.py
+      - name: Run Alpha exact primary artifact tests
+        run: python3 scripts/test_alpha_primary_artifact.py
       - name: Run market environment summary tests
         run: python3 scripts/test_market_environment.py
       - name: Run provenance/freshness/quality metadata tests
