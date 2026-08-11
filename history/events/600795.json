@@ -4,8 +4,8 @@
   "org_id": "gssh0600795",
   "source": "CNINFO",
   "source_tier": "OFFICIAL",
-  "covered_start_date": "2026-07-11",
-  "updated_at_cst": "2026-08-10T21:59:59+08:00",
+  "covered_start_date": "2026-07-12",
+  "updated_at_cst": "2026-08-11T09:02:31+08:00",
   "query_status": "OK",
   "event_count": 2,
   "events": [
@@ -28,7 +28,7 @@
         "dates": []
       },
       "freshness": "RECENT_30D",
-      "fetched_at": "2026-08-10T21:59:59+08:00",
+      "fetched_at": "2026-08-11T09:02:31+08:00",
       "status": "OPEN",
       "related_event_id": null,
       "supersedes_event_id": null
@@ -52,13 +52,13 @@
         "dates": []
       },
       "freshness": "RECENT_30D",
-      "fetched_at": "2026-08-10T21:59:59+08:00",
+      "fetched_at": "2026-08-11T09:02:31+08:00",
       "status": "OPEN",
       "related_event_id": null,
       "supersedes_event_id": null
     }
   ],
-  "requested_start_date": "2026-07-11",
+  "requested_start_date": "2026-07-12",
   "coverage_complete": true,
   "incomplete_ranges": [],
   "query_diagnostics": {
@@ -71,7 +71,7 @@
     "segments": [
       {
         "start_date": "2026-07-16",
-        "end_date": "2026-08-10",
+        "end_date": "2026-08-11",
         "pages_total": 1,
         "pages_requested": 1,
         "complete": true
