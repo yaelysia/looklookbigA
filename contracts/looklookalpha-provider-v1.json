@@ -79,9 +79,28 @@
         "local_persistence_created_at"
       ]
     },
+    "provider_operation_identity": {
+      "domain": "looklookbigA.refresh-operation-identity.v1",
+      "purpose": "CRASH_RECOVERY_DISCRIMINATOR_NOT_SEMANTIC_COMMAND_IDENTITY",
+      "algorithm": "SHA-256",
+      "authority": "PROVIDER",
+      "returned_by": "start_or_recover",
+      "workflow_input": "operation_identity_fingerprint",
+      "fields": [
+        "idempotency_fingerprint",
+        "command_digest",
+        "workflow_identity",
+        "material_execution_inputs"
+      ],
+      "raw_idempotency_key_exposed": false,
+      "run_name_marker": "alpha-refresh corr=<correlation> op=<operation_identity_fingerprint> cmd=<command_digest>",
+      "recovery_requires_exact_workflow_head_sha": true,
+      "unverified_run_binding_allowed": false
+    },
     "identity_fields": [
       "dispatch_correlation_id",
       "idempotency_key",
+      "operation_identity_fingerprint",
       "command_digest",
       "workflow_identity",
       "material_execution_inputs"
@@ -100,10 +119,11 @@
       "CANCELLED"
     ],
     "latest_run_fallback_allowed": false,
-    "ambiguous_dispatch_recovery": "FRESH_CORRELATION_SCAN_BEFORE_REDISPATCH",
+    "ambiguous_dispatch_recovery": "FRESH_CORRELATION_SCAN_WITH_FULL_PROVIDER_OPERATION_IDENTITY_BEFORE_REDISPATCH",
     "same_key_same_digest": "RECOVER_SAME_OPERATION",
     "same_key_different_digest": "CONFLICT",
     "same_correlation_different_digest": "CORRELATION_MISMATCH",
+    "same_correlation_digest_wrong_operation_identity": "CONFLICT",
     "material_inputs_mismatch_with_same_digest": "CONFLICT"
   },
   "primary_artifact": {
