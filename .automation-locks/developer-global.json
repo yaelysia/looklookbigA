@@ -1,11 +1,10 @@
 {
   "kind": "looklookbigA-auto-worker-lease",
-  "state": "IDLE",
-  "token": null,
+  "state": "ACTIVE",
+  "token": "manual-20260811T1018-8c7e3b5a",
   "work_item": "pr-55/issue-54",
-  "acquired_at": "2026-08-10T16:03:40.258431+00:00",
-  "lease_until": "2026-08-11T00:03:40.258431+00:00",
-  "released_at": "2026-08-11T00:38:00+00:00",
-  "start_time": "2026-08-10T16:03:40.258431+00:00",
-  "note": "Recovered after scheduled-task interruption; next run must resume PR #55 from persistent checkpoint state."
+  "acquired_at": "2026-08-11T02:18:30+00:00",
+  "lease_until": "2026-08-11T03:58:30+00:00",
+  "start_head_sha": "4303b503be50162c72e89c9e60a23a94d01a0960",
+  "note": "Manual validation run of the looklookbigA development-progression scheduled-task prompt; handling current-head OPERATION_RECOVERY_IDENTITY_GAP only."
 }
