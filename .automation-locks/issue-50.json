@@ -10,5 +10,6 @@
   "base_sha_at_lock": "555213ea5ece24628b9e0acd550c9fd28e539a1e",
   "locked_at": "2026-08-11T20:02:52+00:00",
   "state": "DEVELOPING",
-  "next_action": "Plan and implement the first narrow acceptance slice: share structure/current float state with provenance and tests; keep all later ownership/capital sections pending."
+  "checkpoint": "ISSUE_50_SHARE_STRUCTURE_SUBMITTED",
+  "next_action": "Inspect exact-head CI for the current share-structure slice. If green, next run may begin only the controllers/control-holder slice; keep top holders, institutional holdings, shareholder counts, plans, unlocks, pledges, signals, changes integration, and docs pending."
 }
