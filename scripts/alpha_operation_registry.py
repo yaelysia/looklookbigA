@@ -61,16 +61,33 @@ def _operation_id(idem_fp, command_digest, workflow_identity):
     return "op_" + hashlib.sha256(payload).hexdigest()[:32]
 
 
-def _validate_command(workflow_identity, material_execution_inputs, command_digest):
-    digest = alpha_refresh_contract.normalize_digest(command_digest)
-    expected = alpha_refresh_contract.canonical_command_digest(
-        workflow_identity, material_execution_inputs
-    )
-    if digest != expected:
-        raise RegistryConflict(
-            f"command_digest mismatch: expected={expected} provided={digest}"
+def _normalize_material_inputs(value):
+    if not isinstance(value, dict):
+        raise RegistryError("material execution inputs must be a JSON object")
+    try:
+        encoded = json.dumps(
+            value,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
         )
-    return digest
+    except (TypeError, ValueError) as exc:
+        raise RegistryError(f"material execution inputs are not JSON-safe: {exc}") from exc
+    return json.loads(encoded)
+
+
+def _validate_command(workflow_identity, material_execution_inputs, command_digest):
+    """Validate transport shape without redefining Alpha semantic identity.
+
+    Alpha is authoritative for the RFC8785/JCS semantic command digest. The
+    provider only validates the supplied 64-hex digest, preserves it unchanged,
+    and separately audits the exact workflow identity/material execution inputs.
+    """
+    if not str(workflow_identity or ""):
+        raise RegistryError("workflow_identity is required")
+    _normalize_material_inputs(material_execution_inputs)
+    return alpha_refresh_contract.normalize_digest(command_digest)
 
 
 def _find_by_correlation(registry, correlation):
@@ -87,11 +104,18 @@ def _find_by_idempotency(registry, idem_fp):
     return None
 
 
-def _record_matches(record, idem_fp, digest, workflow_identity):
+def _record_matches(
+    record,
+    idem_fp,
+    digest,
+    workflow_identity,
+    material_execution_inputs,
+):
     return (
         record.get("idempotency_fingerprint") == idem_fp
         and record.get("command_digest") == digest
         and record.get("workflow_identity") == workflow_identity
+        and record.get("material_execution_inputs") == material_execution_inputs
     )
 
 
@@ -107,10 +131,10 @@ def _identity_values(
     )
     alpha_refresh_contract.validate_identifier(idempotency_key, "idempotency_key")
     idem_fp = alpha_refresh_contract.idempotency_fingerprint(idempotency_key)
-    digest = _validate_command(
-        workflow_identity, material_execution_inputs, command_digest
-    )
-    return correlation, idem_fp, digest
+    material = _normalize_material_inputs(material_execution_inputs)
+    workflow = str(workflow_identity or "")
+    digest = _validate_command(workflow, material, command_digest)
+    return correlation, idem_fp, digest, workflow, material
 
 
 def reserve_state(
@@ -126,13 +150,13 @@ def reserve_state(
 ):
     """Reserve a new command or recover an existing one.
 
-    Existing operations whose dispatch lease expired are *not* automatically
-    redispatched. They return should_dispatch=False until a caller performs a
-    correlation scan and calls recover_after_correlation_scan_state(). This is
-    the crash/ambiguous-response barrier that prevents duplicate dispatches.
+    command_digest is caller-supplied semantic identity. Dispatch metadata is
+    deliberately not folded into it. Existing operations whose dispatch lease
+    expired are not automatically redispatched: callers must first perform a
+    fresh correlation scan.
     """
     now = now or utc_now()
-    correlation, idem_fp, digest = _identity_values(
+    correlation, idem_fp, digest, workflow, material = _identity_values(
         dispatch_correlation_id,
         idempotency_key,
         command_digest,
@@ -145,13 +169,17 @@ def reserve_state(
     operations = result.setdefault("operations", {})
 
     by_corr = _find_by_correlation(result, correlation)
-    if by_corr and not _record_matches(by_corr, idem_fp, digest, workflow_identity):
+    if by_corr and not _record_matches(
+        by_corr, idem_fp, digest, workflow, material
+    ):
         raise alpha_refresh_contract.RefreshIdentityConflict(
             "dispatch_correlation_id is already bound to a different logical command"
         )
 
     by_key = _find_by_idempotency(result, idem_fp)
-    if by_key and not _record_matches(by_key, idem_fp, digest, workflow_identity):
+    if by_key and not _record_matches(
+        by_key, idem_fp, digest, workflow, material
+    ):
         raise alpha_refresh_contract.RefreshIdentityConflict(
             "idempotency_key is already bound to a different logical command"
         )
@@ -173,19 +201,18 @@ def reserve_state(
         if lease_until and lease_until > now:
             return result, deepcopy(existing), changed, False
 
-        # Never redispatch an existing ambiguous/expired reservation here.
-        # The caller must first scan workflow runs by every correlation alias.
         return result, deepcopy(existing), changed, False
 
-    operation_id = _operation_id(idem_fp, digest, workflow_identity)
+    operation_id = _operation_id(idem_fp, digest, workflow)
     record = {
         "operation_id": operation_id,
         "primary_correlation_id": correlation,
         "correlation_ids": [correlation],
         "idempotency_fingerprint": idem_fp,
         "command_digest": digest,
-        "workflow_identity": workflow_identity,
-        "material_execution_inputs": material_execution_inputs,
+        "command_digest_source": "CALLER_SUPPLIED_SEMANTIC",
+        "workflow_identity": workflow,
+        "material_execution_inputs": material,
         "dispatch_state": "RESERVED",
         "dispatch_owner_token": owner_token,
         "dispatch_lease_until": iso(
@@ -218,7 +245,7 @@ def claim_run_state(
     now=None,
 ):
     now = now or utc_now()
-    correlation, idem_fp, digest = _identity_values(
+    correlation, idem_fp, digest, workflow, material = _identity_values(
         dispatch_correlation_id,
         idempotency_key,
         command_digest,
@@ -231,7 +258,7 @@ def claim_run_state(
         raise RegistryConflict(
             "workflow started without a durable pre-dispatch reservation"
         )
-    if not _record_matches(record, idem_fp, digest, workflow_identity):
+    if not _record_matches(record, idem_fp, digest, workflow, material):
         raise alpha_refresh_contract.RefreshIdentityConflict(
             "workflow run identity does not match the durable reservation"
         )
@@ -240,14 +267,17 @@ def claim_run_state(
     existing_run_id = record.get("workflow_run_id")
     if existing_run_id is not None and int(existing_run_id) != run_id:
         raise RegistryConflict(
-            f"duplicate workflow runs detected for one logical operation: existing={existing_run_id} new={run_id}"
+            f"duplicate workflow runs detected for one logical operation: "
+            f"existing={existing_run_id} new={run_id}"
         )
 
     record["workflow_run_id"] = run_id
     record["workflow_run_url"] = workflow_run_url
     record["workflow_head_sha"] = workflow_head_sha
     record["workflow_run_attempt"] = (
-        int(workflow_run_attempt) if workflow_run_attempt not in (None, "") else None
+        int(workflow_run_attempt)
+        if workflow_run_attempt not in (None, "")
+        else None
     )
     record["dispatch_state"] = "DISPATCHED"
     record["dispatch_owner_token"] = None
@@ -266,7 +296,7 @@ def resolve_state(
     workflow_identity,
     material_execution_inputs,
 ):
-    correlation, idem_fp, digest = _identity_values(
+    correlation, idem_fp, digest, workflow, material = _identity_values(
         dispatch_correlation_id,
         idempotency_key,
         command_digest,
@@ -276,7 +306,7 @@ def resolve_state(
     record = _find_by_correlation(registry or empty_registry(), correlation)
     if not record:
         return None
-    if not _record_matches(record, idem_fp, digest, workflow_identity):
+    if not _record_matches(record, idem_fp, digest, workflow, material):
         raise alpha_refresh_contract.RefreshIdentityConflict(
             "correlation resolves to a different logical command"
         )
@@ -295,16 +325,9 @@ def recover_after_correlation_scan_state(
     owner_token=None,
     now=None,
 ):
-    """Recover an exact run or authorize redispatch only after a run scan.
-
-    Callers must pass the provider workflow runs returned by a fresh GitHub API
-    query. Every correlation alias is checked. If any matching run exists it is
-    claimed; if multiple distinct matches exist the operation is ambiguous and
-    no redispatch is permitted. Only a verified-empty scan plus an expired
-    dispatch lease can issue a new dispatch permit.
-    """
+    """Recover an exact run or authorize redispatch only after a fresh scan."""
     now = now or utc_now()
-    correlation, idem_fp, digest = _identity_values(
+    correlation, idem_fp, digest, workflow, material = _identity_values(
         dispatch_correlation_id,
         idempotency_key,
         command_digest,
@@ -317,7 +340,7 @@ def recover_after_correlation_scan_state(
     )
     if not record:
         raise RegistryConflict("cannot recover an operation that was never reserved")
-    if not _record_matches(record, idem_fp, digest, workflow_identity):
+    if not _record_matches(record, idem_fp, digest, workflow, material):
         raise alpha_refresh_contract.RefreshIdentityConflict(
             "recovery identity does not match the durable reservation"
         )
@@ -333,23 +356,25 @@ def recover_after_correlation_scan_state(
             matches[int(found["workflow_run_id"])] = (alias, found)
     if len(matches) > 1:
         raise alpha_refresh_contract.RefreshOperationAmbiguous(
-            f"multiple workflow runs found during correlation recovery: {sorted(matches)}"
+            f"multiple workflow runs found during correlation recovery: "
+            f"{sorted(matches)}"
         )
     if matches:
         alias, found = next(iter(matches.values()))
-        return (*claim_run_state(
+        claimed = claim_run_state(
             result,
             dispatch_correlation_id=alias,
             idempotency_key=idempotency_key,
             command_digest=digest,
-            workflow_identity=workflow_identity,
-            material_execution_inputs=material_execution_inputs,
+            workflow_identity=workflow,
+            material_execution_inputs=material,
             workflow_run_id=found["workflow_run_id"],
             workflow_run_url=found.get("workflow_run_url"),
             workflow_head_sha=found.get("head_sha"),
             workflow_run_attempt=found.get("run_attempt"),
             now=now,
-        ), False)
+        )
+        return (*claimed, False)
 
     lease_until = parse_iso(record.get("dispatch_lease_until"))
     if lease_until and lease_until > now:
@@ -439,7 +464,9 @@ class GitHubRegistryStore:
         payload = {
             "message": "Update Alpha refresh operation registry",
             "content": base64.b64encode(
-                (json.dumps(registry, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+                (
+                    json.dumps(registry, ensure_ascii=False, indent=2) + "\n"
+                ).encode("utf-8")
             ).decode("ascii"),
             "branch": self.branch,
         }
@@ -487,9 +514,7 @@ def recover_after_correlation_scan(store, runs, **kwargs):
 
 def _parse_material_inputs(raw):
     value = json.loads(raw)
-    if not isinstance(value, dict):
-        raise RegistryError("material execution inputs must be a JSON object")
-    return value
+    return _normalize_material_inputs(value)
 
 
 def _store_from_args(args):
@@ -502,7 +527,9 @@ def _store_from_args(args):
 def main(argv=None):
     import argparse
 
-    parser = argparse.ArgumentParser(description="Durable Alpha refresh operation registry")
+    parser = argparse.ArgumentParser(
+        description="Durable Alpha refresh operation registry"
+    )
     parser.add_argument("--repository", default=os.environ.get("GITHUB_REPOSITORY"))
     parser.add_argument("--token-env", default="GITHUB_TOKEN")
     parser.add_argument("--registry-branch", default=REGISTRY_BRANCH)
@@ -551,7 +578,11 @@ def main(argv=None):
         record, should_dispatch = reserve_or_recover(
             store, owner_token=args.owner_token, **identity
         )
-        print(json.dumps({"operation": record, "should_dispatch": should_dispatch}))
+        print(
+            json.dumps(
+                {"operation": record, "should_dispatch": should_dispatch}
+            )
+        )
     elif args.command == "claim-run":
         record = claim_run(
             store,
