@@ -1,11 +1,13 @@
 {
   "kind": "looklookbigA-auto-worker-lease",
-  "state": "ACTIVE",
-  "token": "auto-20260811T065930Z-f31c8d72",
+  "state": "IDLE",
+  "token": null,
   "work_item": "pr-55/issue-54",
   "acquired_at": "2026-08-11T06:59:30+00:00",
   "lease_until": "2026-08-11T07:49:30+00:00",
-  "start_head_sha": "0c6ca143254f61af24b43abb201eb56778b1b434",
-  "checkpoint_target": "FINAL_RECONCILE_READY",
-  "note": "Exact-primary artifact checkpoint CI is green. This lease is only for final no-code reconciliation, PR state persistence, and Ready-for-Review transition while retaining MANUAL_GATE_REQUIRED."
+  "released_at": "2026-08-11T07:01:50+00:00",
+  "last_token": "auto-20260811T065930Z-f31c8d72",
+  "last_checkpoint": "READY_FOR_REVIEW",
+  "last_head_sha": "0c6ca143254f61af24b43abb201eb56778b1b434",
+  "note": "Final no-code reconciliation completed: exact-head CI is green, no current-head trusted blocker exists, PR body checkpoint was persisted, PR #55 was marked Ready for Review, MANUAL_GATE_REQUIRED retained, and the lease was released."
 }
