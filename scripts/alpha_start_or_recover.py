@@ -10,6 +10,14 @@ import alpha_refresh_contract
 
 DEFAULT_WORKFLOW = ".github/workflows/realtime-quotes.yml"
 MAX_SCAN_PAGES = 100
+EXTERNAL_OPERATION_STATES = (
+    "ACCEPTED",
+    "QUEUED",
+    "RUNNING",
+    "SUCCEEDED",
+    "FAILED",
+    "CANCELLED",
+)
 
 
 class StartOrRecoverError(RuntimeError):
@@ -28,6 +36,66 @@ def _request_json(url, token):
     )
     with urllib.request.urlopen(request, timeout=15) as response:
         return json.loads(response.read().decode("utf-8"))
+
+
+def fetch_workflow_run(repository, token, workflow_run_id):
+    try:
+        run_id = int(workflow_run_id)
+    except (TypeError, ValueError) as exc:
+        raise StartOrRecoverError("workflow_run_id must be an integer") from exc
+    if run_id <= 0:
+        raise StartOrRecoverError("workflow_run_id must be positive")
+    run = _request_json(
+        f"https://api.github.com/repos/{repository}/actions/runs/{run_id}", token
+    )
+    try:
+        returned_id = int(run.get("id"))
+    except (TypeError, ValueError) as exc:
+        raise StartOrRecoverError("exact workflow run response is missing its id") from exc
+    if returned_id != run_id:
+        raise StartOrRecoverError(
+            f"exact workflow run lookup returned id={returned_id}, expected={run_id}"
+        )
+    return run
+
+
+def external_operation_state(record, run=None):
+    """Map one durable provider operation to the stable external state contract.
+
+    Before GitHub has an exact run id, a valid durable reservation is ACCEPTED.
+    Once a run id exists, state must come from that exact GitHub Actions run;
+    callers are never allowed to substitute a latest/other run.
+    """
+    workflow_run_id = record.get("workflow_run_id")
+    if workflow_run_id is None:
+        if run is not None:
+            raise StartOrRecoverError(
+                "workflow run state cannot be attached before an exact run is bound"
+            )
+        if record.get("dispatch_state") != "RESERVED":
+            raise StartOrRecoverError(
+                "operation without an exact run must be a durable RESERVED operation"
+            )
+        return "ACCEPTED", "DURABLE_RESERVATION"
+
+    if run is None:
+        raise StartOrRecoverError(
+            "exact GitHub Actions run payload is required once workflow_run_id is bound"
+        )
+    try:
+        expected_id = int(workflow_run_id)
+        actual_id = int(run.get("id"))
+    except (TypeError, ValueError) as exc:
+        raise StartOrRecoverError("workflow run identity is not machine-valid") from exc
+    if actual_id != expected_id:
+        raise StartOrRecoverError(
+            f"workflow run state cross-wire: expected id={expected_id}, got id={actual_id}"
+        )
+
+    state = alpha_refresh_contract.operation_state(run)
+    if state not in EXTERNAL_OPERATION_STATES or state == "ACCEPTED":
+        raise StartOrRecoverError(f"unsupported external operation state: {state}")
+    return state, "GITHUB_ACTIONS_RUN_API"
 
 
 def scan_workflow_runs(repository, token, workflow_path, not_before=None):
@@ -78,9 +146,15 @@ def _operation_fingerprint(identity):
     )
 
 
-def _expose_dispatch_identity(record, identity):
+def _expose_dispatch_identity(record, identity, *, repository, token):
     exposed = dict(record)
     exposed["operation_identity_fingerprint"] = _operation_fingerprint(identity)
+    run = None
+    if exposed.get("workflow_run_id") is not None:
+        run = fetch_workflow_run(repository, token, exposed["workflow_run_id"])
+    state, source = external_operation_state(exposed, run=run)
+    exposed["operation_state"] = state
+    exposed["operation_state_source"] = source
     return exposed
 
 
@@ -95,10 +169,20 @@ def start_or_recover(
     record, should_dispatch = alpha_operation_registry.reserve_or_recover(
         store, **identity
     )
-    if record.get("workflow_run_id"):
-        return _expose_dispatch_identity(record, identity), "RECOVERED"
+    if record.get("workflow_run_id") is not None:
+        return (
+            _expose_dispatch_identity(
+                record, identity, repository=repository, token=token
+            ),
+            "RECOVERED",
+        )
     if should_dispatch:
-        return _expose_dispatch_identity(record, identity), "DISPATCH_REQUIRED"
+        return (
+            _expose_dispatch_identity(
+                record, identity, repository=repository, token=token
+            ),
+            "DISPATCH_REQUIRED",
+        )
 
     runs = scan_workflow_runs(
         repository,
@@ -117,14 +201,26 @@ def start_or_recover(
     record, should_dispatch = alpha_operation_registry.recover_after_correlation_scan(
         store, verified_runs, **identity
     )
-    if record.get("workflow_run_id"):
-        return _expose_dispatch_identity(record, identity), "RECOVERED"
+    if record.get("workflow_run_id") is not None:
+        return (
+            _expose_dispatch_identity(
+                record, identity, repository=repository, token=token
+            ),
+            "RECOVERED",
+        )
     if should_dispatch:
         return (
-            _expose_dispatch_identity(record, identity),
+            _expose_dispatch_identity(
+                record, identity, repository=repository, token=token
+            ),
             "REDISPATCH_REQUIRED_AFTER_EMPTY_SCAN",
         )
-    return _expose_dispatch_identity(record, identity), "WAITING_FOR_EXISTING_DISPATCH"
+    return (
+        _expose_dispatch_identity(
+            record, identity, repository=repository, token=token
+        ),
+        "WAITING_FOR_EXISTING_DISPATCH",
+    )
 
 
 def _material_inputs(raw):
