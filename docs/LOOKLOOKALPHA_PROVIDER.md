@@ -34,28 +34,70 @@
 
 `scripts/alpha_capability_contract.py` 负责验证 snapshot 是否满足稳定 capability profile。consumer 不应只比较 schema number；schema 相同但能力清单缺失仍应判为不兼容。
 
-## Refresh operation identity
+## Semantic command identity 与 dispatch identity
 
-一个逻辑 refresh command 由以下字段共同定义：
+两类身份必须严格分离。
+
+### Semantic command identity
+
+`command_digest` 代表 Alpha 的完整语义命令，不由 `looklookbigA` 根据自己能看到的少量 workflow input 重新定义。其语义等价于 Alpha 的 `RefreshCommandCanonicalBody`，至少覆盖：
+
+```text
+command_schema_version
+provider/workflow identity + version/SHA
+requirements                      # deterministic order
+subjects                          # deterministic order
+temporal mode + fixed cutoff when applicable
+execution mode
+material provider/workflow inputs
+requested payload versions
+```
+
+规范公式为：
+
+```text
+domain = "looklookAlpha.refresh-command.v1"
+SHA256(
+  domain
+  || 0x00
+  || command_schema_version
+  || 0x00
+  || RFC8785_JCS(canonical_command_body)
+)
+```
+
+生产路径中 Alpha / caller 是 canonicalization 与 semantic digest 的权威来源。`looklookbigA` **不需要也不应**根据 `workflow_identity + mode` 等局部信息重新计算该 digest；provider 只做：
+
+1. 校验 `command_digest` 是 64 位小写 hex；
+2. 原样持久化并用于 correlation / idempotency；
+3. 独立记录 provider 实际可见的 `workflow_identity` 与 `material_execution_inputs`；
+4. 如果同一 idempotency/digest 被再次提交但 provider 可见 material inputs 与已保存记录矛盾，fail closed，而不是静默复用。
+
+下列 dispatch / persistence metadata **不属于 semantic command identity**，改变它们不得改变 semantic digest：
 
 ```text
 dispatch_correlation_id
 idempotency_key
-command_digest
-workflow_identity
-material_execution_inputs
+deadline / submitted time
+caller-local Job id
+retry attempt
+local persistence object id / revision / created_at
 ```
 
-`command_digest` 是下列 canonical JSON 的 SHA-256：
+### Dispatch identity
 
-```json
-{
-  "workflow_identity": "...",
-  "material_execution_inputs": {"mode": "..."}
-}
+Provider dispatch/recovery 使用：
+
+```text
+caller-supplied semantic command_digest
++ idempotency_key
++ dispatch_correlation_id
++ exact workflow_identity
++ auditable material_execution_inputs
+→ exact logical provider operation/run
 ```
 
-JSON 使用稳定 key 排序和紧凑编码。`dispatch_correlation_id` / `idempotency_key` 是操作标识符，不应包含凭据、token 或其他秘密。registry 只保存 idempotency fingerprint，不把原始 key 作为长期操作身份公开。
+`workflow_identity` 和 `material_execution_inputs` 会在 provider registry 中单独审计，但它们不会被 provider 再次压缩成另一种“semantic digest”。
 
 ## start_or_recover
 
@@ -75,7 +117,7 @@ path:   .provider-operations/refresh-registry-v1.json
 协议顺序：
 
 ```text
-consumer durable dispatch intent
+consumer durable canonical command + dispatch intent
 → provider durable reservation
 → dispatch workflow
 → workflow claims its exact run id
@@ -85,9 +127,10 @@ consumer durable dispatch intent
 
 核心语义：
 
-- 相同 `idempotency_key` + 相同 command：恢复同一个逻辑 operation；
-- 相同 key + 不同 command：冲突并拒绝；
-- 相同 correlation + 不同 command：correlation mismatch 并拒绝；
+- 相同 `idempotency_key` + 相同 semantic `command_digest` + 一致 provider-visible material inputs：恢复同一个逻辑 operation；
+- 相同 key + 不同 semantic digest：冲突并拒绝；
+- 相同 correlation + 不同 semantic digest：correlation mismatch 并拒绝；
+- 相同 digest 但实际 provider-visible material execution inputs 与已保存记录矛盾：视为调用方合同错误并拒绝；
 - 已有 reservation 但尚未绑定 run 时，lease 到期后也不能直接 redispatch；
 - 必须先按 correlation 对 GitHub Actions workflow runs 做 fresh scan；
 - scan 找到唯一精确 run 时恢复它；
@@ -114,7 +157,14 @@ command_digest
 workflow_identity
 ```
 
-四个 identity 字段必须成组提供。workflow 会校验 `workflow_identity` 指向当前 workflow 的精确 SHA，并重新计算 command digest。随后 `claim-alpha-refresh` job 把本次 `GITHUB_RUN_ID` 绑定到 durable reservation。
+四个 identity 字段必须成组提供。workflow 会：
+
+- 验证 correlation / idempotency identifier 格式；
+- 验证 `command_digest` 为合法 64-hex semantic digest；
+- 验证 `workflow_identity` 指向当前 workflow 的精确 SHA；
+- **不会**从 `workflow_identity + mode` 重新计算或替换 caller 的 semantic digest；
+- 把实际 `mode` 作为 provider-visible material execution input 交给 registry 审计；
+- 由 `claim-alpha-refresh` 把本次 `GITHUB_RUN_ID` 绑定到 durable reservation。
 
 普通非 Alpha 的 realtime 执行没有这些 identity 字段时仍走原有行为，不能因此改变现有实时行情语义。
 
@@ -181,22 +231,19 @@ fixture 用于冻结 schema/capability、Trust tier、Freshness SLA、lag dimens
 
 ```bash
 python3 scripts/test_alpha_provider_contract.py
+python3 scripts/test_alpha_semantic_command_identity.py
 ```
 
-测试覆盖至少包括：
+其中 semantic-command 回归明确验证：
 
-- capability profile；
-- frozen fixtures；
-- exact artifact digest；
-- operation terminal states；
-- same-key idempotency / conflicting reuse；
-- exact run claim；
-- concurrent distinct operation isolation；
-- expired/ambiguous reservation 的 correlation recovery；
-- duplicate-run ambiguity；
-- workflow claim / artifact / release gate wiring。
+- domain + command schema version + canonical body 的 digest test vector；
+- dispatch correlation / idempotency / deadline / retry / persistence metadata 变化不改变 semantic digest；
+- workflow identity、requirements、subjects、temporal semantics、execution mode、material provider inputs、requested payload versions、command schema version任一变化都会改变 digest；
+- provider registry 原样保存 caller digest，不以局部 workflow input 重定义它；
+- 同一 digest 与矛盾 provider-visible material inputs 同时出现时 fail closed；
+- snapshot audit metadata 原样携带 caller semantic digest。
 
-这些回归同时进入 pre-merge security gate、reusable selftest 和 v1 smoke。稳定发布还必须保留 live-price guard、provenance / trust / freshness 与原有完整 smoke。
+这些回归进入 pre-merge security gate、reusable selftest 和 v1 smoke。稳定发布还必须保留 live-price guard、provenance / trust / freshness 与原有完整 smoke。
 
 ## 发布到 v1
 
