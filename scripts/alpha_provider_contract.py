@@ -48,6 +48,7 @@ def _operation_identity_from_env():
             "dispatch_correlation_id": None,
             "idempotency_fingerprint": None,
             "command_digest": None,
+            "command_digest_source": None,
             "workflow_identity": None,
             "material_execution_inputs": None,
         }
@@ -67,13 +68,6 @@ def _operation_identity_from_env():
     alpha_refresh_contract.validate_identifier(idempotency_key, "idempotency_key")
     digest = alpha_refresh_contract.normalize_digest(command_digest)
     material_execution_inputs = {"mode": requested_mode}
-    expected_digest = alpha_refresh_contract.canonical_command_digest(
-        workflow_identity, material_execution_inputs
-    )
-    if digest != expected_digest:
-        raise RuntimeError(
-            f"refresh command digest mismatch: expected={expected_digest} provided={digest}"
-        )
 
     return {
         "present": True,
@@ -82,6 +76,7 @@ def _operation_identity_from_env():
             idempotency_key
         ),
         "command_digest": digest,
+        "command_digest_source": "CALLER_SUPPLIED_SEMANTIC",
         "workflow_identity": workflow_identity,
         "material_execution_inputs": material_execution_inputs,
     }
