@@ -49,6 +49,34 @@
     "registry_branch": "provider-operations",
     "registry_path": ".provider-operations/refresh-registry-v1.json",
     "dispatch_protocol": "DURABLE_RESERVATION_BEFORE_DISPATCH",
+    "semantic_command_digest": {
+      "domain": "looklookAlpha.refresh-command.v1",
+      "command_schema_version_field": "command_schema_version",
+      "canonicalization": "RFC8785_JCS",
+      "formula": "SHA256(domain || 0x00 || command_schema_version || 0x00 || RFC8785_JCS(canonical_command_body))",
+      "authority": "CALLER",
+      "provider_behavior": "VALIDATE_64_HEX_AND_PRESERVE",
+      "canonical_body_fields": [
+        "provider_workflow_identity",
+        "requirements",
+        "subjects",
+        "temporal",
+        "execution_mode",
+        "material_provider_workflow_inputs",
+        "requested_payload_versions"
+      ],
+      "excluded_dispatch_fields": [
+        "dispatch_correlation_id",
+        "idempotency_key",
+        "deadline",
+        "submitted_time",
+        "caller_local_job_id",
+        "retry_attempt",
+        "local_persistence_object_id",
+        "local_persistence_revision",
+        "local_persistence_created_at"
+      ]
+    },
     "identity_fields": [
       "dispatch_correlation_id",
       "idempotency_key",
@@ -73,7 +101,8 @@
     "ambiguous_dispatch_recovery": "FRESH_CORRELATION_SCAN_BEFORE_REDISPATCH",
     "same_key_same_digest": "RECOVER_SAME_OPERATION",
     "same_key_different_digest": "CONFLICT",
-    "same_correlation_different_digest": "CORRELATION_MISMATCH"
+    "same_correlation_different_digest": "CORRELATION_MISMATCH",
+    "material_inputs_mismatch_with_same_digest": "CONFLICT"
   },
   "primary_artifact": {
     "name": "realtime-snapshot",
