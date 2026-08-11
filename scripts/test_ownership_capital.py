@@ -37,6 +37,36 @@ def _payload():
     }
 
 
+def _controller_payload(include_controlling=False):
+    payload = {
+        "sjkzr": [
+            {
+                "SECUCODE": "002558.SZ",
+                "SECURITY_CODE": "002558",
+                "HOLDER_NAME": "史玉柱",
+                "HOLD_RATIO": None,
+            }
+        ],
+        "sdgd": [
+            {
+                "END_DATE": "2026-03-31 00:00:00",
+                "HOLDER_RANK": 1,
+                "HOLDER_NAME": "上海巨人投资管理有限公司",
+                "HOLD_NUM_RATIO": 29.69,
+            }
+        ],
+    }
+    if include_controlling:
+        payload["kggd"] = [
+            {
+                "HOLDER_NAME": "上海巨人投资管理有限公司",
+                "HOLD_RATIO": 29.69,
+                "END_DATE": "2026-03-31 00:00:00",
+            }
+        ]
+    return payload
+
+
 def test_latest_dated_row_and_float_semantics():
     value = ownership.normalize_share_structure(
         _payload(),
@@ -87,9 +117,50 @@ def test_missing_required_field_is_explicitly_partial():
     assert "MISSING_RESTRICTED_SHARES" in value["metadata"]["quality_flags"]
 
 
-def test_full_finalize_attaches_share_structure_and_schema():
+def test_actual_controller_is_preserved_without_guessing_controlling_shareholder():
+    value = ownership.normalize_controllers(
+        _controller_payload(),
+        "https://example.invalid/shareholders?code=SZ002558",
+        "SZ002558",
+        "2026-08-12T06:00:00+08:00",
+    )
+    assert value["status"] == "PARTIAL"
+    assert value["actual_controller"]["holders"] == [
+        {"name": "史玉柱", "hold_ratio_percent": None, "as_of_date": None}
+    ]
+    assert value["actual_controller"]["as_of_date"] is None
+    assert value["controlling_shareholder"]["status"] == "UNAVAILABLE"
+    assert value["controlling_shareholder"]["holders"] == []
+    assert (
+        value["controlling_shareholder"]["inference_policy"]
+        == "PROVIDER_DECLARED_ONLY; NEVER_INFER_FROM_LARGEST_HOLDER"
+    )
+    assert "ACTUAL_CONTROLLER_UNDATED" in value["metadata"]["quality_flags"]
+    assert (
+        "CONTROLLING_SHAREHOLDER_NOT_IDENTIFIED_BY_PROVIDER"
+        in value["metadata"]["quality_flags"]
+    )
+    assert "sdgd" not in value["provenance"]["field_mapping"]["controlling_shareholder"]
+
+
+def test_provider_declared_controlling_shareholder_is_accepted_with_date():
+    value = ownership.normalize_controllers(
+        _controller_payload(include_controlling=True),
+        "https://example.invalid/shareholders?code=SZ002558",
+        "SZ002558",
+        "2026-08-12T06:00:00+08:00",
+    )
+    assert value["status"] == "OK"
+    assert value["controlling_shareholder"]["status"] == "OK"
+    assert value["controlling_shareholder"]["as_of_date"] == "2026-03-31"
+    assert value["controlling_shareholder"]["holders"][0]["name"] == "上海巨人投资管理有限公司"
+    assert value["controlling_shareholder"]["holders"][0]["hold_ratio_percent"] == 29.69
+    assert "ACTUAL_CONTROLLER_UNDATED" in value["metadata"]["quality_flags"]
+
+
+def test_full_finalize_attaches_share_structure_controllers_and_schema():
     class Base:
-        calls = 0
+        calls = []
 
         @staticmethod
         def infer_identifiers(code):
@@ -98,9 +169,13 @@ def test_full_finalize_attaches_share_structure_and_schema():
 
         @staticmethod
         def http_get(url):
-            Base.calls += 1
+            Base.calls.append(url)
             assert "code=SZ002558" in url
-            return json.dumps(_payload())
+            if "CapitalStockStructure" in url:
+                return json.dumps(_payload())
+            if "ShareholderResearch" in url:
+                return json.dumps(_controller_payload())
+            raise AssertionError(url)
 
     with tempfile.TemporaryDirectory() as tmp:
         path = Path(tmp) / "snapshot.json"
@@ -108,7 +183,7 @@ def test_full_finalize_attaches_share_structure_and_schema():
             json.dumps(
                 {
                     "schema_version": 16,
-                    "runner_time_utc": "2026-08-11T21:00:00+00:00",
+                    "runner_time_utc": "2026-08-11T22:00:00+00:00",
                     "detail_stocks": {"002558": {"status": "OK"}},
                 }
             ),
@@ -116,12 +191,19 @@ def test_full_finalize_attaches_share_structure_and_schema():
         )
         ownership.finalize_snapshot(path, Base, "FULL")
         snapshot = json.loads(path.read_text(encoding="utf-8"))
-        assert Base.calls == 1
+        assert len(Base.calls) == 2
         context = snapshot["detail_stocks"]["002558"]["ownership_and_capital"]
         assert context["share_structure"]["as_of_date"] == "2026-08-01"
+        assert context["controllers"]["actual_controller"]["holders"][0]["name"] == "史玉柱"
+        assert context["controllers"]["controlling_shareholder"]["status"] == "UNAVAILABLE"
+        assert context["status"] == "PARTIAL"
         assert snapshot["schema_version"] == 17
         assert snapshot["features"]["ownership_and_capital"] == "v1"
-        assert snapshot["ownership_and_capital_summary"]["status"] == "OK"
+        assert snapshot["ownership_and_capital_summary"]["status"] == "PARTIAL"
+        assert snapshot["ownership_and_capital_summary"]["implemented_sections"] == [
+            "share_structure",
+            "controllers",
+        ]
 
 
 def test_intraday_fast_is_network_free_and_explicitly_deferred():
@@ -140,7 +222,7 @@ def test_intraday_fast_is_network_free_and_explicitly_deferred():
             json.dumps(
                 {
                     "schema_version": 16,
-                    "runner_time_cst": "2026-08-12 05:00:00",
+                    "runner_time_cst": "2026-08-12 06:00:00",
                     "detail_stocks": {"002558": {"status": "OK"}},
                 }
             ),
@@ -151,6 +233,8 @@ def test_intraday_fast_is_network_free_and_explicitly_deferred():
         context = snapshot["detail_stocks"]["002558"]["ownership_and_capital"]
         assert context["status"] == "DEFERRED"
         assert context["share_structure"]["metadata"]["freshness"] == "NOT_FETCHED_IN_INTRADAY_FAST"
+        assert context["controllers"]["status"] == "DEFERRED"
+        assert context["controllers"]["metadata"]["freshness"] == "NOT_FETCHED_IN_INTRADAY_FAST"
         assert snapshot["ownership_and_capital_summary"]["status"] == "DEFERRED"
 
 
@@ -159,7 +243,9 @@ def main():
         test_latest_dated_row_and_float_semantics,
         test_undated_provider_row_is_not_promoted_to_current_fact,
         test_missing_required_field_is_explicitly_partial,
-        test_full_finalize_attaches_share_structure_and_schema,
+        test_actual_controller_is_preserved_without_guessing_controlling_shareholder,
+        test_provider_declared_controlling_shareholder_is_accepted_with_date,
+        test_full_finalize_attaches_share_structure_controllers_and_schema,
         test_intraday_fast_is_network_free_and_explicitly_deferred,
     ]
     for test in tests:
