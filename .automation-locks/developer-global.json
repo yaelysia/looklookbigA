@@ -1,12 +1,13 @@
 {
   "kind": "looklookbigA-auto-worker-lease",
-  "state": "ACTIVE",
-  "token": "auto-20260811T170152Z-5b2e9c41",
-  "work_item": "pr-56/issue-54-v1-promotion",
+  "state": "IDLE",
+  "token": null,
+  "work_item": "pr-57/issue-54-v1-promotion",
   "acquired_at": "2026-08-11T17:01:52+00:00",
   "lease_until": "2026-08-11T17:51:52+00:00",
-  "start_head_sha": "555213ea5ece24628b9e0acd550c9fd28e539a1e",
-  "start_base_sha": "90aa41aa2990930d2046879bdb8907f4823b1787",
-  "checkpoint_target": "V1_PROMOTION_AUTO_REVALIDATE_SUBMITTED",
-  "note": "Trusted current-head review requires exactly one product-tree-identical AUTO-REVALIDATE commit for base 90aa41aa2990930d2046879bdb8907f4823b1787, then fresh PR synchronize CI. No product semantics or automation lock files may be added to the promotion diff."
+  "released_at": "2026-08-11T17:08:10+00:00",
+  "last_token": "auto-20260811T170152Z-5b2e9c41",
+  "last_checkpoint": "V1_PROMOTION_AUTO_REVALIDATE_SUBMITTED",
+  "last_head_sha": "c4714fd619cb8d0a70467f3dc4a401196bf0f678",
+  "note": "Trusted review on PR #56 required base revalidation, but protected master rejected the direct fast-forward update. Created replacement Draft PR #57 on dedicated branch, advanced it exactly once with a product-tree-identical AUTO-REVALIDATE commit for current v1 base, confirmed fresh synchronize CI run 31515896351 triggered, closed superseded PR #56, and stopped without waiting for CI."
 }
