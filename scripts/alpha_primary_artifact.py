@@ -34,6 +34,13 @@ def _require_positive_int(value, field):
     return parsed
 
 
+def _normalize_sha(value, field, error_code="PRIMARY_ARTIFACT_INVALID_IDENTITY"):
+    sha = str(value or "").lower()
+    if len(sha) != 40 or any(ch not in "0123456789abcdef" for ch in sha):
+        raise PrimaryArtifactError(error_code, f"{field} must be an exact 40-hex SHA")
+    return sha
+
+
 def _request_json(url, token):
     request = urllib.request.Request(
         url,
@@ -48,17 +55,18 @@ def _request_json(url, token):
         return json.loads(response.read().decode("utf-8"))
 
 
-def list_exact_run_artifacts(repository, token, workflow_run_id):
-    run_id = _require_positive_int(workflow_run_id, "workflow_run_id")
+def _repository_api(repository):
     repository = str(repository or "")
     if "/" not in repository:
         raise PrimaryArtifactError(
             "PRIMARY_ARTIFACT_INVALID_IDENTITY", "repository must be owner/name"
         )
-    api = (
-        f"https://api.github.com/repos/{repository}/actions/runs/"
-        f"{run_id}/artifacts"
-    )
+    return f"https://api.github.com/repos/{repository}"
+
+
+def list_exact_run_artifacts(repository, token, workflow_run_id):
+    run_id = _require_positive_int(workflow_run_id, "workflow_run_id")
+    api = f"{_repository_api(repository)}/actions/runs/{run_id}/artifacts"
     artifacts = []
     for page in range(1, MAX_ARTIFACT_PAGES + 1):
         query = urllib.parse.urlencode({"per_page": 100, "page": page})
@@ -78,10 +86,59 @@ def list_exact_run_artifacts(repository, token, workflow_run_id):
     )
 
 
+def get_exact_run_provenance(repository, token, workflow_run_id):
+    run_id = _require_positive_int(workflow_run_id, "workflow_run_id")
+    run = _request_json(
+        f"{_repository_api(repository)}/actions/runs/{run_id}", token
+    )
+    observed = _require_positive_int(run.get("id"), "workflow_run.id")
+    if observed != run_id:
+        raise PrimaryArtifactError(
+            "PRIMARY_ARTIFACT_WRONG_RUN",
+            f"GitHub run provenance returned run {observed}, expected {run_id}",
+        )
+    return {
+        "workflow_run_id": run_id,
+        "workflow_run_head_sha": _normalize_sha(
+            run.get("head_sha"), "workflow_run.head_sha"
+        ),
+        "workflow_run_attempt": _require_positive_int(
+            run.get("run_attempt"), "workflow_run.run_attempt"
+        ),
+        "workflow_run_head_branch": run.get("head_branch"),
+        "workflow_path": run.get("path"),
+        "workflow_id": run.get("workflow_id"),
+        "workflow_run_api_url": run.get("url"),
+        "workflow_run_html_url": run.get("html_url"),
+        "workflow_run_event": run.get("event"),
+    }
+
+
+def _listing_run_provenance(artifact, run_id):
+    workflow = artifact.get("workflow_run") or {}
+    observed_run_id = workflow.get("id")
+    if observed_run_id not in (None, "") and int(observed_run_id) != run_id:
+        raise PrimaryArtifactError(
+            "PRIMARY_ARTIFACT_WRONG_RUN",
+            f"artifact {artifact.get('id')} belongs to workflow run {observed_run_id}, "
+            f"expected {run_id}",
+        )
+    head_sha = workflow.get("head_sha")
+    if not head_sha:
+        return {"workflow_run_id": run_id}
+    return {
+        "workflow_run_id": run_id,
+        "workflow_run_head_sha": _normalize_sha(
+            head_sha, "artifact.workflow_run.head_sha"
+        ),
+    }
+
+
 def resolve_exact_primary_from_listing(
     artifacts,
     workflow_run_id,
     expected_name=DEFAULT_ARTIFACT_NAME,
+    exact_run_provenance=None,
 ):
     run_id = _require_positive_int(workflow_run_id, "workflow_run_id")
     expected_name = str(expected_name or "")
@@ -112,14 +169,27 @@ def resolve_exact_primary_from_listing(
             f"artifact {artifact.get('id')} for exact run {run_id} is expired",
         )
     artifact_id = _require_positive_int(artifact.get("id"), "artifact_id")
-    workflow = artifact.get("workflow_run") or {}
-    observed_run_id = workflow.get("id")
-    if observed_run_id not in (None, "") and int(observed_run_id) != run_id:
-        raise PrimaryArtifactError(
-            "PRIMARY_ARTIFACT_WRONG_RUN",
-            f"artifact {artifact_id} belongs to workflow run {observed_run_id}, "
-            f"expected {run_id}",
+    listing_provenance = _listing_run_provenance(artifact, run_id)
+    provenance = dict(listing_provenance)
+    if exact_run_provenance:
+        if int(exact_run_provenance.get("workflow_run_id") or 0) != run_id:
+            raise PrimaryArtifactError(
+                "PRIMARY_ARTIFACT_WRONG_RUN",
+                "exact run provenance does not match requested workflow_run_id",
+            )
+        exact_head = _normalize_sha(
+            exact_run_provenance.get("workflow_run_head_sha"),
+            "workflow_run_head_sha",
         )
+        listing_head = listing_provenance.get("workflow_run_head_sha")
+        if listing_head and listing_head != exact_head:
+            raise PrimaryArtifactError(
+                "PRIMARY_ARTIFACT_PROVENANCE_MISMATCH",
+                "artifact listing head SHA contradicts exact workflow run provenance",
+            )
+        provenance.update(exact_run_provenance)
+        provenance["workflow_run_head_sha"] = exact_head
+
     api_url = str(artifact.get("url") or "")
     download_url = str(artifact.get("archive_download_url") or "")
     if not api_url or not download_url:
@@ -129,6 +199,7 @@ def resolve_exact_primary_from_listing(
         )
 
     return {
+        **provenance,
         "workflow_run_id": run_id,
         "artifact_id": artifact_id,
         "artifact_name": expected_name,
@@ -150,9 +221,13 @@ def resolve_exact_primary(
     workflow_run_id,
     expected_name=DEFAULT_ARTIFACT_NAME,
 ):
+    run_provenance = get_exact_run_provenance(repository, token, workflow_run_id)
     artifacts = list_exact_run_artifacts(repository, token, workflow_run_id)
     return resolve_exact_primary_from_listing(
-        artifacts, workflow_run_id, expected_name
+        artifacts,
+        workflow_run_id,
+        expected_name,
+        exact_run_provenance=run_provenance,
     )
 
 
@@ -189,6 +264,60 @@ def _read_zip_members(archive_bytes):
             "PRIMARY_ARTIFACT_ARCHIVE_INVALID",
             "downloaded primary artifact is not a valid ZIP",
         ) from exc
+
+
+def _verify_manifest_provenance(primary, artifact_identity):
+    trusted_head = _normalize_sha(
+        artifact_identity.get("workflow_run_head_sha"),
+        "workflow_run_head_sha",
+        error_code="PRIMARY_ARTIFACT_RUN_PROVENANCE_MISSING",
+    )
+    claimed_head = _normalize_sha(
+        primary.get("producing_commit_sha"),
+        "manifest primary.producing_commit_sha",
+        error_code="PRIMARY_ARTIFACT_MANIFEST_IDENTITY_MISMATCH",
+    )
+    if claimed_head != trusted_head:
+        raise PrimaryArtifactError(
+            "PRIMARY_ARTIFACT_PROVENANCE_MISMATCH",
+            f"manifest producing_commit_sha {claimed_head} does not match exact run head_sha {trusted_head}",
+        )
+
+    trusted_attempt = artifact_identity.get("workflow_run_attempt")
+    if trusted_attempt not in (None, ""):
+        trusted_attempt = _require_positive_int(
+            trusted_attempt, "workflow_run_attempt"
+        )
+        try:
+            claimed_attempt = int(primary.get("workflow_run_attempt"))
+        except (TypeError, ValueError) as exc:
+            raise PrimaryArtifactError(
+                "PRIMARY_ARTIFACT_MANIFEST_IDENTITY_MISMATCH",
+                "manifest workflow_run_attempt is missing or invalid",
+            ) from exc
+        if claimed_attempt != trusted_attempt:
+            raise PrimaryArtifactError(
+                "PRIMARY_ARTIFACT_PROVENANCE_MISMATCH",
+                f"manifest workflow_run_attempt {claimed_attempt} does not match exact run attempt {trusted_attempt}",
+            )
+
+    trusted_branch = str(artifact_identity.get("workflow_run_head_branch") or "")
+    claimed_branch = str(primary.get("producing_ref_name") or "")
+    if trusted_branch and claimed_branch and claimed_branch != trusted_branch:
+        raise PrimaryArtifactError(
+            "PRIMARY_ARTIFACT_PROVENANCE_MISMATCH",
+            f"manifest producing_ref_name {claimed_branch!r} does not match exact run head_branch {trusted_branch!r}",
+        )
+
+    workflow_path = str(artifact_identity.get("workflow_path") or "")
+    workflow_ref = str(primary.get("workflow_ref") or "")
+    if workflow_path and workflow_ref:
+        marker = f"/{workflow_path}@"
+        if marker not in workflow_ref:
+            raise PrimaryArtifactError(
+                "PRIMARY_ARTIFACT_PROVENANCE_MISMATCH",
+                f"manifest workflow_ref does not identify exact run workflow path {workflow_path}",
+            )
 
 
 def validate_downloaded_primary_archive(
@@ -247,9 +376,10 @@ def validate_downloaded_primary_archive(
     if manifest_run_id != run_id:
         raise PrimaryArtifactError(
             "PRIMARY_ARTIFACT_MANIFEST_IDENTITY_MISMATCH",
-            f"manifest workflow_run_id {manifest_run_id} does not match exact run "
-            f"{run_id}",
+            f"manifest workflow_run_id {manifest_run_id} does not match exact run {run_id}",
         )
+    _verify_manifest_provenance(primary, artifact_identity)
+
     snapshot_path = _safe_archive_member(
         primary.get("snapshot_path") or DEFAULT_SNAPSHOT_PATH
     )
@@ -270,8 +400,7 @@ def validate_downloaded_primary_archive(
     if expected_digest != actual_digest:
         raise PrimaryArtifactError(
             "PRIMARY_ARTIFACT_DIGEST_MISMATCH",
-            f"snapshot digest mismatch expected={expected_digest} "
-            f"actual={actual_digest}",
+            f"snapshot digest mismatch expected={expected_digest} actual={actual_digest}",
         )
     expected_size = primary.get("size_bytes")
     if expected_size not in (None, "") and int(expected_size) != len(snapshot):
@@ -279,12 +408,11 @@ def validate_downloaded_primary_archive(
             "PRIMARY_ARTIFACT_SIZE_MISMATCH",
             f"snapshot size mismatch expected={expected_size} actual={len(snapshot)}",
         )
-    for required in ("producing_commit_sha", "produced_at"):
-        if not str(primary.get(required) or ""):
-            raise PrimaryArtifactError(
-                "PRIMARY_ARTIFACT_MANIFEST_INVALID",
-                f"manifest primary.{required} is required",
-            )
+    if not str(primary.get("produced_at") or ""):
+        raise PrimaryArtifactError(
+            "PRIMARY_ARTIFACT_MANIFEST_INVALID",
+            "manifest primary.produced_at is required",
+        )
 
     verified = dict(artifact_identity)
     verified.update(
@@ -301,6 +429,7 @@ def validate_downloaded_primary_archive(
             "workflow_sha": primary.get("workflow_sha"),
             "produced_at": primary.get("produced_at"),
             "manifest_verified": True,
+            "run_provenance_verified": True,
         }
     )
     return verified
