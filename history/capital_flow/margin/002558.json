@@ -4,18 +4,9 @@
   "source": "Eastmoney",
   "source_tier": "PRIMARY_PROVIDER",
   "data_semantics": "Exchange-published margin data redistributed by a market-data provider",
-  "fetched_at": "2026-08-11T09:02:31+08:00",
-  "source_url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPTA_WEB_RZRQ_GGMX&columns=ALL&filter=%28SCODE%3D%22002558%22%29&sortColumns=DATE&sortTypes=-1&pageNumber=1&pageSize=24&source=WEB&client=WEB&_=1786410177440",
+  "fetched_at": "2026-08-10T18:05:02+08:00",
+  "source_url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPTA_WEB_RZRQ_GGMX&columns=ALL&filter=%28SCODE%3D%22002558%22%29&sortColumns=DATE&sortTypes=-1&pageNumber=1&pageSize=24&source=WEB&client=WEB&_=1786356320991",
   "records": [
-    {
-      "trade_date": "2026-08-10",
-      "financing_balance": 1643122150.0,
-      "financing_buy_amount": 197929332.0,
-      "financing_repay_amount": 253639474.0,
-      "financing_net_buy_amount": -55710142.0,
-      "securities_lending_balance": 8871462.0,
-      "margin_balance": 1651993612.0
-    },
     {
       "trade_date": "2026-08-07",
       "financing_balance": 1698832292.0,
@@ -222,6 +213,15 @@
       "financing_net_buy_amount": 79798732.0,
       "securities_lending_balance": 12962236.0,
       "margin_balance": 1496353540.0
+    },
+    {
+      "trade_date": "2026-07-07",
+      "financing_balance": 1403592572.0,
+      "financing_buy_amount": 388243291.0,
+      "financing_repay_amount": 480384605.0,
+      "financing_net_buy_amount": -92141314.0,
+      "securities_lending_balance": 16957637.0,
+      "margin_balance": 1420550209.0
     }
   ]
 }

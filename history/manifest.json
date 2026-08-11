@@ -1,14 +1,14 @@
 {
   "schema_version": 2,
-  "latest_snapshot": "snapshots/2026-08-11/090231_run31395761230_a2.json",
-  "latest_runner_time_cst": "2026-08-11 09:02:31.109",
+  "latest_snapshot": "snapshots/2026-08-11/092943_run31395761230_a3.json",
+  "latest_runner_time_cst": "2026-08-11 09:29:43.481",
   "daily_k_codes": [
     "002558",
     "600795"
   ],
-  "updated_at_cst": "2026-08-11 09:02:31.109",
+  "updated_at_cst": "2026-08-11 09:29:43.481",
   "latest_run_id": 31395761230,
-  "latest_run_attempt": 2,
+  "latest_run_attempt": 3,
   "persisted_run_id": 31395761230,
-  "persisted_at_utc": "2026-08-11T01:03:15+00:00"
+  "persisted_at_utc": "2026-08-11T01:30:10+00:00"
 }
