@@ -1,11 +1,13 @@
 {
   "kind": "looklookbigA-auto-worker-lease",
-  "state": "ACTIVE",
-  "token": "auto-20260811T035943Z-6e4d8c2a",
+  "state": "IDLE",
+  "token": null,
   "work_item": "pr-55/issue-54",
   "acquired_at": "2026-08-11T03:59:43+00:00",
   "lease_until": "2026-08-11T04:49:43+00:00",
-  "start_head_sha": "4651a5a6872cd1e290c2ee563c74c682540a62f0",
-  "checkpoint_target": "FINAL_RECONCILE_AND_READY",
-  "note": "Current-head CI is green. This lease is only for final diff/state reconciliation and, if no new blocker is found, marking PR #55 Ready for Review while retaining MANUAL_GATE_REQUIRED."
+  "released_at": "2026-08-11T04:02:27+00:00",
+  "last_token": "auto-20260811T035943Z-6e4d8c2a",
+  "last_checkpoint": "DOC_CONTRACT_RECONCILE_SUBMITTED",
+  "last_head_sha": "c49a91667101bb2c332842f0c41d76a189f3fb2f",
+  "note": "Final reconciliation found and corrected provider-documentation drift only. CI run 31457195454 is in progress on the documentation head; next run inspects CI and, if green, performs final no-write reconciliation then marks PR #55 Ready for Review while retaining MANUAL_GATE_REQUIRED."
 }
