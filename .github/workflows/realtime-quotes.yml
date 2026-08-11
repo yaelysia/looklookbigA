@@ -1,7 +1,7 @@
 name: Realtime A-share Quotes
 
 run-name: >-
-  ${{ inputs.dispatch_correlation_id != '' && format('alpha-refresh corr={0} cmd={1}', inputs.dispatch_correlation_id, inputs.command_digest) || format('Realtime A-share Quotes #{0}', github.run_number) }}
+  ${{ inputs.dispatch_correlation_id != '' && format('alpha-refresh corr={0} op={1} cmd={2}', inputs.dispatch_correlation_id, inputs.operation_identity_fingerprint, inputs.command_digest) || format('Realtime A-share Quotes #{0}', github.run_number) }}
 
 on:
   workflow_dispatch:
@@ -16,12 +16,17 @@ on:
           - intraday_fast
           - full
       dispatch_correlation_id:
-        description: "Optional Alpha refresh correlation id. Must be supplied together with idempotency_key, command_digest and workflow_identity."
+        description: "Optional Alpha refresh correlation id. Must be supplied together with idempotency_key, operation_identity_fingerprint, command_digest and workflow_identity."
         required: false
         default: ""
         type: string
       idempotency_key:
         description: "Optional Alpha refresh idempotency key. Never emitted in logs."
+        required: false
+        default: ""
+        type: string
+      operation_identity_fingerprint:
+        description: "Provider-side non-secret fingerprint returned by start_or_recover; binds idempotency identity, semantic digest, exact workflow identity and material inputs for crash recovery."
         required: false
         default: ""
         type: string
@@ -136,6 +141,7 @@ jobs:
       ${{ github.event_name == 'workflow_dispatch' &&
           (inputs.dispatch_correlation_id != '' ||
            inputs.idempotency_key != '' ||
+           inputs.operation_identity_fingerprint != '' ||
            inputs.command_digest != '' ||
            inputs.workflow_identity != '') }}
     runs-on: ubuntu-latest
@@ -150,6 +156,7 @@ jobs:
         env:
           DISPATCH_CORRELATION_ID: ${{ inputs.dispatch_correlation_id }}
           IDEMPOTENCY_KEY: ${{ inputs.idempotency_key }}
+          OPERATION_IDENTITY_FINGERPRINT: ${{ inputs.operation_identity_fingerprint }}
           COMMAND_DIGEST: ${{ inputs.command_digest }}
           WORKFLOW_IDENTITY: ${{ inputs.workflow_identity }}
           REQUESTED_MODE: ${{ inputs.mode }}
@@ -162,12 +169,13 @@ jobs:
           values = {
               "dispatch_correlation_id": os.environ.get("DISPATCH_CORRELATION_ID") or "",
               "idempotency_key": os.environ.get("IDEMPOTENCY_KEY") or "",
+              "operation_identity_fingerprint": (os.environ.get("OPERATION_IDENTITY_FINGERPRINT") or "").lower(),
               "command_digest": (os.environ.get("COMMAND_DIGEST") or "").lower(),
               "workflow_identity": os.environ.get("WORKFLOW_IDENTITY") or "",
           }
           if not all(values.values()):
               raise SystemExit(
-                  "Alpha refresh identity must supply correlation, idempotency key, command digest and workflow identity together"
+                  "Alpha refresh identity must supply correlation, idempotency key, operation identity fingerprint, command digest and workflow identity together"
               )
 
           actual_workflow_sha = (os.environ.get("GITHUB_WORKFLOW_SHA") or "").lower()
@@ -184,12 +192,27 @@ jobs:
               values["idempotency_key"], "idempotency_key"
           )
           digest = alpha_refresh_contract.normalize_digest(values["command_digest"])
+          supplied_operation_fingerprint = alpha_refresh_contract.normalize_digest(
+              values["operation_identity_fingerprint"]
+          )
+          material = {"mode": (os.environ.get("REQUESTED_MODE") or "auto").lower()}
+          expected_operation_fingerprint = alpha_refresh_contract.operation_identity_fingerprint(
+              values["idempotency_key"],
+              digest,
+              values["workflow_identity"],
+              material,
+          )
+          if supplied_operation_fingerprint != expected_operation_fingerprint:
+              raise SystemExit(
+                  "operation_identity_fingerprint mismatch: dispatch inputs do not match the durable provider operation identity"
+              )
           print(
               "ALPHA_REFRESH_IDENTITY status=PASS "
               f"correlation={values['dispatch_correlation_id']} "
+              f"operation_identity_fingerprint={supplied_operation_fingerprint} "
               f"workflow_identity={values['workflow_identity']} "
               f"command_digest={digest} "
-              f"requested_mode={(os.environ.get('REQUESTED_MODE') or 'auto').lower()}"
+              f"requested_mode={material['mode']}"
           )
           PY
 
