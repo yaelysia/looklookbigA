@@ -26,7 +26,7 @@ on:
         default: ""
         type: string
       command_digest:
-        description: "Optional canonical SHA-256 digest for the Alpha refresh command."
+        description: "Caller-supplied semantic refresh-command SHA-256 digest. The provider preserves it and does not reinterpret dispatch metadata as command identity."
         required: false
         default: ""
         type: string
@@ -51,6 +51,7 @@ on:
       - "scripts/alpha_provider_contract.py"
       - "scripts/alpha_refresh_contract.py"
       - "scripts/test_alpha_provider_contract.py"
+      - "scripts/test_alpha_semantic_command_identity.py"
       - "scripts/realtime_quotes_watchlist.py"
       - "scripts/realtime_quotes_watchlist_runner.py"
       - "scripts/performance_fast_path.py"
@@ -176,24 +177,19 @@ jobs:
                   f"workflow_identity mismatch: expected={expected_identity} provided={values['workflow_identity']}"
               )
 
-          material = {"mode": (os.environ.get("REQUESTED_MODE") or "auto").lower()}
-          expected_digest = alpha_refresh_contract.canonical_command_digest(
-              values["workflow_identity"], material
-          )
-          if values["command_digest"] != expected_digest:
-              raise SystemExit(
-                  f"command_digest mismatch: expected={expected_digest} provided={values['command_digest']}"
-              )
-
           alpha_refresh_contract.validate_identifier(
               values["dispatch_correlation_id"], "dispatch_correlation_id"
           )
           alpha_refresh_contract.validate_identifier(
               values["idempotency_key"], "idempotency_key"
           )
+          digest = alpha_refresh_contract.normalize_digest(values["command_digest"])
           print(
               "ALPHA_REFRESH_IDENTITY status=PASS "
-              f"correlation={values['dispatch_correlation_id']} workflow_identity={values['workflow_identity']}"
+              f"correlation={values['dispatch_correlation_id']} "
+              f"workflow_identity={values['workflow_identity']} "
+              f"command_digest={digest} "
+              f"requested_mode={(os.environ.get('REQUESTED_MODE') or 'auto').lower()}"
           )
           PY
 
