@@ -1,11 +1,13 @@
 {
   "kind": "looklookbigA-auto-worker-lease",
-  "state": "ACTIVE",
-  "token": "auto-20260811T175901Z-6e42c9a1",
+  "state": "IDLE",
+  "token": null,
   "work_item": "pr-57/issue-54-v1-promotion",
   "acquired_at": "2026-08-11T17:59:01+00:00",
   "lease_until": "2026-08-11T18:49:01+00:00",
-  "start_head_sha": "c4714fd619cb8d0a70467f3dc4a401196bf0f678",
-  "checkpoint_target": "V1_PROMOTION_READY_FOR_REVIEW",
-  "note": "Fresh synchronize CI for PR #57 is green. This lease is limited to final promotion reconciliation, persistent PR state update, and marking Ready for Review. Stable v1 merge remains MANUAL_GATE_REQUIRED."
+  "released_at": "2026-08-11T18:02:30+00:00",
+  "last_token": "auto-20260811T175901Z-6e42c9a1",
+  "last_checkpoint": "V1_PROMOTION_READY_FOR_REVIEW",
+  "last_head_sha": "c4714fd619cb8d0a70467f3dc4a401196bf0f678",
+  "note": "PR #57 exact synchronize gate passed, merge candidate was verified against current v1 base, full promotion scope has no automation lock paths, and PR #57 was marked Ready for Review. Stable v1 promotion remains MANUAL_GATE_REQUIRED and must not be auto-merged by the development worker."
 }
