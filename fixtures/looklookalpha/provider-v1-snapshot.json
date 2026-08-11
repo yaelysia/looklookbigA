@@ -1,0 +1,147 @@
+{
+  "fixture_kind": "looklookalpha-provider-contract",
+  "schema_version": 16,
+  "features": {
+    "intraday_structure_metrics": "v1",
+    "daily_k_context": "v1",
+    "live_price_guard": "v1",
+    "market_environment": "v1",
+    "data_provenance": "v1",
+    "changes_since_previous": "v1",
+    "company_events": "v1",
+    "capital_flow": "v1",
+    "fundamentals": "v1",
+    "alpha_provider_contract": "v1"
+  },
+  "detail_stocks": {
+    "000001": {
+      "quote": {
+        "code": "000001",
+        "current_price": 10.0,
+        "source": "CONTRACT_FIXTURE"
+      },
+      "intraday": {
+        "vwap": 10.0,
+        "structure": "FIXTURE",
+        "current_price_guard": {
+          "status": "PASS",
+          "historical_source_used_for_current_price": false
+        }
+      },
+      "daily_context": {
+        "support": 9.5,
+        "resistance": 10.5
+      },
+      "events": {
+        "items": []
+      },
+      "capital_flow": {
+        "status": "UNAVAILABLE_IN_FIXTURE"
+      },
+      "fundamentals": {
+        "status": "UNAVAILABLE_IN_FIXTURE"
+      }
+    }
+  },
+  "groups": {
+    "fixture_group": {
+      "target_code": "000001",
+      "member_codes": [
+        "000001"
+      ],
+      "relative_strength": {
+        "status": "FIXTURE"
+      }
+    }
+  },
+  "indices": {
+    "fixture_index": {
+      "value": 1000.0,
+      "source": "CONTRACT_FIXTURE"
+    }
+  },
+  "live_price_guard": {
+    "status": "PASS",
+    "policy": {
+      "historical_sources_allowed_for_current_price": false
+    }
+  },
+  "market_environment": {
+    "breadth": {
+      "status": "FIXTURE"
+    }
+  },
+  "data_quality": {
+    "source_trust": {
+      "tiers_present": [
+        "TIER_1",
+        "TIER_2",
+        "TIER_3"
+      ]
+    },
+    "freshness_sla": {
+      "states_present": [
+        "MET",
+        "UNMEASURED",
+        "NOT_APPLICABLE"
+      ]
+    },
+    "lag_dimensions": [
+      "DATA_LAG",
+      "DISCOVERY_LAG",
+      "SESSION_COMPLETENESS"
+    ],
+    "provider_semantics": {
+      "fallback": "EXPLICIT",
+      "consensus": "EXPLICIT"
+    }
+  },
+  "changes_since_previous": {
+    "status": "NO_PREVIOUS_FIXTURE"
+  },
+  "company_events": {
+    "items": []
+  },
+  "capital_flow_summary": {
+    "status": "UNAVAILABLE_IN_FIXTURE"
+  },
+  "fundamentals_summary": {
+    "status": "UNAVAILABLE_IN_FIXTURE"
+  },
+  "provider_contract": {
+    "name": "looklookalpha-provider",
+    "contract_version": 1,
+    "capability_manifest": "contracts/looklookalpha-provider-v1.json",
+    "stable_ref": "v1",
+    "snapshot_schema_version": 16,
+    "workflow": {
+      "workflow_ref": "yaelysia/looklookbigA/.github/workflows/realtime-quotes.yml@0000000000000000000000000000000000000000",
+      "workflow_sha": "0000000000000000000000000000000000000000",
+      "producing_commit_sha": "0000000000000000000000000000000000000000",
+      "run_id": "0",
+      "run_attempt": "1",
+      "run_number": "0"
+    },
+    "operation": {
+      "present": true,
+      "dispatch_correlation_id": "fixture-correlation",
+      "idempotency_fingerprint": "0000000000000000",
+      "command_digest": "0000000000000000000000000000000000000000000000000000000000000000",
+      "workflow_identity": ".github/workflows/realtime-quotes.yml@0000000000000000000000000000000000000000",
+      "material_execution_inputs": {
+        "mode": "full"
+      },
+      "status_at_snapshot": "RUNNING",
+      "terminal_status_source": "GITHUB_ACTIONS_RUN_API",
+      "latest_run_fallback_allowed": false
+    },
+    "primary_artifact": {
+      "name": "realtime-snapshot",
+      "snapshot_path": "snapshot.json",
+      "artifact_manifest_path": "alpha-artifact-manifest.json",
+      "cardinality": "EXACTLY_ONE",
+      "digest_algorithm": "SHA-256",
+      "digest_source": "PROVIDER_COMPUTED_OR_CONSUMER_VERIFIED"
+    }
+  }
+}

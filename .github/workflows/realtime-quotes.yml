@@ -1,5 +1,8 @@
 name: Realtime A-share Quotes
 
+run-name: >-
+  ${{ inputs.dispatch_correlation_id != '' && format('alpha-refresh corr={0} op={1} cmd={2}', inputs.dispatch_correlation_id, inputs.operation_identity_fingerprint, inputs.command_digest) || format('Realtime A-share Quotes #{0}', github.run_number) }}
+
 on:
   workflow_dispatch:
     inputs:
@@ -12,6 +15,31 @@ on:
           - auto
           - intraday_fast
           - full
+      dispatch_correlation_id:
+        description: "Optional Alpha refresh correlation id. Must be supplied together with idempotency_key, operation_identity_fingerprint, command_digest and workflow_identity."
+        required: false
+        default: ""
+        type: string
+      idempotency_key:
+        description: "Optional Alpha refresh idempotency key. Never emitted in logs."
+        required: false
+        default: ""
+        type: string
+      operation_identity_fingerprint:
+        description: "Provider-side non-secret fingerprint returned by start_or_recover; binds idempotency identity, semantic digest, exact workflow identity and material inputs for crash recovery."
+        required: false
+        default: ""
+        type: string
+      command_digest:
+        description: "Caller-supplied semantic refresh-command SHA-256 digest. The provider preserves it and does not reinterpret dispatch metadata as command identity."
+        required: false
+        default: ""
+        type: string
+      workflow_identity:
+        description: "Optional exact workflow identity: .github/workflows/realtime-quotes.yml@<40-hex workflow SHA>."
+        required: false
+        default: ""
+        type: string
   push:
     paths:
       - ".github/workflows/realtime-quotes.yml"
@@ -21,6 +49,14 @@ on:
       - ".github/workflows/pre-merge-security-gate.yml"
       - ".github/workflows/v1-smoke.yml"
       - "requirements-event-facts.txt"
+      - "contracts/looklookalpha-provider-v1.json"
+      - "scripts/alpha_artifact_manifest.py"
+      - "scripts/alpha_capability_contract.py"
+      - "scripts/alpha_operation_registry.py"
+      - "scripts/alpha_provider_contract.py"
+      - "scripts/alpha_refresh_contract.py"
+      - "scripts/test_alpha_provider_contract.py"
+      - "scripts/test_alpha_semantic_command_identity.py"
       - "scripts/realtime_quotes_watchlist.py"
       - "scripts/realtime_quotes_watchlist_runner.py"
       - "scripts/performance_fast_path.py"
@@ -100,7 +136,123 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  claim-alpha-refresh:
+    if: >-
+      ${{ github.event_name == 'workflow_dispatch' &&
+          (inputs.dispatch_correlation_id != '' ||
+           inputs.idempotency_key != '' ||
+           inputs.operation_identity_fingerprint != '' ||
+           inputs.command_digest != '' ||
+           inputs.workflow_identity != '') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Validate Alpha refresh identity
+        shell: bash
+        env:
+          DISPATCH_CORRELATION_ID: ${{ inputs.dispatch_correlation_id }}
+          IDEMPOTENCY_KEY: ${{ inputs.idempotency_key }}
+          OPERATION_IDENTITY_FINGERPRINT: ${{ inputs.operation_identity_fingerprint }}
+          COMMAND_DIGEST: ${{ inputs.command_digest }}
+          WORKFLOW_IDENTITY: ${{ inputs.workflow_identity }}
+          REQUESTED_MODE: ${{ inputs.mode }}
+        run: |
+          set -euo pipefail
+          PYTHONPATH=scripts python3 - <<'PY'
+          import os
+          import alpha_refresh_contract
+
+          values = {
+              "dispatch_correlation_id": os.environ.get("DISPATCH_CORRELATION_ID") or "",
+              "idempotency_key": os.environ.get("IDEMPOTENCY_KEY") or "",
+              "operation_identity_fingerprint": (os.environ.get("OPERATION_IDENTITY_FINGERPRINT") or "").lower(),
+              "command_digest": (os.environ.get("COMMAND_DIGEST") or "").lower(),
+              "workflow_identity": os.environ.get("WORKFLOW_IDENTITY") or "",
+          }
+          if not all(values.values()):
+              raise SystemExit(
+                  "Alpha refresh identity must supply correlation, idempotency key, operation identity fingerprint, command digest and workflow identity together"
+              )
+
+          actual_workflow_sha = (os.environ.get("GITHUB_WORKFLOW_SHA") or "").lower()
+          expected_identity = f".github/workflows/realtime-quotes.yml@{actual_workflow_sha}"
+          if values["workflow_identity"] != expected_identity:
+              raise SystemExit(
+                  f"workflow_identity mismatch: expected={expected_identity} provided={values['workflow_identity']}"
+              )
+
+          alpha_refresh_contract.validate_identifier(
+              values["dispatch_correlation_id"], "dispatch_correlation_id"
+          )
+          alpha_refresh_contract.validate_identifier(
+              values["idempotency_key"], "idempotency_key"
+          )
+          digest = alpha_refresh_contract.normalize_digest(values["command_digest"])
+          supplied_operation_fingerprint = alpha_refresh_contract.normalize_digest(
+              values["operation_identity_fingerprint"]
+          )
+          material = {"mode": (os.environ.get("REQUESTED_MODE") or "auto").lower()}
+          expected_operation_fingerprint = alpha_refresh_contract.operation_identity_fingerprint(
+              values["idempotency_key"],
+              digest,
+              values["workflow_identity"],
+              material,
+          )
+          if supplied_operation_fingerprint != expected_operation_fingerprint:
+              raise SystemExit(
+                  "operation_identity_fingerprint mismatch: dispatch inputs do not match the durable provider operation identity"
+              )
+          print(
+              "ALPHA_REFRESH_IDENTITY status=PASS "
+              f"correlation={values['dispatch_correlation_id']} "
+              f"operation_identity_fingerprint={supplied_operation_fingerprint} "
+              f"workflow_identity={values['workflow_identity']} "
+              f"command_digest={digest} "
+              f"requested_mode={material['mode']}"
+          )
+          PY
+
+      - name: Claim exact workflow run in durable Alpha registry
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          DISPATCH_CORRELATION_ID: ${{ inputs.dispatch_correlation_id }}
+          IDEMPOTENCY_KEY: ${{ inputs.idempotency_key }}
+          COMMAND_DIGEST: ${{ inputs.command_digest }}
+          WORKFLOW_IDENTITY: ${{ inputs.workflow_identity }}
+          REQUESTED_MODE: ${{ inputs.mode }}
+        run: |
+          set -euo pipefail
+          material="$(
+            python3 - <<'PY'
+          import json
+          import os
+          print(json.dumps({"mode": (os.environ.get("REQUESTED_MODE") or "auto").lower()}, separators=(",", ":")))
+          PY
+          )"
+          PYTHONPATH=scripts python3 scripts/alpha_operation_registry.py claim-run \
+            --correlation "$DISPATCH_CORRELATION_ID" \
+            --idempotency-key "$IDEMPOTENCY_KEY" \
+            --command-digest "$COMMAND_DIGEST" \
+            --workflow-identity "$WORKFLOW_IDENTITY" \
+            --material-inputs-json "$material" \
+            --base-sha "$GITHUB_SHA" \
+            --run-id "$GITHUB_RUN_ID" \
+            --run-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            --head-sha "$GITHUB_SHA" \
+            --run-attempt "$GITHUB_RUN_ATTEMPT"
+
   fetch-quotes:
+    needs:
+      - claim-alpha-refresh
+    if: >-
+      ${{ always() &&
+          (needs.claim-alpha-refresh.result == 'success' ||
+           needs.claim-alpha-refresh.result == 'skipped') }}
     runs-on: ubuntu-latest
     timeout-minutes: 3
     permissions:
@@ -181,14 +333,29 @@ jobs:
         env:
           MARKET_HISTORY_DIR: .market-data/history
           LOOKLOOK_EXECUTION_MODE: ${{ steps.execution-mode.outputs.mode }}
+          LOOKLOOK_SNAPSHOT_ARTIFACT_NAME: realtime-snapshot
+          LOOKLOOK_DISPATCH_CORRELATION_ID: ${{ inputs.dispatch_correlation_id }}
+          LOOKLOOK_IDEMPOTENCY_KEY: ${{ inputs.idempotency_key }}
+          LOOKLOOK_COMMAND_DIGEST: ${{ inputs.command_digest }}
         run: python3 scripts/realtime_quotes_watchlist_runner.py
+
+      - name: Generate Alpha primary artifact manifest
+        if: ${{ success() }}
+        shell: bash
+        run: >-
+          python3 scripts/alpha_artifact_manifest.py
+          --snapshot snapshot.json
+          --output alpha-artifact-manifest.json
+          --artifact-name realtime-snapshot
 
       - name: Upload realtime snapshot
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: realtime-snapshot
-          path: snapshot.json
+          path: |
+            snapshot.json
+            alpha-artifact-manifest.json
           if-no-files-found: error
           retention-days: 1
 
