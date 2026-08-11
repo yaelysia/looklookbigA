@@ -76,17 +76,66 @@ def _snapshot():
 
 
 def _identity(correlation="corr-1", key="idem-1", mode="full"):
-    workflow = "realtime-quotes.yml@" + "a" * 40
+    workflow = ".github/workflows/realtime-quotes.yml@" + "a" * 40
     material = {"mode": mode}
+    canonical_body = {
+        "provider_workflow_identity": {"workflow_identity": workflow},
+        "material_provider_workflow_inputs": material,
+    }
     return {
         "dispatch_correlation_id": correlation,
         "idempotency_key": key,
         "workflow_identity": workflow,
         "material_execution_inputs": material,
         "command_digest": alpha_refresh_contract.canonical_command_digest(
-            workflow, material
+            "1", canonical_body
         ),
     }
+
+
+def _operation_fingerprint(identity):
+    return alpha_refresh_contract.operation_identity_fingerprint(
+        identity["idempotency_key"],
+        identity["command_digest"],
+        identity["workflow_identity"],
+        identity["material_execution_inputs"],
+    )
+
+
+def _raw_run(
+    identity,
+    run_id,
+    *,
+    status="completed",
+    conclusion="success",
+    created_at="2026-08-10T00:00:01Z",
+):
+    return {
+        "id": run_id,
+        "display_title": alpha_refresh_contract.build_run_name(
+            identity["dispatch_correlation_id"],
+            _operation_fingerprint(identity),
+            identity["command_digest"],
+        ),
+        "status": status,
+        "conclusion": conclusion,
+        "head_sha": identity["workflow_identity"].rsplit("@", 1)[1],
+        "run_attempt": 1,
+        "html_url": f"https://example.invalid/run/{run_id}",
+        "created_at": created_at,
+    }
+
+
+def _verified_run(identity, run_id, **kwargs):
+    raw = _raw_run(identity, run_id, **kwargs)
+    return alpha_refresh_contract.verify_scanned_runs(
+        [raw],
+        [identity["dispatch_correlation_id"]],
+        identity["idempotency_key"],
+        identity["command_digest"],
+        identity["workflow_identity"],
+        identity["material_execution_inputs"],
+    )[0]
 
 
 class _MemoryStore:
@@ -198,18 +247,7 @@ def test_artifact_manifest_allows_exact_engine_revision_override():
 
 def test_refresh_identity_exact_recovery_conflicts_and_duplicates():
     identity = _identity()
-    title = alpha_refresh_contract.build_run_name(
-        identity["dispatch_correlation_id"], identity["command_digest"]
-    )
-    run = {
-        "id": 77,
-        "display_title": title,
-        "status": "completed",
-        "conclusion": "success",
-        "head_sha": "a" * 40,
-        "run_attempt": 1,
-        "html_url": "https://example.invalid/run/77",
-    }
+    run = _verified_run(identity, 77)
     resolved = alpha_refresh_contract.resolve_operation_by_correlation(
         [run],
         identity["dispatch_correlation_id"],
@@ -218,25 +256,26 @@ def test_refresh_identity_exact_recovery_conflicts_and_duplicates():
     )
     assert resolved["workflow_run_id"] == 77
     assert resolved["status"] == "SUCCEEDED"
+    assert resolved["operation_identity_fingerprint"] == _operation_fingerprint(identity)
 
-    conflicting = dict(run)
-    conflicting["display_title"] = alpha_refresh_contract.build_run_name(
-        identity["dispatch_correlation_id"], "b" * 64
-    )
+    conflicting_identity = dict(identity)
+    conflicting_identity["command_digest"] = "b" * 64
+    conflicting = _raw_run(conflicting_identity, 79)
     try:
-        alpha_refresh_contract.resolve_operation_by_correlation(
+        alpha_refresh_contract.verify_scanned_runs(
             [conflicting],
-            identity["dispatch_correlation_id"],
+            [identity["dispatch_correlation_id"]],
             identity["idempotency_key"],
             identity["command_digest"],
+            identity["workflow_identity"],
+            identity["material_execution_inputs"],
         )
     except alpha_refresh_contract.RefreshIdentityConflict:
         pass
     else:
         raise AssertionError("conflicting correlation reuse must be rejected")
 
-    duplicate = dict(run)
-    duplicate["id"] = 78
+    duplicate = _verified_run(identity, 78)
     try:
         alpha_refresh_contract.resolve_operation_by_correlation(
             [run, duplicate],
@@ -391,17 +430,7 @@ def test_registry_scan_recovers_run_or_authorizes_redispatch_only_when_empty():
     after_expiry = now + timedelta(
         seconds=alpha_operation_registry.DISPATCH_LEASE_SECONDS + 1
     )
-    run = {
-        "id": 404,
-        "display_title": alpha_refresh_contract.build_run_name(
-            identity["dispatch_correlation_id"], identity["command_digest"]
-        ),
-        "status": "completed",
-        "conclusion": "success",
-        "head_sha": "d" * 40,
-        "run_attempt": 1,
-        "html_url": "https://example.invalid/run/404",
-    }
+    run = _verified_run(identity, 404)
     recovered_registry, record, changed, should_dispatch = (
         alpha_operation_registry.recover_after_correlation_scan_state(
             registry,
@@ -447,19 +476,9 @@ def test_start_or_recover_scans_correlation_after_ambiguous_dispatch():
     )
     assert action == "DISPATCH_REQUIRED"
     assert record["workflow_run_id"] is None
+    assert record["operation_identity_fingerprint"] == _operation_fingerprint(identity)
 
-    run = {
-        "id": 505,
-        "display_title": alpha_refresh_contract.build_run_name(
-            identity["dispatch_correlation_id"], identity["command_digest"]
-        ),
-        "status": "in_progress",
-        "conclusion": None,
-        "head_sha": "e" * 40,
-        "run_attempt": 1,
-        "html_url": "https://example.invalid/run/505",
-        "created_at": "2026-08-10T00:00:01Z",
-    }
+    run = _raw_run(identity, 505, status="in_progress", conclusion=None)
     original_scan = alpha_start_or_recover.scan_workflow_runs
     alpha_start_or_recover.scan_workflow_runs = lambda *args, **kwargs: [run]
     try:
@@ -478,6 +497,48 @@ def test_start_or_recover_scans_correlation_after_ambiguous_dispatch():
     print("PASS alpha_start_or_recover_ambiguous_dispatch")
 
 
+def test_recovery_rejects_same_corr_digest_wrong_idempotency_identity():
+    store = _MemoryStore()
+    identity = _identity("corr-crosswire", "idem-good")
+    first_identity = dict(identity)
+    first_identity["owner_token"] = "first"
+    _, action = alpha_start_or_recover.start_or_recover(
+        store,
+        repository="owner/repo",
+        token="unused-in-first-reservation",
+        **first_identity,
+    )
+    assert action == "DISPATCH_REQUIRED"
+
+    wrong = dict(identity)
+    wrong["idempotency_key"] = "idem-wrong"
+    wrong_run = _raw_run(wrong, 606, status="completed", conclusion="failure")
+    original_scan = alpha_start_or_recover.scan_workflow_runs
+    alpha_start_or_recover.scan_workflow_runs = lambda *args, **kwargs: [wrong_run]
+    try:
+        second_identity = dict(identity)
+        second_identity["owner_token"] = "second"
+        try:
+            alpha_start_or_recover.start_or_recover(
+                store,
+                repository="owner/repo",
+                token="unused-by-stub",
+                **second_identity,
+            )
+        except alpha_refresh_contract.RefreshIdentityConflict:
+            pass
+        else:
+            raise AssertionError(
+                "same correlation+digest with a different idempotency identity must never be recovered"
+            )
+    finally:
+        alpha_start_or_recover.scan_workflow_runs = original_scan
+    assert store.registry["operations"]
+    operation = next(iter(store.registry["operations"].values()))
+    assert operation["workflow_run_id"] is None
+    print("PASS alpha_recovery_rejects_wrong_idempotency_identity")
+
+
 def test_provider_snapshot_audits_exact_operation_identity():
     with tempfile.TemporaryDirectory() as tmp:
         snapshot_path = Path(tmp) / "snapshot.json"
@@ -493,7 +554,11 @@ def test_provider_snapshot_audits_exact_operation_identity():
         workflow_identity = ".github/workflows/realtime-quotes.yml@" + workflow_sha
         material = {"mode": "full"}
         digest = alpha_refresh_contract.canonical_command_digest(
-            workflow_identity, material
+            "1",
+            {
+                "provider_workflow_identity": {"workflow_identity": workflow_identity},
+                "material_provider_workflow_inputs": material,
+            },
         )
         values = {
             "LOOKLOOK_DISPATCH_CORRELATION_ID": "corr-audit",
@@ -545,11 +610,14 @@ def test_workflows_wire_claim_manifest_and_release_gates():
     for token in (
         "run-name:",
         "alpha-refresh corr=",
+        " op=",
         "dispatch_correlation_id:",
         "idempotency_key:",
+        "operation_identity_fingerprint:",
         "command_digest:",
         "workflow_identity:",
         "claim-alpha-refresh:",
+        "operation_identity_fingerprint(",
         "alpha_operation_registry.py claim-run",
         "GITHUB_WORKFLOW_SHA",
         "alpha-artifact-manifest.json",
@@ -593,6 +661,7 @@ def main():
         test_registry_expired_reservation_requires_correlation_scan,
         test_registry_scan_recovers_run_or_authorizes_redispatch_only_when_empty,
         test_start_or_recover_scans_correlation_after_ambiguous_dispatch,
+        test_recovery_rejects_same_corr_digest_wrong_idempotency_identity,
         test_provider_snapshot_audits_exact_operation_identity,
         test_workflows_wire_claim_manifest_and_release_gates,
     ]
