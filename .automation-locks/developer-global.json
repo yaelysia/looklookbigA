@@ -1,11 +1,13 @@
 {
   "kind": "looklookbigA-auto-worker-lease",
-  "state": "ACTIVE",
-  "token": "auto-20260811T210155Z-50-share-8c4f2a1d",
+  "state": "IDLE",
+  "token": null,
   "work_item": "issue-50/share-structure-current-state",
   "acquired_at": "2026-08-11T21:01:55+00:00",
   "lease_until": "2026-08-11T21:51:55+00:00",
-  "start_head_sha": "0c7b8b9b8b0e041cb1ec19c23cd6f453e24a6337",
-  "checkpoint_target": "ISSUE_50_SHARE_STRUCTURE_SUBMITTED",
-  "note": "Resume Draft PR #58 and implement only the current share-structure/float-state slice with explicit dates, provenance, and focused tests. Do not begin controllers, top holders, institutional holdings, shareholder counts, plans, unlocks, or pledges."
+  "released_at": "2026-08-11T21:10:00+00:00",
+  "last_token": "auto-20260811T210155Z-50-share-8c4f2a1d",
+  "last_checkpoint": "ISSUE_50_SHARE_STRUCTURE_SUBMITTED",
+  "last_head_sha": "819856f8903a06854e1bfe3745ca83b8fa8cfa26",
+  "note": "Resumed Draft PR #58 and completed only the current dated share-structure/float-state slice with explicit Eastmoney provenance, semantic separation of LISTED_A_SHARES from FREE_SHARES, FULL snapshot integration, FAST no-network deferral, and five focused deterministic tests. Pre-merge Security Gate run 31536492398 is in progress; next run inspects that exact-head result before starting the controllers slice."
 }
