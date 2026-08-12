@@ -1,13 +1,11 @@
 {
   "kind": "looklookbigA-auto-worker-lease",
-  "state": "IDLE",
-  "token": null,
-  "work_item": "issue-50/top-holders-history",
-  "acquired_at": "2026-08-11T23:01:45+00:00",
-  "lease_until": "2026-08-11T23:51:45+00:00",
-  "released_at": "2026-08-11T23:14:30+00:00",
-  "last_token": "auto-20260811T230145Z-50-top-holders-7b24d9c1",
-  "last_checkpoint": "ISSUE_50_TOP_HOLDERS_SUBMITTED",
-  "last_head_sha": "c6be596d2a3bfea9da66df36463d8cbee3925ef0",
-  "note": "Previous controllers exact-head CI passed. Completed only the top_holders report-period/history slice with separate total/float holder scopes, up to four report periods, concentration metrics, explicit disclosure lag/provenance, provider-declared holder types, failure isolation, and FAST no-network deferral. Final exact-head Pre-merge Security Gate run 31545628455 is in progress; next run inspects it before starting only institutional_holdings."
+  "state": "ACTIVE",
+  "token": "auto-20260812T000124Z-50-institutional-4f8c2d71",
+  "work_item": "issue-50/institutional-holdings",
+  "acquired_at": "2026-08-12T00:01:24+00:00",
+  "lease_until": "2026-08-12T00:51:24+00:00",
+  "start_head_sha": "c6be596d2a3bfea9da66df36463d8cbee3925ef0",
+  "checkpoint_target": "ISSUE_50_INSTITUTIONAL_HOLDINGS_SUBMITTED",
+  "note": "Top-holders exact-head CI passed. This lease is limited to the institutional_holdings report-period slice, focused tests, checkpoint persistence, and CI trigger verification."
 }
