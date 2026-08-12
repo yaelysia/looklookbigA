@@ -1,13 +1,13 @@
 {
   "kind": "looklookbigA-auto-worker-lease",
-  "state": "ACTIVE",
-  "token": "auto-20260812T200205Z-48-event-semantics-4c72a1e6",
+  "state": "IDLE",
+  "token": null,
   "work_item": "issue-48/confirmed-event-semantics",
   "acquired_at": "2026-08-12T20:02:05+00:00",
   "lease_until": "2026-08-12T20:52:05+00:00",
-  "released_at": null,
-  "last_token": "auto-20260812T190212Z-48-upcoming-events-8c4e91d2",
-  "last_checkpoint": "ISSUE_48_CORE_WINDOWS_SUBMITTED",
-  "last_head_sha": "1164f21ee59e60d0eb3a0780ddb80a234feda93d",
-  "note": "Resume Issue #48 after exact-head core-window CI passed. This lease is limited to additional confirmed high-value event-date semantics plus tightly related semantic dedupe/trading-day proximity where safe."
+  "released_at": "2026-08-12T20:16:10+00:00",
+  "last_token": "auto-20260812T200205Z-48-event-semantics-4c72a1e6",
+  "last_checkpoint": "ISSUE_48_EVENT_CALENDAR_CONTEXT_SUBMITTED",
+  "last_head_sha": "a79f7f5b799d81826412f151b407045ed6029a4d",
+  "note": "Submitted confirmed-title event calendar context: dividend/resumption/shareholder-meeting/earnings title-scoped dates, semantic cross-source dedupe, authoritative trading-day proximity and same-day overlap context. Focused tests passed 4/4 locally; exact-head Pre-merge Security Gate run 31636691852 is in progress."
 }
