@@ -40,8 +40,12 @@ EVENT_RULES = [
     ("HOLDER_INCREASE", ("增持",)),
     ("HOLDER_DECREASE", ("减持",)),
     ("UNLOCK", ("解除限售", "解禁", "限售股份上市流通", "限售股上市流通")),
+    ("PLEDGE", ("股份质押", "股票质押", "解除质押", "质押股份")),
+    ("CONVERTIBLE_BOND", ("可转换公司债券", "可转债",)),
+    ("PREFERRED_SHARES", ("优先股",)),
     ("MAJOR_CONTRACT", ("重大合同", "中标", "项目定点", "签订合同", "合同进展")),
     ("M&A", ("重大资产重组", "资产重组", "发行股份购买资产", "并购", "收购")),
+    ("REFINANCING", ("向特定对象发行", "定向增发", "非公开发行", "配股",)),
     ("DIVIDEND", ("利润分配", "权益分派", "分红", "除权", "除息")),
     ("EQUITY_INCENTIVE", ("股权激励", "限制性股票激励", "股票期权激励")),
     ("LITIGATION", ("诉讼", "仲裁")),
@@ -69,6 +73,10 @@ MEDIUM_IMPORTANCE_TYPES = {
     "UNLOCK",
     "DIVIDEND",
     "EQUITY_INCENTIVE",
+    "PLEDGE",
+    "CONVERTIBLE_BOND",
+    "PREFERRED_SHARES",
+    "REFINANCING",
 }
 
 _CORRECTION_RE = re.compile(r"更正|补充|修订|修正")
@@ -416,6 +424,13 @@ def extract_facts(event_type, title, api_snippet=None):
     elif event_type == "UNLOCK":
         facts["unlock_date"] = dates[0] if dates else None
         facts["unlock_percentages"] = percentages
+    elif event_type == "PLEDGE":
+        facts["pledge_percentages"] = percentages
+        facts["pledge_dates"] = dates
+    elif event_type in {"CONVERTIBLE_BOND", "PREFERRED_SHARES", "REFINANCING"}:
+        facts["potential_dilution_percentages"] = percentages
+        facts["capital_amounts"] = amounts
+        facts["effective_dates"] = dates
     elif event_type == "MAJOR_CONTRACT":
         facts["contract_amount_yuan"] = amounts[0]["value_yuan"] if amounts else None
     elif event_type == "DIVIDEND":

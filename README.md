@@ -21,12 +21,13 @@
 - **完整日级分钟历史**：腾讯分钟行情除生成 5 / 15 / 30 分钟动量、VWAP 位置、日内位置和量能强度外，还按交易日/股票合并保存全部已终结分钟，输出缺口、连续性、终态和 replay 资格。
 - **资金 / 成交行为上下文**：为 detail stock 输出 `capital_flow`，区分 `OBSERVED / DERIVED / OFFICIAL_DELAYED / VENDOR_ESTIMATE`；包含 1/5/15/30 分钟成交速度、上涨/下跌分钟成交结构、量价确认、方向性 pressure、承接/absorption、VWAP 行为、融资融券延迟数据和同行资金同步性。FAST 只复用现有分钟/quote/上一 exact snapshot 与融资缓存，不增加盘中资金网络依赖；语义与公式见 `docs/CAPITAL_FLOW.md`。
 - **基本面 / 财务趋势上下文**：为 detail stock 输出 `fundamentals`，保留公司披露累计口径，同时仅通过可验证的 `Q1 / H1-Q1 / Q3-H1 / FY-Q3` 恢复单季度，连续四个已验证单季度才计算 TTM；提供营收/利润/扣非利润、利润率、ROE、经营现金流质量、资产负债同比、趋势 evidence、财务背离和 `changes_since_previous`。FAST 只读财务缓存，FULL 才并发刷新 main/income/balance/cashflow 四张低频报表；详见 `docs/FUNDAMENTALS.md`。
+- **股权 / 股本 / 股东结构上下文**：为 detail stock 输出 `ownership_and_capital`，包含股本历史、实控人与控股股东、前十大及流通股东集中度、机构持仓、股东户数、回购/增减持计划、解禁、质押与资本工具、结构信号，并与 `upcoming_events`、市值口径、exact-history `changes_since_previous` 和统一数据质量合同衔接。所有控制关系、比例和潜在稀释都按证据 fail closed，FAST 不增加低频网络请求；详见 `docs/OWNERSHIP_AND_CAPITAL.md`。
 - **板块对照组与同步相对强弱**：除轻量行情、组内均值/中位数和领涨领跌外，还以同一交易日、同一已终结分钟截止点计算重点股相对配置同业篮子、创业板指和中证1000的 5 / 15 / 30 分钟超额收益；分钟缺口和同业覆盖变化会显式降级，详见 `docs/RELATIVE_STRENGTH_WINDOWS.md`。
 - **市场环境与个股归因**：输出上证 / 沪深300 / 中证1000 / 深成 / 创业板 / 科创50、全市场广度、风格差、配置板块环境，以及重点股相对市场 / 板块的结构化 `driver_attribution`。FAST 按交易日和上午/下午分段只允许一个并发 owner 引导 breadth，后续刷新读取会话绑定缓存；失败、等待和陈旧状态均显式降级。FULL 继续现场完整获取。
 - **20～60 日日 K 背景**：MA5 / MA10 / MA20 / MA60、ATR14、5 / 10 / 20 日高低、20 日收益、日线 swing high / low。
 - **支撑 / 压力上下文**：综合均线、昨日 OHLC、近期高低和日线拐点生成可解释的候选价位及共振强度。
 - **公告 / 公司事件**：从巨潮资讯官方披露源获取 detail stock 最近 7 / 30 / 90 日公告，输出稳定 `event_id`、事件类型、发布时间、官方 PDF、重要性、结构化事实、事件关联、缓存和 provider health；重要公告可从官方 PDF 原文做确定性事实抽取。已经成功得到的官方 PDF facts 在后续较弱 FAST refresh 或失败的 FULL re-enrichment 中不会被擦除。
-- **快照增量变化**：自动比较上一份完整归档快照，输出价格 / 成交额 / 分时 / 资金行为 / 基本面 / 相对强弱 / 板块排名 / 市场环境 / 新增或更新事件的 `before / after / delta` 和显著性原因。资金相对强弱只在 peer universe 可比时计算变化；融资数据只在新的披露交易日出现时报告变化；基本面区分新报告期与同报告期修订。master Realtime 优先使用同一 run 的前一次成功 attempt，否则使用上一条成功 run，并严格校验 exact `market-history-state` 的 run / attempt / head SHA。
+- **快照增量变化**：自动比较上一份完整归档快照，输出价格 / 成交额 / 分时 / 资金行为 / 基本面 / 股权资本结构 / 相对强弱 / 板块排名 / 市场环境 / 新增或更新事件的 `before / after / delta` 和显著性原因。资金相对强弱只在 peer universe 可比时计算变化；融资数据只在新的披露交易日出现时报告变化；基本面区分新报告期与同报告期修订；股权资本结构只报告新披露期、同期间修订或持久事件状态变化。master Realtime 优先使用同一 run 的前一次成功 attempt，否则使用上一条成功 run，并严格校验 exact `market-history-state` 的 run / attempt / head SHA。
 - **统一 provenance / freshness / quality / trust / SLA**：重要原始数据和派生数据统一携带来源、时间、freshness、quality、Source Trust 和 Freshness SLA；顶层提供适合 LLM 消费的质量摘要。
 - **历史缓存**：主仓库使用独立 `market-data` 分支持久保存日 K、完整分钟记录、公司事件、融资融券低频缓存、财务报表低频缓存和盘中快照。后台 writer 采用加锁、暂存校验和领域合并；迟到 run 可补齐归档/分钟，但不能回退 latest manifest。
 - **实时价格保险**：历史缓存、历史快照、公司事件缓存、资金缓存、财务缓存和日 K 数据被禁止进入 `quote.latest`。盘中实时 quote 失效时，只允许降级到仍然 LIVE 的当日分钟价；两者都不新鲜时当前价直接标记不可用。
@@ -54,6 +55,7 @@
 - `docs/INTRADAY_FAST.md`
 - `docs/CAPITAL_FLOW.md`
 - `docs/FUNDAMENTALS.md`
+- `docs/OWNERSHIP_AND_CAPITAL.md`
 - `docs/MARKET_CALENDAR.md`
 - `docs/MARKET_HISTORY.md`
 - `docs/RELATIVE_STRENGTH_WINDOWS.md`

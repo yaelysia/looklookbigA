@@ -41,6 +41,7 @@ import market_calendar
 import market_breadth_source
 import market_environment
 import minute_history
+import ownership_capital
 import performance_fast_path
 import quote_resilience
 import realtime_quotes_watchlist as base
@@ -167,6 +168,13 @@ if __name__ == "__main__":
         performance_fast_path.timed_call(
             "capital_flow",
             capital_flow_context.finalize_snapshot,
+            base.SNAPSHOT_PATH,
+            base,
+            EXECUTION_MODE,
+        )
+        performance_fast_path.timed_call(
+            "ownership_and_capital",
+            ownership_capital.finalize_snapshot,
             base.SNAPSHOT_PATH,
             base,
             EXECUTION_MODE,

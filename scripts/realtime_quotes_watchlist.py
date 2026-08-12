@@ -13,7 +13,7 @@ CST = timezone(timedelta(hours=8))
 CONFIG_PATH = Path("config/quote_watchlist.json")
 SNAPSHOT_PATH = Path("snapshot.json")
 
-QUOTE_FIELDS = "f43,f44,f45,f46,f47,f48,f57,f58,f60,f71,f86,f169,f170,f171"
+QUOTE_FIELDS = "f20,f21,f43,f44,f45,f46,f47,f48,f57,f58,f60,f71,f86,f169,f170,f171"
 
 INDICES = [
     ("上证指数", "1.000001"),
@@ -200,6 +200,13 @@ def quote_payload(now: datetime, code: str):
         "volume_raw": d.get("f47"),
         "amount_raw": amount_raw,
         "amount_1e8": round(amount_raw / 1e8, 4),
+        "total_market_cap": d.get("f20"),
+        "float_market_cap": d.get("f21"),
+        "market_cap_currency": "CNY",
+        "market_cap_semantics": {
+            "total_market_cap": "Eastmoney f20 total market cap",
+            "float_market_cap": "Eastmoney f21 provider float market cap",
+        },
         "market_time_cst": fmt_dt(qdt),
         "lag_seconds": lag,
         "freshness": state,

@@ -319,6 +319,177 @@ def _relative_window_changes(before_item, after_item):
     return result
 
 
+def _ownership_disclosure_view(context, section_name):
+    section = (context or {}).get(section_name) or {}
+    if section_name == "share_structure":
+        values = section.get("values") or {}
+        return {
+            "as_of_date": section.get("as_of_date"),
+            "total_shares": values.get("total_shares"),
+            "float_shares": values.get("float_shares"),
+            "restricted_shares": values.get("restricted_shares"),
+            "change_reason": values.get("change_reason"),
+        }
+    if section_name == "controllers":
+        return {
+            "as_of_date": section.get("as_of_date"),
+            "actual_controller_names": sorted(
+                item.get("name")
+                for item in ((section.get("actual_controller") or {}).get("holders") or [])
+                if item.get("name")
+            ),
+            "controlling_shareholder_names": sorted(
+                item.get("name")
+                for item in ((section.get("controlling_shareholder") or {}).get("holders") or [])
+                if item.get("name")
+            ),
+            "control_change": (section.get("control_change") or {}).get("state"),
+        }
+    if section_name == "top_holders":
+        return {
+            "as_of_date": section.get("as_of_date"),
+            "top10_concentration_percent": section.get("top10_concentration_percent"),
+            "float_top10_concentration_percent": section.get("float_top10_concentration_percent"),
+            "concentration_state": (section.get("concentration_trend") or {}).get("state"),
+        }
+    if section_name == "institutional_holdings":
+        latest = section.get("latest") or {}
+        return {
+            "as_of_date": section.get("as_of_date"),
+            "institution_count": latest.get("institution_count"),
+            "hold_ratio_percent": latest.get("hold_ratio_percent"),
+            "fund_hold_ratio_percent": latest.get("fund_hold_ratio_percent"),
+            "trend": (section.get("trend") or {}).get("state"),
+        }
+    latest = section.get("latest") or {}
+    return {
+        "as_of_date": section.get("as_of_date"),
+        "shareholder_count": latest.get("shareholder_count"),
+        "trend": section.get("trend"),
+    }
+
+
+def _ownership_event_states(context):
+    plans = (context or {}).get("buyback_and_holder_plans") or {}
+    states = {}
+    for bucket_name in ("buybacks", "holder_increase_plans", "holder_decrease_plans"):
+        current = (plans.get(bucket_name) or {}).get("current") or {}
+        if current.get("event_id"):
+            states[f"plan:{bucket_name}:{current['event_id']}"] = {
+                "status": current.get("status"),
+                "active_execution_window": current.get("active_execution_window"),
+                "remaining_amount_min_yuan": current.get("remaining_amount_min_yuan"),
+                "remaining_amount_max_yuan": current.get("remaining_amount_max_yuan"),
+                "remaining_shares_min": current.get("remaining_shares_min"),
+                "remaining_shares_max": current.get("remaining_shares_max"),
+            }
+    for item in ((context or {}).get("unlocks") or {}).get("upcoming") or []:
+        if item.get("event_id"):
+            states[f"unlock:{item['event_id']}"] = {
+                "unlock_date": item.get("unlock_date"),
+                "status": item.get("status"),
+                "unlock_shares": item.get("unlock_shares"),
+            }
+    for event_type in ("pledges", "convertible_bonds", "preferred_shares", "refinancing"):
+        for item in ((context or {}).get("pledges_and_capital_tools") or {}).get(event_type) or []:
+            if item.get("event_id"):
+                states[f"capital:{event_type}:{item['event_id']}"] = {
+                    "status": item.get("status"),
+                    "effective_date": item.get("effective_date"),
+                }
+    return states
+
+
+def _ownership_changes(before_item, after_item):
+    before = (before_item or {}).get("ownership_and_capital")
+    after = (after_item or {}).get("ownership_and_capital")
+    if not isinstance(before, dict) and not isinstance(after, dict):
+        return {
+            "status": "NO_LAYER",
+            "new_disclosures": [],
+            "state_changes": [],
+            "changed": False,
+            "significance": "NONE",
+        }
+    if not isinstance(before, dict) or not isinstance(after, dict):
+        return {
+            "status": "NO_COMPARABLE_BASELINE",
+            "new_disclosures": [],
+            "state_changes": [],
+            "changed": False,
+            "significance": "NONE",
+        }
+
+    new_disclosures = []
+    state_changes = []
+    for name in (
+        "share_structure",
+        "controllers",
+        "top_holders",
+        "institutional_holdings",
+        "shareholder_count",
+    ):
+        before_section = before.get(name) or {}
+        after_section = after.get(name) or {}
+        if before_section.get("status") not in {"OK", "PARTIAL"} or after_section.get(
+            "status"
+        ) not in {"OK", "PARTIAL"}:
+            continue
+        previous_view = _ownership_disclosure_view(before, name)
+        current_view = _ownership_disclosure_view(after, name)
+        before_date = previous_view.get("as_of_date")
+        after_date = current_view.get("as_of_date")
+        if after_date and after_date != before_date and current_view != previous_view:
+            new_disclosures.append(
+                {
+                    "section": name,
+                    "previous_as_of_date": before_date,
+                    "current_as_of_date": after_date,
+                    "current": current_view,
+                }
+            )
+        elif after_date and after_date == before_date and current_view != previous_view:
+            state_changes.append(
+                {
+                    "kind": "DISCLOSED_STATE_CHANGED_SAME_PERIOD",
+                    "section": name,
+                    "as_of_date": after_date,
+                    "before": previous_view,
+                    "after": current_view,
+                }
+            )
+
+    event_sections = ("buyback_and_holder_plans", "unlocks", "pledges_and_capital_tools")
+    event_state_comparable = all(
+        (before.get(name) or {}).get("status") in {"OK", "PARTIAL"}
+        and (after.get(name) or {}).get("status") in {"OK", "PARTIAL"}
+        for name in event_sections
+    )
+    if event_state_comparable:
+        before_states = _ownership_event_states(before)
+        after_states = _ownership_event_states(after)
+        for key in sorted(set(before_states) | set(after_states)):
+            if key not in before_states:
+                state_changes.append({"kind": "NEW_EVENT_STATE", "key": key, "after": after_states[key]})
+            elif key not in after_states:
+                state_changes.append({"kind": "EVENT_STATE_REMOVED", "key": key, "before": before_states[key]})
+            elif before_states[key] != after_states[key]:
+                state_changes.append(
+                    {"kind": "EVENT_STATE_CHANGED", "key": key, "before": before_states[key], "after": after_states[key]}
+                )
+
+    changed = bool(new_disclosures or state_changes)
+    return {
+        "status": "AVAILABLE",
+        "new_disclosures": new_disclosures,
+        "state_changes": state_changes,
+        "changed": changed,
+        "significance": "MODERATE" if changed else "NONE",
+        "comparison_policy": "dated disclosures and persistent official event states only; fetched_at/metadata ignored",
+        "quality_flags": [] if event_state_comparable else ["EVENT_STATE_NOT_COMPARABLE"],
+    }
+
+
 def _stock_change(code, before_item, after_item, previous, current, interval_seconds):
     before_quote = (before_item or {}).get("quote") or {}
     after_quote = (after_item or {}).get("quote") or {}
@@ -402,6 +573,18 @@ def _stock_change(code, before_item, after_item, previous, current, interval_sec
     if relative["primary_driver"]["changed"]:
         _add_reason(reasons, "MODERATE", "DRIVER_ATTRIBUTION_CHANGED", relative["primary_driver"])
 
+    ownership_change = _ownership_changes(before_item, after_item)
+    if ownership_change.get("changed"):
+        _add_reason(
+            reasons,
+            "MODERATE",
+            "OWNERSHIP_DISCLOSURE_OR_STATE_CHANGED",
+            {
+                "new_disclosures": len(ownership_change.get("new_disclosures") or []),
+                "state_changes": len(ownership_change.get("state_changes") or []),
+            },
+        )
+
     window_changes = _relative_window_changes(before_item, after_item)
     for kind in ("vs_groups", "vs_indices"):
         for benchmark_id, benchmark in window_changes[kind].items():
@@ -457,6 +640,7 @@ def _stock_change(code, before_item, after_item, previous, current, interval_sec
         },
         "relative_strength_change": relative,
         "relative_strength_windows_change": window_changes,
+        "ownership_and_capital_change": ownership_change,
         "strength_direction": strength_direction,
         "significance": significance,
         "significance_reasons": reasons,
