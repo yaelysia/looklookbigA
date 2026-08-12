@@ -1,13 +1,13 @@
 {
   "kind": "looklookbigA-auto-worker-lease",
-  "state": "IDLE",
-  "token": null,
-  "work_item": "issue-53/final-validation-ready",
-  "acquired_at": "2026-08-12T15:02:00+00:00",
-  "lease_until": "2026-08-12T15:52:00+00:00",
-  "released_at": "2026-08-12T15:06:20+00:00",
+  "state": "ACTIVE",
+  "token": "auto-20260812T160121Z-53-rerun-artifact-b7c4e812",
+  "work_item": "issue-53/rerun-artifact-upload-conflict",
+  "acquired_at": "2026-08-12T16:01:21+00:00",
+  "lease_until": "2026-08-12T16:51:21+00:00",
+  "released_at": null,
   "last_token": "auto-20260812T150200Z-53-ready-cleanup-a41f9c6e",
   "last_checkpoint": "ISSUE_53_READY_FOR_REVIEW",
   "last_head_sha": "07f06bf490c0ba507eb2f248573c4c5631d21d90",
-  "note": "Issue #53 acceptance criteria were revalidated. Removed the issue lock; final PR diff is README.md only; PR #66 is Ready for Review at exact head 07f06bf490c0ba507eb2f248573c4c5631d21d90. Exact-head Pre-merge Security Gate run 31610259059 is in progress; independent reviewer should inspect it and merge only if all final gates pass."
+  "note": "Resume PR #66 after trusted exact-head CHANGES_REQUIRED. This lease is limited to the single reviewer blocker group RERUN_ARTIFACT_UPLOAD_CONFLICT / DOCUMENTED_FALLBACK_NOT_EXECUTABLE / CI_COVERAGE_GAP."
 }
