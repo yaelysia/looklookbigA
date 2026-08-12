@@ -1,4 +1,3 @@
-import copy
 import json
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
@@ -68,37 +67,6 @@ def install_fast_indices(base, quote_resilience):
         return out
 
     base.fetch_indices = fast_indices
-
-
-def cache_only_market_breadth(base, now, indices):
-    """Breadth never performs network I/O on the FAST critical path."""
-    previous, rel = performance_fast_path._load_previous_snapshot()
-    breadth = copy.deepcopy((((previous or {}).get("market_environment") or {}).get("breadth")) or {})
-    collected = performance_fast_path._parse_cst_timestamp(breadth.get("collected_at_cst"), base.CST)
-    age = max(0, int((now - collected).total_seconds())) if collected else None
-    current_session = performance_fast_path._current_index_session(indices)
-    same_session = bool(current_session and breadth.get("market_session_date") == current_session)
-
-    if breadth and age is not None and age <= performance_fast_path.FAST_BREADTH_CACHE_MAX_AGE_SECONDS and same_session:
-        breadth["source"] = f"Fast cache <- {breadth.get('source') or 'market breadth'}"
-        breadth["fast_path"] = {
-            "mode": performance_fast_path.MODE_FAST,
-            "source": "HISTORY_CACHE_ONLY",
-            "age_seconds": age,
-            "max_age_seconds": performance_fast_path.FAST_BREADTH_CACHE_MAX_AGE_SECONDS,
-            "source_snapshot": rel,
-            "network_refresh": "DEFERRED_OUTSIDE_CRITICAL_PATH",
-        }
-        return breadth
-
-    reason = "NO_CACHE"
-    if breadth and not same_session:
-        reason = "CACHE_SESSION_MISMATCH"
-    elif breadth and age is None:
-        reason = "CACHE_TIME_UNMEASURABLE"
-    elif breadth and age > performance_fast_path.FAST_BREADTH_CACHE_MAX_AGE_SECONDS:
-        reason = "CACHE_TOO_OLD"
-    raise RuntimeError(f"fast breadth cache unavailable: {reason}")
 
 
 def prefetch_company_events(config, company_events):
@@ -229,8 +197,8 @@ def finalize_performance(snapshot_path):
         "indices": "single Tencent Trust-B batch; dual-source consensus deferred to FULL",
         "daily_k": "reuse current-day validated cache; otherwise explicit unverified fast reuse",
         "market_breadth": (
-            "no network I/O; reuse same-session cache <= "
-            f"{performance_fast_path.FAST_BREADTH_CACHE_MAX_AGE_SECONDS}s or mark unavailable"
+            "one concurrency-owned bootstrap per verified session segment; "
+            "subsequent refreshes use the session-bound state cache"
         ),
         "company_events": (
             f"official CNINFO refresh in parallel with market collection; per-request budget "

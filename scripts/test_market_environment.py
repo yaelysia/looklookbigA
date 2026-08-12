@@ -418,12 +418,13 @@ def test_finalize_snapshot_updates_schema_and_feature():
     finally:
         market_environment.LAST_BREADTH = old_breadth
 
-    assert data["schema_version"] == 9
+    assert data["schema_version"] == 22
     assert data["features"]["market_environment"] == "v1"
+    assert data["features"]["breadth_bootstrap"] == "v1"
     assert data["market_environment"]["indices"]["covered_count"] == 6
     assert data["market_environment"]["breadth"]["overall"]["up_count"] == 2800
     assert data["market_environment"]["summary"]
-    print("PASS finalize_snapshot_schema9")
+    print("PASS finalize_snapshot_schema22")
 
 
 def main():

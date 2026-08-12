@@ -15,6 +15,9 @@ on:
       - "docs/CAPITAL_FLOW.md"
       - "docs/FUNDAMENTALS.md"
       - "docs/LOOKLOOKALPHA_PROVIDER.md"
+      - "docs/MARKET_CALENDAR.md"
+      - "docs/MARKET_HISTORY.md"
+      - "docs/RELATIVE_STRENGTH_WINDOWS.md"
       - "contracts/looklookalpha-provider-v1.json"
       - "requirements-event-facts.txt"
       - "vite.config.ts"
@@ -26,6 +29,7 @@ on:
       - ".github/workflows/v1-smoke.yml"
       - ".github/dependabot.yml"
       - "config/quote_watchlist.json"
+      - "config/a_share_trading_calendar.json"
       - "scripts/alpha_artifact_manifest.py"
       - "scripts/alpha_primary_artifact.py"
       - "scripts/alpha_capability_contract.py"
@@ -41,7 +45,12 @@ on:
       - "scripts/intraday_fast_tail.py"
       - "scripts/event_fact_continuity.py"
       - "scripts/history_continuity.py"
+      - "scripts/history_artifact.py"
       - "scripts/resolve_previous_realtime_run.py"
+      - "scripts/market_calendar.py"
+      - "scripts/minute_history.py"
+      - "scripts/relative_strength_windows.py"
+      - "scripts/breadth_bootstrap.py"
       - "scripts/intraday_metrics.py"
       - "scripts/daily_k_context.py"
       - "scripts/history_store.py"
@@ -97,6 +106,11 @@ on:
       - "scripts/test_fundamentals_review_hardening.py"
       - "scripts/test_event_fact_continuity.py"
       - "scripts/test_history_continuity.py"
+      - "scripts/test_history_artifact.py"
+      - "scripts/test_market_calendar.py"
+      - "scripts/test_minute_history.py"
+      - "scripts/test_relative_strength_windows.py"
+      - "scripts/test_breadth_bootstrap.py"
       - "scripts/test_changes_since_previous.py"
       - "scripts/test_changes_comparability.py"
       - "scripts/test_company_events.py"
@@ -162,6 +176,16 @@ jobs:
         run: python3 scripts/test_event_fact_continuity.py
       - name: Run history read-after-write continuity tests
         run: python3 scripts/test_history_continuity.py
+      - name: Run exact-attempt history artifact tests
+        run: python3 scripts/test_history_artifact.py
+      - name: Run authoritative A-share calendar tests
+        run: python3 scripts/test_market_calendar.py
+      - name: Run complete minute-history tests
+        run: python3 scripts/test_minute_history.py
+      - name: Run synchronized relative-strength window tests
+        run: python3 scripts/test_relative_strength_windows.py
+      - name: Run FAST breadth bootstrap state-machine tests
+        run: python3 scripts/test_breadth_bootstrap.py
       - name: Run changes-since-previous tests
         run: python3 scripts/test_changes_since_previous.py
       - name: Run changes comparability regression tests

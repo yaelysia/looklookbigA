@@ -1,4 +1,3 @@
-import copy
 import json
 import os
 import threading
@@ -13,8 +12,6 @@ MODE_AUTO = "AUTO"
 MODE_FAST = "INTRADAY_FAST"
 MODE_FULL = "FULL"
 FAST_NETWORK_TIMEOUT_SECONDS = 3
-FAST_BREADTH_TIMEOUT_SECONDS = 2
-FAST_BREADTH_CACHE_MAX_AGE_SECONDS = 600
 FAST_DECISION_TARGET_MS = 10_000
 FAST_DECISION_HARD_LIMIT_MS = 15_000
 
@@ -269,89 +266,6 @@ def install_fast_daily_metadata(data_metadata):
     data_metadata._fast_daily_metadata_installed = True
 
 
-def _history_root():
-    return Path(os.environ.get("MARKET_HISTORY_DIR", ".market-data/history"))
-
-
-def _load_previous_snapshot():
-    root = _history_root()
-    try:
-        manifest = json.loads((root / "manifest.json").read_text(encoding="utf-8"))
-        rel = manifest.get("latest_snapshot")
-        if not rel:
-            return None, None
-        candidate = (root / rel).resolve()
-        candidate.relative_to(root.resolve())
-        return json.loads(candidate.read_text(encoding="utf-8")), rel
-    except Exception:
-        return None, None
-
-
-def _parse_cst_timestamp(value, tz):
-    text = str(value or "").strip()
-    if not text:
-        return None
-    try:
-        dt = datetime.fromisoformat(text.replace("Z", "+00:00"))
-    except ValueError:
-        try:
-            dt = datetime.strptime(text[:19], "%Y-%m-%d %H:%M:%S")
-        except ValueError:
-            return None
-    if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=tz)
-    return dt.astimezone(tz)
-
-
-def _current_index_session(indices):
-    dates = []
-    for item in (indices or {}).values():
-        market_time = str(((item or {}).get("quote") or {}).get("market_time_cst") or "")
-        if len(market_time) >= 10:
-            dates.append(market_time[:10])
-    if not dates:
-        return None
-    return max(set(dates), key=lambda value: (dates.count(value), value))
-
-
-def fast_market_breadth(base, now, indices, market_breadth_source):
-    class FastBase:
-        @staticmethod
-        def http_get(url, timeout=6, attempts=1):
-            return base.http_get(url, timeout=min(float(timeout), FAST_BREADTH_TIMEOUT_SECONDS), attempts=1)
-
-    try:
-        value = market_breadth_source._full_result(FastBase(), now, indices)
-        value["fast_path"] = {
-            "mode": MODE_FAST,
-            "source": "LIVE_FULL_UNIVERSE",
-            "network_deadline_seconds": FAST_BREADTH_TIMEOUT_SECONDS,
-        }
-        return value
-    except Exception as live_exc:
-        previous, rel = _load_previous_snapshot()
-        breadth = copy.deepcopy((((previous or {}).get("market_environment") or {}).get("breadth")) or {})
-        collected = _parse_cst_timestamp(breadth.get("collected_at_cst"), base.CST)
-        age = max(0, int((now - collected).total_seconds())) if collected else None
-        current_session = _current_index_session(indices)
-        same_session = bool(current_session and breadth.get("market_session_date") == current_session)
-        if breadth and age is not None and age <= FAST_BREADTH_CACHE_MAX_AGE_SECONDS and same_session:
-            breadth["source"] = f"Fast cache <- {breadth.get('source') or 'market breadth'}"
-            breadth["fast_path"] = {
-                "mode": MODE_FAST,
-                "source": "HISTORY_CACHE",
-                "age_seconds": age,
-                "max_age_seconds": FAST_BREADTH_CACHE_MAX_AGE_SECONDS,
-                "source_snapshot": rel,
-                "live_refresh_error": f"{type(live_exc).__name__}: {live_exc}",
-            }
-            return breadth
-        raise RuntimeError(
-            "fast breadth unavailable within deadline and no same-session cache: "
-            f"{type(live_exc).__name__}: {live_exc}"
-        ) from live_exc
-
-
 def finalize_company_events_fast(snapshot_path, config, company_events):
     path = Path(snapshot_path)
     data = json.loads(path.read_text(encoding="utf-8"))
@@ -548,7 +462,7 @@ def finalize_performance(snapshot_path):
         "fast_path_contract": {
             "critical": ["realtime_quote", "minute_series", "peer_quotes", "indices"],
             "daily_k": "reuse current-day validated cache; otherwise explicit unverified fast reuse",
-            "market_breadth": f"live full-universe deadline {FAST_BREADTH_TIMEOUT_SECONDS}s, then same-session cache <= {FAST_BREADTH_CACHE_MAX_AGE_SECONDS}s",
+            "market_breadth": "one concurrency-owned bootstrap per verified session segment; then session-bound cache",
             "company_events": f"parallel official refresh with {FAST_NETWORK_TIMEOUT_SECONDS}s per-request deadline",
             "pdf_facts": "deferred in INTRADAY_FAST",
         } if mode == MODE_FAST else None,

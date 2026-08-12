@@ -4,6 +4,8 @@ import time
 import urllib.parse
 from pathlib import Path
 
+import market_calendar
+
 
 def _as_float(value):
     try:
@@ -107,16 +109,49 @@ def fetch_daily_bars(base, code, limit=90):
 
 
 def _split_completed_bars(now, bars):
-    today = now.strftime("%Y-%m-%d")
+    today = now.astimezone(market_calendar.CST).strftime("%Y-%m-%d")
+    expected = market_calendar.previous_completed_session(now)
+    expected_text = expected.isoformat() if expected else None
     current_partial = None
     completed = []
-    today_complete = (now.hour, now.minute) >= (15, 5)
+    unexpected = []
     for bar in bars:
-        if bar["date"] == today and not today_complete:
+        bar_date = str(bar["date"])
+        if expected_text is not None and bar_date <= expected_text:
+            completed.append(bar)
+            continue
+        if expected_text is None and bar_date < today:
+            completed.append(bar)
+            continue
+        if bar_date == today:
             current_partial = bar
             continue
-        completed.append(bar)
-    return completed, current_partial
+        unexpected.append(bar_date)
+
+    latest = completed[-1]["date"] if completed else None
+    if expected_text is None:
+        status = "UNVERIFIED_COMPLETED_BAR"
+        quality = "DEGRADED"
+        reason_codes = ["CALENDAR_UNVERIFIED"]
+    elif latest == expected_text:
+        status = "LATEST_COMPLETED_BAR"
+        quality = "PASS"
+        reason_codes = []
+    else:
+        status = "STALE_COMPLETED_BAR"
+        quality = "DEGRADED"
+        reason_codes = ["LATEST_BAR_DOES_NOT_MATCH_EXPECTED_COMPLETED_SESSION"]
+    if unexpected:
+        quality = "DEGRADED"
+        reason_codes.append("UNEXPECTED_BAR_AFTER_COMPLETED_SESSION")
+    return completed, current_partial, {
+        "status": status,
+        "quality": quality,
+        "expected_previous_completed_session": expected_text,
+        "latest_completed_date": latest,
+        "unexpected_bar_dates": unexpected,
+        "reason_codes": reason_codes,
+    }
 
 
 def _ma(bars, window):
@@ -309,10 +344,12 @@ def build_daily_context(base, now, code, detail_item):
         "history_count": 0,
         "completed_bar_count": 0,
         "latest_completed_date": None,
+        "completed_bar_validation": None,
+        "quality": "DEGRADED",
     }
     try:
         source, bars, source_errors = fetch_daily_bars(base, code, limit=90)
-        completed, current_partial = _split_completed_bars(now, bars)
+        completed, current_partial, completed_validation = _split_completed_bars(now, bars)
         completed = completed[-60:]
         if len(completed) < 20:
             raise RuntimeError(f"only {len(completed)} completed daily bars")
@@ -351,12 +388,19 @@ def build_daily_context(base, now, code, detail_item):
 
         result.update(
             {
-                "status": "OK" if len(completed) >= 60 else "PARTIAL",
+                "status": "OK"
+                if len(completed) >= 60 and completed_validation["quality"] == "PASS"
+                else "PARTIAL",
+                "quality": completed_validation["quality"],
                 "source": source,
                 "errors": source_errors,
                 "history_count": len(bars),
                 "completed_bar_count": len(completed),
                 "latest_completed_date": prev["date"],
+                "expected_previous_completed_session": completed_validation[
+                    "expected_previous_completed_session"
+                ],
+                "completed_bar_validation": completed_validation,
                 "current_partial_bar": current_partial,
                 "current_price": current_price,
                 "previous_day": prev,
@@ -399,6 +443,7 @@ def install(base):
             f"DAILY {code} status={context.get('status')} source={context.get('source')} "
             f"bars={context.get('completed_bar_count')} ma20={((context.get('moving_averages') or {}).get('ma20'))} "
             f"atr14={context.get('atr14')} alignment={context.get('ma_alignment')} "
+            f"completed_bar={((context.get('completed_bar_validation') or {}).get('status'))} "
             f"support1={support} resistance1={resistance}",
             flush=True,
         )
@@ -429,6 +474,12 @@ def finalize_snapshot(snapshot_path):
             levels = context.get("key_levels") or {}
             if levels.get("status") == "OK" and not (levels.get("supports") or levels.get("resistances")):
                 errors.append(f"{code}: no key levels")
+            validation = context.get("completed_bar_validation") or {}
+            if validation.get("status") == "LATEST_COMPLETED_BAR" and (
+                context.get("latest_completed_date")
+                != validation.get("expected_previous_completed_session")
+            ):
+                errors.append(f"{code}: contradictory latest completed bar claim")
 
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
     if errors:

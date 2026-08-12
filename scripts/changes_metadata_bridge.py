@@ -55,6 +55,7 @@ def install(data_metadata):
                 "groups",
                 "indices",
                 "market_environment",
+                "detail_stocks.*.relative_strength_windows",
                 "detail_stocks.*.events",
             ],
             "algorithm": "changes_since_previous_v1",

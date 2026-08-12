@@ -49,6 +49,11 @@ def test_pre_merge_gate_is_unconditional_for_protected_branches():
     assert "enable_history_cache: false" in text
     assert "Run event fact continuity tests" in text
     assert "Run history read-after-write continuity tests" in text
+    assert "Run exact-attempt history artifact tests" in text
+    assert "Run authoritative A-share calendar tests" in text
+    assert "Run complete minute-history tests" in text
+    assert "Run synchronized relative-strength window tests" in text
+    assert "Run FAST breadth bootstrap state-machine tests" in text
     print("PASS unconditional_pre_merge_security_gate")
 
 
@@ -117,8 +122,15 @@ def test_intraday_fast_workflow_contract():
     assert '"scripts/intraday_fast_tail.py"' in realtime
     assert '"scripts/event_fact_continuity.py"' in realtime
     assert '"scripts/history_continuity.py"' in realtime
+    assert '"scripts/history_artifact.py"' in realtime
+    assert '"scripts/market_calendar.py"' in realtime
+    assert '"scripts/minute_history.py"' in realtime
+    assert '"scripts/relative_strength_windows.py"' in realtime
+    assert '"scripts/breadth_bootstrap.py"' in realtime
     assert '"scripts/resolve_previous_realtime_run.py"' in realtime
     assert '"scripts/test_intraday_fast.py"' in realtime
+    assert '"scripts/test_relative_strength_windows.py"' in realtime
+    assert '"scripts/test_breadth_bootstrap.py"' in realtime
     assert "persist-history:" not in realtime
 
     assert "event_fact_continuity.install(company_events, company_event_facts)" in runner
@@ -128,14 +140,25 @@ def test_intraday_fast_workflow_contract():
     assert "default: AUTO" in reusable
     assert "LOOKLOOK_EXECUTION_MODE" in reusable
     assert "steps.execution-mode.outputs.mode == 'FULL'" in reusable
+    assert "group: looklookbiga-reusable-${{ github.repository_id }}-${{ inputs.cache_namespace }}" in reusable
+    assert "cancel-in-progress: false" in reusable
 
     assert "execution_mode: FULL" in premerge
     assert "Run intraday fast-path behavior tests" in premerge
     assert "Run event fact continuity tests" in premerge
     assert "Run history read-after-write continuity tests" in premerge
+    assert "Run exact-attempt history artifact tests" in premerge
+    assert "Run authoritative A-share calendar tests" in premerge
+    assert "Run complete minute-history tests" in premerge
+    assert "Run synchronized relative-strength window tests" in premerge
+    assert "Run FAST breadth bootstrap state-machine tests" in premerge
     assert "execution_mode: INTRADAY_FAST" in selftest
     assert '"scripts/intraday_fast_tail.py"' in selftest
+    assert '"scripts/relative_strength_windows.py"' in selftest
+    assert '"scripts/breadth_bootstrap.py"' in selftest
     assert "Run intraday fast-path behavior tests" in selftest
+    assert "Run synchronized relative-strength window tests" in selftest
+    assert "Run FAST breadth bootstrap state-machine tests" in selftest
     print("PASS intraday_fast_workflow_contract")
 
 
@@ -149,11 +172,12 @@ def test_realtime_history_read_after_write_barrier():
     assert "Resolve exact previous successful master run" in text
     assert "python3 scripts/resolve_previous_realtime_run.py" in text
     assert "Restore exact previous successful history artifact" in text
-    assert "run-id: ${{ steps.previous-realtime.outputs.run_id }}" in text
-    assert "path: .previous-realtime-history" in text
+    assert "python3 scripts/history_artifact.py" in text
+    assert "--current .market-data/history" in text
+    assert "--run-id '${{ steps.previous-realtime.outputs.run_id }}'" in text
+    assert "--run-attempt '${{ steps.previous-realtime.outputs.run_attempt }}'" in text
+    assert "--head-sha '${{ steps.previous-realtime.outputs.head_sha }}'" in text
     assert "continue-on-error: true" in text
-    assert "python3 scripts/history_continuity.py hydrate" in text
-    assert "--incoming .previous-realtime-history" in text
     assert "Verify fallback baseline is not behind previous success" in text
     assert "python3 scripts/history_continuity.py verify" in text
     assert "--expected-started-at" in text
@@ -169,15 +193,17 @@ def test_background_history_persistence_is_master_only_and_monotonic():
     assert "branches:" in text and "- master" in text
     assert "- completed" in text
     assert "github.event.workflow_run.conclusion == 'success'" in text
-    assert "run-id: ${{ github.event.workflow_run.id }}" in text
-    assert "github-token: ${{ github.token }}" in text
+    assert "python3 .engine/scripts/history_artifact.py" in text
+    assert "--run-id '${{ github.event.workflow_run.id }}'" in text
+    assert "--run-attempt '${{ github.event.workflow_run.run_attempt }}'" in text
+    assert "--head-sha '${{ github.event.workflow_run.head_sha }}'" in text
     assert "actions: read" in text
     assert "contents: write" in text
     assert "cancel-in-progress: false" in text
 
     # The incoming artifact is staged separately. It cannot overwrite history
     # before the exact triggering engine revision applies the monotonic guard.
-    assert "path: .incoming-history" in text
+    assert "--current .incoming-history" in text
     assert "path: history" not in text
     assert "ref: ${{ github.event.workflow_run.head_sha }}" in text
     assert "path: .engine" in text
@@ -185,6 +211,8 @@ def test_background_history_persistence_is_master_only_and_monotonic():
     assert "--current history" in text
     assert "--incoming .incoming-history" in text
     assert "--expected-run-id '${{ github.event.workflow_run.id }}'" in text
+    assert "--expected-run-attempt '${{ github.event.workflow_run.run_attempt }}'" in text
+    assert "--expected-head-sha '${{ github.event.workflow_run.head_sha }}'" in text
     print("PASS background_history_persistence_master_only_monotonic")
 
 

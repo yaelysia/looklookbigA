@@ -175,12 +175,16 @@ def _baseline_descriptor(previous, current, previous_path):
         flags.append("BASELINE_MISSING_MARKET_ENVIRONMENT")
     if schema < 10 or not isinstance(previous.get("data_quality"), dict):
         flags.append("BASELINE_PREDATES_DATA_PROVENANCE")
+    if not isinstance(previous.get("observation"), dict):
+        flags.append("BASELINE_PREDATES_OBSERVATION_IDENTITY")
     if interval is None or interval <= 0:
         flags.append("INVALID_BASELINE_INTERVAL")
     elif interval > THRESHOLDS["long_baseline_interval_seconds"]:
         flags.append("LONG_BASELINE_INTERVAL")
 
     quality = "OK" if not flags else "PARTIAL"
+    previous_observation = previous.get("observation") or {}
+    current_observation = current.get("observation") or {}
     return {
         "previous_snapshot_path": previous_path,
         "previous_snapshot_time": prev_time.isoformat(timespec="seconds") if prev_time else previous.get("runner_time_cst"),
@@ -189,6 +193,16 @@ def _baseline_descriptor(previous, current, previous_path):
         "previous_schema_version": schema,
         "previous_overall_data_quality": ((previous.get("data_quality") or {}).get("overall")),
         "current_overall_data_quality": ((current.get("data_quality") or {}).get("overall")),
+        "previous_observation": {
+            "run_id": previous_observation.get("run_id"),
+            "run_attempt": previous_observation.get("run_attempt"),
+            "head_sha": previous_observation.get("head_sha"),
+        },
+        "current_observation": {
+            "run_id": current_observation.get("run_id"),
+            "run_attempt": current_observation.get("run_attempt"),
+            "head_sha": current_observation.get("head_sha"),
+        },
         "quality": quality,
         "quality_flags": flags,
     }
@@ -197,6 +211,112 @@ def _baseline_descriptor(previous, current, previous_path):
 def _stock_relative(snapshot, code):
     target = (((snapshot.get("market_environment") or {}).get("targets") or {}).get(code) or {})
     return target.get("relative_strength") or {}, target.get("driver_attribution") or {}
+
+
+def _window_benchmarks(item):
+    context = (item or {}).get("relative_strength_windows") or {}
+    result = {}
+    for kind, container in (
+        ("GROUP", context.get("vs_groups") or {}),
+        ("INDEX", context.get("vs_indices") or {}),
+    ):
+        for benchmark_id, benchmark in container.items():
+            result[(kind, benchmark_id)] = benchmark or {}
+    return context, result
+
+
+def _relative_window_changes(before_item, after_item):
+    before_context, before_benchmarks = _window_benchmarks(before_item)
+    after_context, after_benchmarks = _window_benchmarks(after_item)
+    same_session = bool(
+        before_context.get("session_date")
+        and before_context.get("session_date") == after_context.get("session_date")
+    )
+    result = {"same_session": same_session, "vs_groups": {}, "vs_indices": {}}
+    for benchmark_key in sorted(set(before_benchmarks) | set(after_benchmarks)):
+        kind, benchmark_id = benchmark_key
+        before = before_benchmarks.get(benchmark_key) or {}
+        after = after_benchmarks.get(benchmark_key) or {}
+        windows = {}
+        for window_id in sorted(
+            set((before.get("windows") or {})) | set((after.get("windows") or {}))
+        ):
+            before_window = (before.get("windows") or {}).get(window_id) or {}
+            after_window = (after.get("windows") or {}).get(window_id) or {}
+            before_coverage = before_window.get("coverage") or {}
+            after_coverage = after_window.get("coverage") or {}
+            universe_comparable = True
+            quality_flags = []
+            if not same_session:
+                universe_comparable = False
+                quality_flags.append("RELATIVE_WINDOW_SESSION_CHANGED")
+            if kind == "GROUP":
+                requested_before = sorted(set(before_coverage.get("requested_peer_codes") or []))
+                requested_after = sorted(set(after_coverage.get("requested_peer_codes") or []))
+                covered_before = sorted(set(before_coverage.get("covered_peer_codes") or []))
+                covered_after = sorted(set(after_coverage.get("covered_peer_codes") or []))
+                if requested_before != requested_after:
+                    universe_comparable = False
+                    quality_flags.append("REQUESTED_PEER_UNIVERSE_CHANGED")
+                if covered_before != covered_after:
+                    universe_comparable = False
+                    quality_flags.append("COVERED_PEER_UNIVERSE_CHANGED")
+                if before_coverage.get("aggregation_method") != after_coverage.get(
+                    "aggregation_method"
+                ):
+                    universe_comparable = False
+                    quality_flags.append("PEER_AGGREGATION_METHOD_CHANGED")
+                coverage_change = _numeric_change(
+                    before_coverage.get("peer_coverage_percent"),
+                    after_coverage.get("peer_coverage_percent"),
+                )
+            else:
+                coverage_change = None
+                if before.get("tcode") != after.get("tcode") or before.get("name") != after.get("name"):
+                    universe_comparable = False
+                    quality_flags.append("INDEX_BENCHMARK_IDENTITY_CHANGED")
+
+            excess_change = _numeric_change(
+                before_window.get("excess_return_percent"),
+                after_window.get("excess_return_percent"),
+            )
+            excess_comparable = bool(excess_change.get("comparable"))
+            if not universe_comparable or not excess_comparable:
+                excess_change = {
+                    "before": excess_change.get("before"),
+                    "after": excess_change.get("after"),
+                    "delta": None,
+                    "delta_percent_of_before": None,
+                    "comparable": False,
+                }
+            state_change = _state_change(
+                before_window.get("state"), after_window.get("state")
+            )
+            if not universe_comparable or not excess_comparable:
+                state_change["changed"] = False
+                state_change["comparable"] = False
+            windows[window_id] = {
+                "window_before": {
+                    "start": before_window.get("window_start"),
+                    "end": before_window.get("window_end"),
+                },
+                "window_after": {
+                    "start": after_window.get("window_start"),
+                    "end": after_window.get("window_end"),
+                },
+                "excess_return_percent": excess_change,
+                "state": state_change,
+                "coverage_percent": coverage_change,
+                "benchmark_universe_comparable": universe_comparable,
+                "quality_flags": quality_flags,
+            }
+        target = result["vs_groups"] if kind == "GROUP" else result["vs_indices"]
+        target[benchmark_id] = {
+            "name": after.get("name") or before.get("name"),
+            "tcode": after.get("tcode") or before.get("tcode"),
+            "windows": windows,
+        }
+    return result
 
 
 def _stock_change(code, before_item, after_item, previous, current, interval_seconds):
@@ -282,6 +402,27 @@ def _stock_change(code, before_item, after_item, previous, current, interval_sec
     if relative["primary_driver"]["changed"]:
         _add_reason(reasons, "MODERATE", "DRIVER_ATTRIBUTION_CHANGED", relative["primary_driver"])
 
+    window_changes = _relative_window_changes(before_item, after_item)
+    for kind in ("vs_groups", "vs_indices"):
+        for benchmark_id, benchmark in window_changes[kind].items():
+            for window_id, window in (benchmark.get("windows") or {}).items():
+                delta = (window.get("excess_return_percent") or {}).get("delta")
+                severity = _severity_for(delta, "relative_strength_delta_abs")
+                _add_reason(
+                    reasons,
+                    severity,
+                    f"SYNCED_EXCESS_RETURN_CHANGED:{kind}:{benchmark_id}:{window_id}",
+                    delta,
+                )
+                state = window.get("state") or {}
+                if state.get("changed"):
+                    _add_reason(
+                        reasons,
+                        "MODERATE",
+                        f"SYNCED_RELATIVE_STATE_CHANGED:{kind}:{benchmark_id}:{window_id}",
+                        state,
+                    )
+
     significance = "NONE"
     for reason in reasons:
         significance = _max_severity(significance, reason["severity"])
@@ -315,6 +456,7 @@ def _stock_change(code, before_item, after_item, previous, current, interval_sec
             "states": intraday_states,
         },
         "relative_strength_change": relative,
+        "relative_strength_windows_change": window_changes,
         "strength_direction": strength_direction,
         "significance": significance,
         "significance_reasons": reasons,
@@ -627,6 +769,12 @@ def build_changes(previous, current, previous_path=None):
                 "previous_snapshot_time": None,
                 "current_snapshot_time": (_snapshot_time(current).isoformat(timespec="seconds") if _snapshot_time(current) else current.get("runner_time_cst")),
                 "interval_seconds": None,
+                "previous_observation": None,
+                "current_observation": {
+                    "run_id": ((current.get("observation") or {}).get("run_id")),
+                    "run_attempt": ((current.get("observation") or {}).get("run_attempt")),
+                    "head_sha": ((current.get("observation") or {}).get("head_sha")),
+                },
                 "quality": "MISSING",
                 "quality_flags": ["NO_VALID_PREVIOUS_SNAPSHOT"],
             },

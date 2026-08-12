@@ -1,5 +1,6 @@
 import json
 import os
+import tempfile
 from datetime import datetime
 from pathlib import Path
 
@@ -36,7 +37,13 @@ def _load_json(path):
 
 def _write_json(path, data):
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    payload = json.dumps(data, ensure_ascii=False, indent=2)
+    with tempfile.NamedTemporaryFile(
+        "w", encoding="utf-8", dir=path.parent, prefix=path.name + ".", delete=False
+    ) as handle:
+        handle.write(payload)
+        temporary = Path(handle.name)
+    os.replace(temporary, path)
 
 
 def _normalize_bars(bars):
@@ -232,6 +239,8 @@ def _compact_snapshot(data):
             "status": item.get("status"),
             "quote": item.get("quote"),
             "minutes": _compact_minutes(item.get("minutes")),
+            "minute_history": item.get("minute_history"),
+            "relative_strength_windows": item.get("relative_strength_windows"),
             "intraday": item.get("intraday"),
             "daily_context": _compact_daily_context(item.get("daily_context")),
             "events": item.get("events"),
@@ -244,6 +253,9 @@ def _compact_snapshot(data):
         "schema_version": data.get("schema_version"),
         "runner_time_cst": data.get("runner_time_cst"),
         "runner_time_utc": data.get("runner_time_utc"),
+        "observation": data.get("observation"),
+        "market_calendar": data.get("market_calendar"),
+        "minute_history": data.get("minute_history"),
         "market_window": data.get("market_window"),
         "features": data.get("features"),
         "detail_stocks": detail,
@@ -274,11 +286,20 @@ def _build_manifest(data, archive_rel):
     root = _history_root()
     daily_dir = root / "daily_k"
     codes = sorted(p.stem for p in daily_dir.glob("*.json")) if daily_dir.exists() else []
+    minute_dir = root / "minutes"
+    minute_sessions = sorted(
+        {
+            path.parent.name
+            for path in minute_dir.glob("*/*.json")
+            if path.is_file()
+        }
+    ) if minute_dir.exists() else []
     return {
         "schema_version": 2,
         "latest_snapshot": str(archive_rel).replace("\\", "/"),
         "latest_runner_time_cst": data.get("runner_time_cst"),
         "daily_k_codes": codes,
+        "minute_sessions": minute_sessions,
         "updated_at_cst": data.get("runner_time_cst"),
     }
 
@@ -331,7 +352,7 @@ def finalize_snapshot(snapshot_path):
         "daily_k_cache": dict(CACHE_META),
     }
 
-    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    _write_json(path, data)
     states = ",".join(f"{code}:{meta.get('state')}" for code, meta in sorted(CACHE_META.items()))
     requests = sum(int(meta.get("network_daily_k_requests") or 0) for meta in CACHE_META.values())
     print(
@@ -353,10 +374,16 @@ def archive_final_snapshot(snapshot_path):
     history = data.setdefault("history", {})
     history["archive_path"] = rel_text
     history["manifest"] = manifest
-    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    _write_json(path, data)
 
     # Commit order matters: a baseline pointer must never advance before the
     # archive it points to exists.
-    _write_json(_history_root() / rel, _compact_snapshot(data))
+    archive_path = _history_root() / rel
+    compact = _compact_snapshot(data)
+    existing = _load_json(archive_path) if archive_path.exists() else None
+    if existing is not None and existing != compact:
+        raise RuntimeError(f"immutable history archive already exists with different content: {rel_text}")
+    if existing is None:
+        _write_json(archive_path, compact)
     _write_json(_history_root() / "manifest.json", manifest)
     print(f"HISTORY_ARCHIVED archive={rel_text} schema={data.get('schema_version')}", flush=True)
