@@ -8,6 +8,7 @@ import ownership_capital_base as core
 
 DATA_CENTER_ENDPOINT = "https://datacenter-web.eastmoney.com/api/data/v1/get"
 TOP_HOLDER_HISTORY_PERIODS = 4
+CONCENTRATION_STABLE_BAND_PP = 0.1
 
 
 def _fetch_datacenter_rows(base, code, report_name, rank_column):
@@ -122,6 +123,39 @@ def _normalize_holder_history(rows, scope):
     return history
 
 
+def _concentration_trend(history):
+    if len(history) < 2:
+        return {
+            "state": "UNKNOWN",
+            "latest_report_date": history[0]["report_date"] if history else None,
+            "baseline_report_date": None,
+            "latest_percent": history[0].get("concentration_percent") if history else None,
+            "baseline_percent": None,
+            "change_pp": None,
+        }
+    latest, previous = history[:2]
+    current = core._as_float(latest.get("concentration_percent"))
+    baseline = core._as_float(previous.get("concentration_percent"))
+    change = current - baseline if current is not None and baseline is not None else None
+    if change is None:
+        state = "UNKNOWN"
+    elif change > CONCENTRATION_STABLE_BAND_PP:
+        state = "RISING"
+    elif change < -CONCENTRATION_STABLE_BAND_PP:
+        state = "FALLING"
+    else:
+        state = "STABLE"
+    return {
+        "state": state,
+        "latest_report_date": latest["report_date"],
+        "baseline_report_date": previous["report_date"],
+        "latest_percent": current,
+        "baseline_percent": baseline,
+        "change_pp": core._round(change, 4) if change is not None else None,
+        "stable_band_pp": CONCENTRATION_STABLE_BAND_PP,
+    }
+
+
 def _as_int(value):
     try:
         if value in (None, "", "-"):
@@ -184,6 +218,8 @@ def normalize_top_holders(
         "float_top10_concentration_percent": (
             float_latest.get("concentration_percent") if float_latest else None
         ),
+        "concentration_trend": _concentration_trend(total_history),
+        "float_concentration_trend": _concentration_trend(float_history),
         "metadata": {
             "freshness": "REPORT_PERIOD_HISTORY",
             "realtime": False,
@@ -192,6 +228,7 @@ def normalize_top_holders(
             "history_period_limit": TOP_HOLDER_HISTORY_PERIODS,
             "date_semantics": "END_DATE_REPORT_PERIOD; DISCLOSED_DATA_MAY_LAG_MARKET_TIME",
             "holder_type_policy": "PROVIDER_DECLARED_ONLY; NO_NAME_BASED_CLASSIFICATION",
+            "trend_policy": "latest versus immediately previous disclosed top-holder concentration; +/-0.1pp stable band",
         },
         "provenance": {
             "provider": "Eastmoney",
@@ -231,6 +268,8 @@ def _deferred_top_holders(fetched_at):
         "top_float_shareholders": {"status": "DEFERRED", "latest": None, "history": []},
         "top10_concentration_percent": None,
         "float_top10_concentration_percent": None,
+        "concentration_trend": _concentration_trend([]),
+        "float_concentration_trend": _concentration_trend([]),
         "metadata": {
             "freshness": "NOT_FETCHED_IN_INTRADAY_FAST",
             "realtime": False,

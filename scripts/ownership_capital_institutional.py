@@ -9,6 +9,7 @@ import ownership_capital_base as core
 INSTITUTIONAL_DETAIL_ENDPOINT = "https://data.eastmoney.com/dataapi/zlsj/detail"
 INSTITUTIONAL_HISTORY_PERIODS = 4
 INSTITUTIONAL_PAGE_SIZE = 500
+INSTITUTIONAL_STABLE_BAND_PP = 0.1
 
 
 def _first(row, *names):
@@ -291,6 +292,29 @@ def _attach_period_changes(history):
         }
 
 
+def _institutional_trend(history):
+    latest = next((item for item in history if item.get("status") != "UNAVAILABLE"), None)
+    change = (latest or {}).get("change_from_previous") or {}
+    ratio_change = core._as_float(change.get("hold_ratio_change_pp"))
+    if ratio_change is None:
+        state = "UNKNOWN"
+    elif ratio_change > INSTITUTIONAL_STABLE_BAND_PP:
+        state = "RISING"
+    elif ratio_change < -INSTITUTIONAL_STABLE_BAND_PP:
+        state = "FALLING"
+    else:
+        state = "STABLE"
+    return {
+        "state": state,
+        "latest_report_date": (latest or {}).get("report_date"),
+        "baseline_report_date": change.get("previous_report_date"),
+        "hold_ratio_change_pp": ratio_change,
+        "institution_count_delta": change.get("institution_count_delta"),
+        "fund_hold_ratio_change_pp": change.get("fund_hold_ratio_change_pp"),
+        "stable_band_pp": INSTITUTIONAL_STABLE_BAND_PP,
+    }
+
+
 def normalize_institutional_holdings(raw_periods, provider_code, fetched_at):
     history = [_normalize_period(item) for item in raw_periods]
     history = sorted(
@@ -323,6 +347,7 @@ def normalize_institutional_holdings(raw_periods, provider_code, fetched_at):
         "as_of_date": latest.get("report_date") if latest else None,
         "latest": latest,
         "history": history,
+        "trend": _institutional_trend(history),
         "metadata": {
             "freshness": "REPORT_PERIOD_HISTORY",
             "realtime": False,
@@ -338,6 +363,7 @@ def normalize_institutional_holdings(raw_periods, provider_code, fetched_at):
             "fund_disclosure_caveat": (
                 "Q1/Q3 fund holdings may be incomplete; H1/FY disclosures are more complete"
             ),
+            "trend_policy": "latest aggregate total-share ratio versus immediately previous disclosed period; +/-0.1pp stable band",
         },
         "provenance": {
             "provider": "Eastmoney",
@@ -387,6 +413,7 @@ def _deferred_institutional(fetched_at):
         "as_of_date": None,
         "latest": None,
         "history": [],
+        "trend": _institutional_trend([]),
         "metadata": {
             "freshness": "NOT_FETCHED_IN_INTRADAY_FAST",
             "realtime": False,

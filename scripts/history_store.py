@@ -245,6 +245,8 @@ def _compact_snapshot(data):
             "daily_context": _compact_daily_context(item.get("daily_context")),
             "events": item.get("events"),
             "event_context": item.get("event_context"),
+            "upcoming_events": item.get("upcoming_events"),
+            "ownership_and_capital": item.get("ownership_and_capital"),
             "metadata": item.get("metadata"),
             "provenance": item.get("provenance"),
             "errors": item.get("errors"),

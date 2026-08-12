@@ -286,7 +286,7 @@ def test_full_finalize_attaches_top_holder_and_institutional_history_without_cha
         )
         ownership.finalize_snapshot(path, Base, "FULL")
         snapshot = json.loads(path.read_text(encoding="utf-8"))
-        assert len(Base.calls) == 6
+        assert len(Base.calls) == 7
         context = snapshot["detail_stocks"]["002558"]["ownership_and_capital"]
         assert context["share_structure"]["as_of_date"] == "2026-08-01"
         assert context["controllers"]["actual_controller"]["holders"][0]["name"] == "史玉柱"
@@ -298,12 +298,11 @@ def test_full_finalize_attaches_top_holder_and_institutional_history_without_cha
         assert context["status"] == "PARTIAL"
         assert snapshot["schema_version"] == 17
         assert snapshot["features"]["ownership_and_capital"] == "v1"
-        assert snapshot["ownership_and_capital_summary"]["implemented_sections"] == [
-            "share_structure",
-            "controllers",
-            "top_holders",
-            "institutional_holdings",
-        ]
+        assert set(snapshot["ownership_and_capital_summary"]["implemented_sections"]) == {
+            "share_structure", "controllers", "top_holders", "institutional_holdings",
+            "shareholder_count", "buyback_and_holder_plans", "unlocks",
+            "pledges_and_capital_tools", "valuation_share_semantics", "structural_signals",
+        }
 
 
 def test_intraday_fast_remains_network_free_with_institutional_holdings_deferred():

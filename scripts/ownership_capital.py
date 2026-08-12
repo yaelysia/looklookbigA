@@ -4,6 +4,7 @@ import ownership_capital_top_holders as _top_holders
 import ownership_capital_institutional as _institutional
 import ownership_capital_shareholder_count as _shareholder_count
 import ownership_capital_event_state as _event_state
+import ownership_capital_analysis as _analysis
 
 
 fetch_top_holders = _top_holders.fetch_top_holders
@@ -30,3 +31,4 @@ def finalize_snapshot(snapshot_path, base, execution_mode):
     _institutional.extend_snapshot(snapshot_path, base, execution_mode)
     _shareholder_count.extend_snapshot(snapshot_path, base, execution_mode)
     _event_state.extend_snapshot(snapshot_path, base, execution_mode)
+    _analysis.extend_snapshot(snapshot_path, base, execution_mode)

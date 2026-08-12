@@ -388,6 +388,15 @@ def _decorate_detail(snapshot, fetched_at):
             )
             relative_windows["metadata"] = relative_windows_meta
 
+        ownership = item.get("ownership_and_capital")
+        ownership_meta = (
+            ownership.get("metadata") if isinstance(ownership, dict) else None
+        )
+        upcoming_events = item.get("upcoming_events")
+        upcoming_meta = (
+            upcoming_events.get("metadata") if isinstance(upcoming_events, dict) else None
+        )
+
         component_qualities = [quote_meta["quality"], minute_meta["quality"]]
         if intraday_meta:
             component_qualities.append(intraday_meta["quality"])
@@ -395,6 +404,10 @@ def _decorate_detail(snapshot, fetched_at):
             component_qualities.append(daily_meta["quality"])
         if relative_windows_meta:
             component_qualities.append(relative_windows_meta["quality"])
+        if _is_metadata_contract(ownership_meta):
+            component_qualities.append(ownership_meta["quality"])
+        if _is_metadata_contract(upcoming_meta):
+            component_qualities.append(upcoming_meta["quality"])
         detail_quality = _composite_quality(component_qualities)
         detail_flags = []
         legacy_quality = _quality_from_status(item.get("status"))
@@ -415,6 +428,8 @@ def _decorate_detail(snapshot, fetched_at):
                 f"detail_stocks.{code}.intraday",
                 f"detail_stocks.{code}.daily_context",
                 f"detail_stocks.{code}.relative_strength_windows",
+                f"detail_stocks.{code}.ownership_and_capital",
+                f"detail_stocks.{code}.upcoming_events",
             ],
         }
 
