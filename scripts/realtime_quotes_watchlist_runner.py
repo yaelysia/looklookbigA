@@ -118,13 +118,15 @@ if __name__ == "__main__":
         performance_fast_path.timed_call(
             "market_calendar", market_calendar.finalize_snapshot, base.SNAPSHOT_PATH
         )
-        performance_fast_path.timed_call("intraday_metrics", intraday_metrics.finalize_snapshot, base.SNAPSHOT_PATH)
         performance_fast_path.timed_call("daily_k_context", daily_k_context.finalize_snapshot, base.SNAPSHOT_PATH)
         performance_fast_path.timed_call(
             "observation_identity", history_continuity.finalize_snapshot, base.SNAPSHOT_PATH
         )
         performance_fast_path.timed_call(
             "minute_history", minute_history.finalize_snapshot, base.SNAPSHOT_PATH
+        )
+        performance_fast_path.timed_call(
+            "intraday_metrics", intraday_metrics.finalize_snapshot, base.SNAPSHOT_PATH
         )
         performance_fast_path.timed_call(
             "relative_strength_windows",

@@ -60,6 +60,10 @@ history/minutes/<YYYY-MM-DD>/<code>.json
 
 因此 locator 可以安全指向后续只增不减的同一日规范记录，而不依赖模糊的“latest”文件。
 
+旧 `minutes` 摘要与 `intraday` 趋势、结构、成交强度统一由该 locator 指向的规范分钟点生成；provider
+在日历收盘时间之后返回的额外行仅以摘要保留在 `minutes.provider_observation`，异常时间保留在规范记录中，
+不得进入最终指标。缺少规范记录时 `intraday` fail closed，不回退到 provider 原始行。
+
 ## FAST breadth 引导状态
 
 会话宽度状态位于：

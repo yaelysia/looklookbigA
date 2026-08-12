@@ -6,6 +6,7 @@ from pathlib import Path
 from types import SimpleNamespace
 
 import history_continuity
+import intraday_metrics
 import market_calendar
 import minute_history
 
@@ -188,12 +189,143 @@ def test_snapshot_locator_reader_and_late_writer_union():
                 os.environ["MARKET_HISTORY_DIR"] = old_root
 
 
+def test_intraday_and_legacy_minutes_use_calendar_trimmed_canonical_points():
+    labels = _expected("2026-08-10 15:06:00")
+    canonical_points = _points(labels)
+    last = canonical_points[-1]
+    extras = [
+        {
+            "time": f"15{minute:02d}",
+            "price": last["price"],
+            "cum_volume": last["cum_volume"],
+            "cum_amount": last["cum_amount"],
+            "delta_volume": 0.0,
+            "delta_amount": 0.0,
+        }
+        for minute in range(1, 31)
+    ]
+    provider_points = canonical_points + extras
+    quote = {"latest": last["price"], "average": 10.0, "high": 11.0, "low": 9.0}
+    expected_intraday = intraday_metrics.build_intraday_metrics(quote, canonical_points)
+    raw_intraday = intraday_metrics.build_intraday_metrics(quote, provider_points)
+    assert raw_intraday["minute_count"] == 272
+    assert raw_intraday["minute_last_time"] == "1530"
+    assert raw_intraday["trend_15m_percent"] == 0.0
+    assert raw_intraday["volume_spike_ratio_1m"] is None
+    assert expected_intraday["volume_spike_ratio_1m"] == 1.0
+
+    with tempfile.TemporaryDirectory() as tmp:
+        base = Path(tmp)
+        history_root = base / "history"
+        old_root = os.environ.get("MARKET_HISTORY_DIR")
+        os.environ["MARKET_HISTORY_DIR"] = str(history_root)
+        fake = SimpleNamespace()
+        fake.infer_identifiers = lambda code: ("SZ", "0." + code, "sz" + code)
+        fake.parse_minutes = lambda rows: list(rows)
+        fake.tencent_minutes = lambda tcode: ("20260810", provider_points)
+        minute_history.CAPTURES.clear()
+        minute_history.install(fake)
+        fake.tencent_minutes("sz002558")
+
+        snapshot = _snapshot("2026-08-10 15:06:00")
+        item = snapshot["detail_stocks"]["002558"]
+        item["quote"] = quote
+        item["minutes"] = {
+            "source": "Tencent",
+            "date": "20260810",
+            "freshness": "CURRENT_SESSION",
+            "count": len(provider_points),
+            "last_time": "1530",
+            "last_price": last["price"],
+            "market_time_cst": "2026-08-10 15:30:00",
+            "lag_seconds": 0,
+            "first_10": provider_points[:10],
+            "last_15": provider_points[-15:],
+        }
+        raw_intraday["current_price_valid"] = True
+        raw_intraday["current_price_source_class"] = "SESSION_QUOTE"
+        raw_intraday["current_price_provider"] = "Eastmoney"
+        raw_intraday["current_price_guard"] = {
+            "status": "OK",
+            "minute_freshness": "CURRENT_SESSION",
+            "minute_lag_seconds": 0,
+            "hard_violations": [],
+        }
+        item["intraday"] = raw_intraday
+        snapshot_path = base / "snapshot.json"
+        snapshot_path.write_text(json.dumps(snapshot), encoding="utf-8")
+
+        try:
+            minute_history.finalize_snapshot(snapshot_path)
+            intraday_metrics.finalize_snapshot(snapshot_path)
+            result = json.loads(snapshot_path.read_text(encoding="utf-8"))
+            item = result["detail_stocks"]["002558"]
+            minutes = item["minutes"]
+            intraday = item["intraday"]
+
+            assert result["schema_version"] == 20
+            assert result["features"]["intraday_structure_metrics"] == "v2"
+            assert minutes["count"] == 242
+            assert minutes["last_time"] == "1500"
+            assert minutes["market_time_cst"] == "2026-08-10 15:00:00"
+            assert minutes["lag_seconds"] == 360
+            assert minutes["provider_observation"]["count"] == 272
+            assert minutes["provider_observation"]["last_time"] == "1530"
+            assert minutes["normalization"]["authority"] == "minute_history"
+            assert minutes["normalization"]["unexpected_provider_times"][-1] == "1530"
+
+            assert intraday["minute_count"] == 242
+            assert intraday["minute_last_time"] == "1500"
+            for field in (
+                "trend_5m_percent",
+                "trend_15m_percent",
+                "trend_30m_percent",
+                "reference_time",
+                "volume_spike_ratio_1m",
+                "amount_spike_ratio_1m",
+                "volume_strength_ratio_5m",
+                "amount_strength_ratio_5m",
+                "structure",
+                "bias",
+                "last_swing_highs",
+                "last_swing_lows",
+            ):
+                assert intraday[field] == expected_intraday[field]
+            assert intraday["canonical_minute_history"]["status"] == "REPLAY_READY"
+            assert intraday["current_price_guard"]["minute_lag_seconds"] == 360
+        finally:
+            minute_history.CAPTURES.clear()
+            if old_root is None:
+                os.environ.pop("MARKET_HISTORY_DIR", None)
+            else:
+                os.environ["MARKET_HISTORY_DIR"] = old_root
+
+
+def test_intraday_does_not_fallback_to_raw_minutes_without_canonical_history():
+    with tempfile.TemporaryDirectory() as tmp:
+        snapshot = _snapshot("2026-08-10 15:06:00")
+        item = snapshot["detail_stocks"]["002558"]
+        item["minutes"] = {"count": 267, "last_time": "1530"}
+        item["intraday"] = {"minute_count": 267, "minute_last_time": "1530"}
+        snapshot_path = Path(tmp) / "snapshot.json"
+        snapshot_path.write_text(json.dumps(snapshot), encoding="utf-8")
+
+        try:
+            intraday_metrics.finalize_snapshot(snapshot_path)
+        except RuntimeError as exc:
+            assert "canonical minute history is unavailable" in str(exc)
+        else:
+            raise AssertionError("raw provider minutes must not be used as fallback")
+
+
 def main():
     tests = [
         test_complete_closed_session_is_replay_eligible,
         test_in_progress_forming_minute_is_excluded_until_final,
         test_merge_completes_gaps_but_conflicts_disqualify_replay,
         test_snapshot_locator_reader_and_late_writer_union,
+        test_intraday_and_legacy_minutes_use_calendar_trimmed_canonical_points,
+        test_intraday_does_not_fallback_to_raw_minutes_without_canonical_history,
     ]
     for test in tests:
         test()

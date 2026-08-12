@@ -340,9 +340,9 @@ def _decorate_detail(snapshot, fetched_at):
                 "type": "DERIVED",
                 "derived_from": [
                     f"detail_stocks.{code}.quote",
-                    f"detail_stocks.{code}.minutes",
+                    f"detail_stocks.{code}.minute_history",
                 ],
-                "algorithm": "intraday_structure_metrics_v1",
+                "algorithm": "intraday_structure_metrics_v2",
             }
 
         daily = item.get("daily_context")
