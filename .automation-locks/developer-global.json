@@ -1,13 +1,13 @@
 {
   "kind": "looklookbigA-auto-worker-lease",
-  "state": "ACTIVE",
-  "token": "auto-20260812T150200Z-53-ready-cleanup-a41f9c6e",
+  "state": "IDLE",
+  "token": null,
   "work_item": "issue-53/final-validation-ready",
   "acquired_at": "2026-08-12T15:02:00+00:00",
   "lease_until": "2026-08-12T15:52:00+00:00",
-  "released_at": null,
-  "last_token": "auto-20260812T140248Z-53-agent-docs-7c2f91a4",
-  "last_checkpoint": "ISSUE_53_AGENT_REFRESH_DOCS_SUBMITTED",
-  "last_head_sha": "d8a6e0ecca1fb574d62561c2eb7ece9c2728d1a0",
-  "note": "Exact-head CI and reusable smoke are green. This lease is limited to final diff/acceptance validation, issue-lock cleanup, PR state persistence, and Ready-for-Review transition for PR #66."
+  "released_at": "2026-08-12T15:06:20+00:00",
+  "last_token": "auto-20260812T150200Z-53-ready-cleanup-a41f9c6e",
+  "last_checkpoint": "ISSUE_53_READY_FOR_REVIEW",
+  "last_head_sha": "07f06bf490c0ba507eb2f248573c4c5631d21d90",
+  "note": "Issue #53 acceptance criteria were revalidated. Removed the issue lock; final PR diff is README.md only; PR #66 is Ready for Review at exact head 07f06bf490c0ba507eb2f248573c4c5631d21d90. Exact-head Pre-merge Security Gate run 31610259059 is in progress; independent reviewer should inspect it and merge only if all final gates pass."
 }
