@@ -1,13 +1,13 @@
 {
   "kind": "looklookbigA-auto-worker-lease",
-  "state": "ACTIVE",
-  "token": "auto-20260812T190212Z-48-upcoming-events-8c4e91d2",
-  "work_item": "issue-48/upcoming-events-bootstrap",
+  "state": "IDLE",
+  "token": null,
+  "work_item": "issue-48/upcoming-events-core",
   "acquired_at": "2026-08-12T19:02:12+00:00",
   "lease_until": "2026-08-12T19:52:12+00:00",
-  "released_at": null,
-  "last_token": "auto-20260812T175945Z-53-ready-7f3a8c21",
-  "last_checkpoint": "RERUN_RUNTIME_VALIDATED_READY",
-  "last_head_sha": "e69b704399d6938318174cfffdce8f44e363bcdc",
-  "note": "PR #66 is merged into master. Close completed Issue #53 if still open, then start the next trusted dependency-aligned work item: Issue #48 upcoming events from current master, limited to one bootstrap/module checkpoint."
+  "released_at": "2026-08-12T19:14:37+00:00",
+  "last_token": "auto-20260812T190212Z-48-upcoming-events-8c4e91d2",
+  "last_checkpoint": "ISSUE_48_CORE_WINDOWS_SUBMITTED",
+  "last_head_sha": "1164f21ee59e60d0eb3a0780ddb80a234feda93d",
+  "note": "Started Issue #48 / Draft PR #67 from current master and submitted the first upcoming-events core slice: explicit unlock and ownership-plan dates only, fail-closed generic dates, exact source-event dedupe, non-overlapping 7/30/90/later buckets, snapshot integration, and focused tests (4/4 locally). Exact-head Pre-merge Security Gate run 31631612095 is queued; next run must inspect CI before extending event coverage."
 }
