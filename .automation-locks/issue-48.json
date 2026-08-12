@@ -8,8 +8,8 @@
   "branch": "auto/issue-48",
   "base_branch": "master",
   "base_sha_at_lock": "ce9a968f0a95e1a3ba62be6cee5965d993aca79b",
-  "locked_at": "2026-08-12T19:04:30+00:00",
+  "locked_at": "2026-08-13T03:02:12+08:00",
   "state": "WAITING",
-  "checkpoint": "ISSUE_48_CORE_WINDOWS_SUBMITTED",
-  "next_action": "Inspect exact-head CI for upcoming_events core slice. If green, next checkpoint may implement additional confirmed high-value event date semantics plus semantic cross-source dedupe/trading-day proximity; keep fundamentals calendar, changes integration, docs/schema, and final gate wiring pending."
+  "checkpoint": "ISSUE_48_EVENT_CALENDAR_CONTEXT_SUBMITTED",
+  "next_action": "Inspect exact-head CI/live reusable smoke for the confirmed-title event calendar context. If green, next budget-driven checkpoint may add reliable fundamentals/report-calendar dates or changes_since_previous integration, but keep docs/schema finalization, required-gate wiring, and Ready cleanup pending."
 }

@@ -48,6 +48,7 @@ import realtime_quotes_watchlist as base
 import relative_strength_windows
 import transport_security
 import upcoming_events
+import upcoming_events_calendar
 
 
 fundamentals_policy_bridge.install(data_policy)
@@ -184,6 +185,9 @@ if __name__ == "__main__":
         )
         performance_fast_path.timed_call(
             "upcoming_events", upcoming_events.finalize_snapshot, base.SNAPSHOT_PATH
+        )
+        performance_fast_path.timed_call(
+            "upcoming_events_calendar", upcoming_events_calendar.finalize_snapshot, base.SNAPSHOT_PATH
         )
         performance_fast_path.timed_call(
             "changes_since_previous", changes_since_previous.finalize_snapshot, base.SNAPSHOT_PATH
