@@ -7,7 +7,7 @@
   "source": "Tencent 1-minute cumulative series",
   "calendar_expectation": {
     "calendar_version": "sse-cn-a-2024-2026@2025-12-22",
-    "evaluated_at_cst": "2026-08-12T18:09:08+08:00",
+    "evaluated_at_cst": "2026-08-12T21:34:09+08:00",
     "status": "COMPLETE_SESSION",
     "verification_status": "VERIFIED",
     "forming_minute": null,
@@ -2212,6 +2212,15 @@
       "head_sha": "9f772a5408e2d47c1837c65d0c52d01512f4738c",
       "source": "GITHUB_ACTIONS",
       "captured_point_count": 242
+    },
+    {
+      "runner_time_cst": "2026-08-12 21:34:09.595",
+      "runner_time_utc": "2026-08-12T13:34:09.595417+00:00",
+      "run_id": 31602055187,
+      "run_attempt": 1,
+      "head_sha": "8c6f2c24d89689dec36a608b01affc8271202590",
+      "source": "GITHUB_ACTIONS",
+      "captured_point_count": 242
     }
   ],
   "source_anomalies": {
@@ -2246,7 +2255,7 @@
     "invalid_row_count": 0
   },
   "conflicts": [],
-  "updated_at_cst": "2026-08-12 18:09:08.922",
+  "updated_at_cst": "2026-08-12 21:34:09.595",
   "coverage": {
     "status": "COMPLETE",
     "observed_count": 242,
