@@ -1,13 +1,13 @@
 {
   "kind": "looklookbigA-auto-worker-lease",
-  "state": "IDLE",
-  "token": null,
-  "work_item": "issue-53/agent-refresh-docs",
-  "acquired_at": "2026-08-12T14:02:48+00:00",
-  "lease_until": "2026-08-12T14:52:48+00:00",
-  "released_at": "2026-08-12T14:16:10+00:00",
+  "state": "ACTIVE",
+  "token": "auto-20260812T150200Z-53-ready-cleanup-a41f9c6e",
+  "work_item": "issue-53/final-validation-ready",
+  "acquired_at": "2026-08-12T15:02:00+00:00",
+  "lease_until": "2026-08-12T15:52:00+00:00",
+  "released_at": null,
   "last_token": "auto-20260812T140248Z-53-agent-docs-7c2f91a4",
   "last_checkpoint": "ISSUE_53_AGENT_REFRESH_DOCS_SUBMITTED",
   "last_head_sha": "d8a6e0ecca1fb574d62561c2eb7ece9c2728d1a0",
-  "note": "Created Draft PR #66 for trusted Issue #53 from current master and submitted the README Agent realtime-refresh contract. The docs cover dispatch-preferred behavior, exact-current-master fetch-quotes rerun fallback, run/attempt/artifact identity, rerun-vs-dispatch limitations, identity-bound run caution, and live-price freshness/guard fail-closed rules. Exact-head Pre-merge Security Gate run 31605723001 is in progress; next run should inspect it and, if green, only remove the issue lock and mark Ready."
+  "note": "Exact-head CI and reusable smoke are green. This lease is limited to final diff/acceptance validation, issue-lock cleanup, PR state persistence, and Ready-for-Review transition for PR #66."
 }
