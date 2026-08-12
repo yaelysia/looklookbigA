@@ -10,6 +10,6 @@
   "base_sha_at_lock": "ce9a968f0a95e1a3ba62be6cee5965d993aca79b",
   "locked_at": "2026-08-13T03:02:12+08:00",
   "state": "WAITING",
-  "checkpoint": "ISSUE_48_CHANGES_INTEGRATION_SUBMITTED",
-  "next_action": "Inspect exact-head CI/live reusable smoke for upcoming_events changes_since_previous integration. If green, next checkpoint may complete docs/schema and required-gate wiring or another proven event-date source, then prepare Ready cleanup; do not expand into unverified calendar guesses."
+  "checkpoint": "ISSUE_48_QUALITY_GATE_SUBMITTED",
+  "next_action": "Inspect exact-head CI/live reusable smoke for the upcoming-events quality-contract and required-gate checkpoint. If green, complete README/UPCOMING_EVENTS snapshot-schema documentation and final acceptance review, then remove .automation-locks/** before Ready. Workflow changes in this checkpoint require MANUAL_GATE_REQUIRED at final merge."
 }
