@@ -4,9 +4,27 @@
   "source": "Eastmoney",
   "source_tier": "PRIMARY_PROVIDER",
   "data_semantics": "Exchange-published margin data redistributed by a market-data provider",
-  "fetched_at": "2026-08-10T18:05:02+08:00",
-  "source_url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPTA_WEB_RZRQ_GGMX&columns=ALL&filter=%28SCODE%3D%22600795%22%29&sortColumns=DATE&sortTypes=-1&pageNumber=1&pageSize=24&source=WEB&client=WEB&_=1786356322127",
+  "fetched_at": "2026-08-12T16:24:44+08:00",
+  "source_url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPTA_WEB_RZRQ_GGMX&columns=ALL&filter=%28SCODE%3D%22600795%22%29&sortColumns=DATE&sortTypes=-1&pageNumber=1&pageSize=24&source=WEB&client=WEB&_=1786523100298",
   "records": [
+    {
+      "trade_date": "2026-08-11",
+      "financing_balance": 710287235.0,
+      "financing_buy_amount": 52505957.0,
+      "financing_repay_amount": 51548678.0,
+      "financing_net_buy_amount": 957279.0,
+      "securities_lending_balance": 47264954.0,
+      "margin_balance": 757552189.0
+    },
+    {
+      "trade_date": "2026-08-10",
+      "financing_balance": 709329956.0,
+      "financing_buy_amount": 43067915.0,
+      "financing_repay_amount": 44924728.0,
+      "financing_net_buy_amount": -1856813.0,
+      "securities_lending_balance": 45190040.0,
+      "margin_balance": 754519996.0
+    },
     {
       "trade_date": "2026-08-07",
       "financing_balance": 711186771.0,
@@ -204,24 +222,6 @@
       "financing_net_buy_amount": 43423595.0,
       "securities_lending_balance": 11969738.0,
       "margin_balance": 904204565.0
-    },
-    {
-      "trade_date": "2026-07-08",
-      "financing_balance": 848811232.0,
-      "financing_buy_amount": 27006621.0,
-      "financing_repay_amount": 68079425.0,
-      "financing_net_buy_amount": -41072804.0,
-      "securities_lending_balance": 11945502.0,
-      "margin_balance": 860756734.0
-    },
-    {
-      "trade_date": "2026-07-07",
-      "financing_balance": 889884035.0,
-      "financing_buy_amount": 33153593.0,
-      "financing_repay_amount": 37865535.0,
-      "financing_net_buy_amount": -4711942.0,
-      "securities_lending_balance": 11319606.0,
-      "margin_balance": 901203641.0
     }
   ]
 }

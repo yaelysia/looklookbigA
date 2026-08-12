@@ -1,0 +1,2265 @@
+{
+  "schema_version": 1,
+  "record_id": "CN_A:2026-08-12:002558",
+  "market": "CN_A",
+  "code": "002558",
+  "session_date": "2026-08-12",
+  "source": "Tencent 1-minute cumulative series",
+  "calendar_expectation": {
+    "calendar_version": "sse-cn-a-2024-2026@2025-12-22",
+    "evaluated_at_cst": "2026-08-12T16:24:44+08:00",
+    "status": "COMPLETE_SESSION",
+    "verification_status": "VERIFIED",
+    "forming_minute": null,
+    "expected_times": [
+      "0930",
+      "0931",
+      "0932",
+      "0933",
+      "0934",
+      "0935",
+      "0936",
+      "0937",
+      "0938",
+      "0939",
+      "0940",
+      "0941",
+      "0942",
+      "0943",
+      "0944",
+      "0945",
+      "0946",
+      "0947",
+      "0948",
+      "0949",
+      "0950",
+      "0951",
+      "0952",
+      "0953",
+      "0954",
+      "0955",
+      "0956",
+      "0957",
+      "0958",
+      "0959",
+      "1000",
+      "1001",
+      "1002",
+      "1003",
+      "1004",
+      "1005",
+      "1006",
+      "1007",
+      "1008",
+      "1009",
+      "1010",
+      "1011",
+      "1012",
+      "1013",
+      "1014",
+      "1015",
+      "1016",
+      "1017",
+      "1018",
+      "1019",
+      "1020",
+      "1021",
+      "1022",
+      "1023",
+      "1024",
+      "1025",
+      "1026",
+      "1027",
+      "1028",
+      "1029",
+      "1030",
+      "1031",
+      "1032",
+      "1033",
+      "1034",
+      "1035",
+      "1036",
+      "1037",
+      "1038",
+      "1039",
+      "1040",
+      "1041",
+      "1042",
+      "1043",
+      "1044",
+      "1045",
+      "1046",
+      "1047",
+      "1048",
+      "1049",
+      "1050",
+      "1051",
+      "1052",
+      "1053",
+      "1054",
+      "1055",
+      "1056",
+      "1057",
+      "1058",
+      "1059",
+      "1100",
+      "1101",
+      "1102",
+      "1103",
+      "1104",
+      "1105",
+      "1106",
+      "1107",
+      "1108",
+      "1109",
+      "1110",
+      "1111",
+      "1112",
+      "1113",
+      "1114",
+      "1115",
+      "1116",
+      "1117",
+      "1118",
+      "1119",
+      "1120",
+      "1121",
+      "1122",
+      "1123",
+      "1124",
+      "1125",
+      "1126",
+      "1127",
+      "1128",
+      "1129",
+      "1130",
+      "1300",
+      "1301",
+      "1302",
+      "1303",
+      "1304",
+      "1305",
+      "1306",
+      "1307",
+      "1308",
+      "1309",
+      "1310",
+      "1311",
+      "1312",
+      "1313",
+      "1314",
+      "1315",
+      "1316",
+      "1317",
+      "1318",
+      "1319",
+      "1320",
+      "1321",
+      "1322",
+      "1323",
+      "1324",
+      "1325",
+      "1326",
+      "1327",
+      "1328",
+      "1329",
+      "1330",
+      "1331",
+      "1332",
+      "1333",
+      "1334",
+      "1335",
+      "1336",
+      "1337",
+      "1338",
+      "1339",
+      "1340",
+      "1341",
+      "1342",
+      "1343",
+      "1344",
+      "1345",
+      "1346",
+      "1347",
+      "1348",
+      "1349",
+      "1350",
+      "1351",
+      "1352",
+      "1353",
+      "1354",
+      "1355",
+      "1356",
+      "1357",
+      "1358",
+      "1359",
+      "1400",
+      "1401",
+      "1402",
+      "1403",
+      "1404",
+      "1405",
+      "1406",
+      "1407",
+      "1408",
+      "1409",
+      "1410",
+      "1411",
+      "1412",
+      "1413",
+      "1414",
+      "1415",
+      "1416",
+      "1417",
+      "1418",
+      "1419",
+      "1420",
+      "1421",
+      "1422",
+      "1423",
+      "1424",
+      "1425",
+      "1426",
+      "1427",
+      "1428",
+      "1429",
+      "1430",
+      "1431",
+      "1432",
+      "1433",
+      "1434",
+      "1435",
+      "1436",
+      "1437",
+      "1438",
+      "1439",
+      "1440",
+      "1441",
+      "1442",
+      "1443",
+      "1444",
+      "1445",
+      "1446",
+      "1447",
+      "1448",
+      "1449",
+      "1450",
+      "1451",
+      "1452",
+      "1453",
+      "1454",
+      "1455",
+      "1456",
+      "1457",
+      "1458",
+      "1459",
+      "1500"
+    ]
+  },
+  "points": [
+    {
+      "time": "0930",
+      "price": 28.95,
+      "cum_volume": 6674.0,
+      "cum_amount": 19321230.0,
+      "delta_volume": 6674.0,
+      "delta_amount": 19321230.0
+    },
+    {
+      "time": "0931",
+      "price": 28.68,
+      "cum_volume": 25157.0,
+      "cum_amount": 72439863.61,
+      "delta_volume": 18483.0,
+      "delta_amount": 53118633.61
+    },
+    {
+      "time": "0932",
+      "price": 28.56,
+      "cum_volume": 33627.0,
+      "cum_amount": 96613521.09,
+      "delta_volume": 8470.0,
+      "delta_amount": 24173657.480000004
+    },
+    {
+      "time": "0933",
+      "price": 28.7,
+      "cum_volume": 39991.0,
+      "cum_amount": 114844664.44,
+      "delta_volume": 6364.0,
+      "delta_amount": 18231143.349999994
+    },
+    {
+      "time": "0934",
+      "price": 28.73,
+      "cum_volume": 43952.0,
+      "cum_amount": 126222101.43,
+      "delta_volume": 3961.0,
+      "delta_amount": 11377436.99000001
+    },
+    {
+      "time": "0935",
+      "price": 28.81,
+      "cum_volume": 48069.0,
+      "cum_amount": 138073894.36,
+      "delta_volume": 4117.0,
+      "delta_amount": 11851792.930000007
+    },
+    {
+      "time": "0936",
+      "price": 28.88,
+      "cum_volume": 52432.0,
+      "cum_amount": 150652237.24,
+      "delta_volume": 4363.0,
+      "delta_amount": 12578342.879999995
+    },
+    {
+      "time": "0937",
+      "price": 28.94,
+      "cum_volume": 58334.0,
+      "cum_amount": 167717888.0,
+      "delta_volume": 5902.0,
+      "delta_amount": 17065650.75999999
+    },
+    {
+      "time": "0938",
+      "price": 28.8,
+      "cum_volume": 62345.0,
+      "cum_amount": 179297478.9,
+      "delta_volume": 4011.0,
+      "delta_amount": 11579590.900000006
+    },
+    {
+      "time": "0939",
+      "price": 28.82,
+      "cum_volume": 66462.0,
+      "cum_amount": 191165496.85,
+      "delta_volume": 4117.0,
+      "delta_amount": 11868017.949999988
+    },
+    {
+      "time": "0940",
+      "price": 28.94,
+      "cum_volume": 71282.0,
+      "cum_amount": 205068294.78,
+      "delta_volume": 4820.0,
+      "delta_amount": 13902797.930000007
+    },
+    {
+      "time": "0941",
+      "price": 28.97,
+      "cum_volume": 78542.0,
+      "cum_amount": 226107886.52,
+      "delta_volume": 7260.0,
+      "delta_amount": 21039591.74000001
+    },
+    {
+      "time": "0942",
+      "price": 28.95,
+      "cum_volume": 83323.0,
+      "cum_amount": 239955218.16,
+      "delta_volume": 4781.0,
+      "delta_amount": 13847331.639999986
+    },
+    {
+      "time": "0943",
+      "price": 28.87,
+      "cum_volume": 88486.0,
+      "cum_amount": 254888383.44,
+      "delta_volume": 5163.0,
+      "delta_amount": 14933165.280000001
+    },
+    {
+      "time": "0944",
+      "price": 28.86,
+      "cum_volume": 91561.0,
+      "cum_amount": 263769896.54,
+      "delta_volume": 3075.0,
+      "delta_amount": 8881513.099999994
+    },
+    {
+      "time": "0945",
+      "price": 28.77,
+      "cum_volume": 95541.0,
+      "cum_amount": 275242785.72,
+      "delta_volume": 3980.0,
+      "delta_amount": 11472889.180000037
+    },
+    {
+      "time": "0946",
+      "price": 28.66,
+      "cum_volume": 99652.0,
+      "cum_amount": 287037319.56,
+      "delta_volume": 4111.0,
+      "delta_amount": 11794533.839999974
+    },
+    {
+      "time": "0947",
+      "price": 28.76,
+      "cum_volume": 102513.0,
+      "cum_amount": 295246769.46,
+      "delta_volume": 2861.0,
+      "delta_amount": 8209449.899999976
+    },
+    {
+      "time": "0948",
+      "price": 28.8,
+      "cum_volume": 104215.0,
+      "cum_amount": 300143815.44,
+      "delta_volume": 1702.0,
+      "delta_amount": 4897045.980000019
+    },
+    {
+      "time": "0949",
+      "price": 28.83,
+      "cum_volume": 106962.0,
+      "cum_amount": 308057707.71,
+      "delta_volume": 2747.0,
+      "delta_amount": 7913892.269999981
+    },
+    {
+      "time": "0950",
+      "price": 28.78,
+      "cum_volume": 109008.0,
+      "cum_amount": 313949198.72,
+      "delta_volume": 2046.0,
+      "delta_amount": 5891491.01000005
+    },
+    {
+      "time": "0951",
+      "price": 28.77,
+      "cum_volume": 111001.0,
+      "cum_amount": 319684240.73,
+      "delta_volume": 1993.0,
+      "delta_amount": 5735042.00999999
+    },
+    {
+      "time": "0952",
+      "price": 28.75,
+      "cum_volume": 114258.0,
+      "cum_amount": 329044875.81,
+      "delta_volume": 3257.0,
+      "delta_amount": 9360635.079999983
+    },
+    {
+      "time": "0953",
+      "price": 28.71,
+      "cum_volume": 117826.0,
+      "cum_amount": 339282266.95,
+      "delta_volume": 3568.0,
+      "delta_amount": 10237391.139999986
+    },
+    {
+      "time": "0954",
+      "price": 28.79,
+      "cum_volume": 120347.0,
+      "cum_amount": 346530224.84,
+      "delta_volume": 2521.0,
+      "delta_amount": 7247957.889999986
+    },
+    {
+      "time": "0955",
+      "price": 28.79,
+      "cum_volume": 123351.0,
+      "cum_amount": 355190692.88,
+      "delta_volume": 3004.0,
+      "delta_amount": 8660468.040000021
+    },
+    {
+      "time": "0956",
+      "price": 28.85,
+      "cum_volume": 127079.0,
+      "cum_amount": 365927612.89,
+      "delta_volume": 3728.0,
+      "delta_amount": 10736920.00999999
+    },
+    {
+      "time": "0957",
+      "price": 28.88,
+      "cum_volume": 130333.0,
+      "cum_amount": 375322314.97,
+      "delta_volume": 3254.0,
+      "delta_amount": 9394702.080000043
+    },
+    {
+      "time": "0958",
+      "price": 28.87,
+      "cum_volume": 132651.0,
+      "cum_amount": 382015759.03,
+      "delta_volume": 2318.0,
+      "delta_amount": 6693444.059999943
+    },
+    {
+      "time": "0959",
+      "price": 28.84,
+      "cum_volume": 134311.0,
+      "cum_amount": 386802982.05,
+      "delta_volume": 1660.0,
+      "delta_amount": 4787223.0200000405
+    },
+    {
+      "time": "1000",
+      "price": 28.92,
+      "cum_volume": 137561.0,
+      "cum_amount": 396181062.16,
+      "delta_volume": 3250.0,
+      "delta_amount": 9378080.110000014
+    },
+    {
+      "time": "1001",
+      "price": 28.95,
+      "cum_volume": 139579.0,
+      "cum_amount": 402014604.09,
+      "delta_volume": 2018.0,
+      "delta_amount": 5833541.929999948
+    },
+    {
+      "time": "1002",
+      "price": 28.89,
+      "cum_volume": 142208.0,
+      "cum_amount": 409613391.01,
+      "delta_volume": 2629.0,
+      "delta_amount": 7598786.920000017
+    },
+    {
+      "time": "1003",
+      "price": 28.88,
+      "cum_volume": 145087.0,
+      "cum_amount": 417937454.92,
+      "delta_volume": 2879.0,
+      "delta_amount": 8324063.910000026
+    },
+    {
+      "time": "1004",
+      "price": 28.81,
+      "cum_volume": 147570.0,
+      "cum_amount": 425094424.9,
+      "delta_volume": 2483.0,
+      "delta_amount": 7156969.9799999595
+    },
+    {
+      "time": "1005",
+      "price": 28.89,
+      "cum_volume": 149564.0,
+      "cum_amount": 430844548.89,
+      "delta_volume": 1994.0,
+      "delta_amount": 5750123.99000001
+    },
+    {
+      "time": "1006",
+      "price": 28.96,
+      "cum_volume": 152159.0,
+      "cum_amount": 438346426.81,
+      "delta_volume": 2595.0,
+      "delta_amount": 7501877.920000017
+    },
+    {
+      "time": "1007",
+      "price": 28.88,
+      "cum_volume": 153947.0,
+      "cum_amount": 443517290.75,
+      "delta_volume": 1788.0,
+      "delta_amount": 5170863.939999998
+    },
+    {
+      "time": "1008",
+      "price": 28.85,
+      "cum_volume": 155006.0,
+      "cum_amount": 446574068.73,
+      "delta_volume": 1059.0,
+      "delta_amount": 3056777.980000019
+    },
+    {
+      "time": "1009",
+      "price": 28.83,
+      "cum_volume": 156810.0,
+      "cum_amount": 451779181.71,
+      "delta_volume": 1804.0,
+      "delta_amount": 5205112.9799999595
+    },
+    {
+      "time": "1010",
+      "price": 28.87,
+      "cum_volume": 159389.0,
+      "cum_amount": 459217797.69,
+      "delta_volume": 2579.0,
+      "delta_amount": 7438615.980000019
+    },
+    {
+      "time": "1011",
+      "price": 28.83,
+      "cum_volume": 160920.0,
+      "cum_amount": 463635383.67,
+      "delta_volume": 1531.0,
+      "delta_amount": 4417585.980000019
+    },
+    {
+      "time": "1012",
+      "price": 28.82,
+      "cum_volume": 164129.0,
+      "cum_amount": 472876733.68,
+      "delta_volume": 3209.0,
+      "delta_amount": 9241350.00999999
+    },
+    {
+      "time": "1013",
+      "price": 28.83,
+      "cum_volume": 165762.0,
+      "cum_amount": 477587196.67,
+      "delta_volume": 1633.0,
+      "delta_amount": 4710462.99000001
+    },
+    {
+      "time": "1014",
+      "price": 28.76,
+      "cum_volume": 167042.0,
+      "cum_amount": 481272501.68,
+      "delta_volume": 1280.0,
+      "delta_amount": 3685305.0099999905
+    },
+    {
+      "time": "1015",
+      "price": 28.75,
+      "cum_volume": 168859.0,
+      "cum_amount": 486498793.17,
+      "delta_volume": 1817.0,
+      "delta_amount": 5226291.49000001
+    },
+    {
+      "time": "1016",
+      "price": 28.8,
+      "cum_volume": 170943.0,
+      "cum_amount": 492503236.17,
+      "delta_volume": 2084.0,
+      "delta_amount": 6004443.0
+    },
+    {
+      "time": "1017",
+      "price": 28.85,
+      "cum_volume": 171965.0,
+      "cum_amount": 495447232.17,
+      "delta_volume": 1022.0,
+      "delta_amount": 2943996.0
+    },
+    {
+      "time": "1018",
+      "price": 28.82,
+      "cum_volume": 173286.0,
+      "cum_amount": 499256629.17,
+      "delta_volume": 1321.0,
+      "delta_amount": 3809397.0
+    },
+    {
+      "time": "1019",
+      "price": 28.9,
+      "cum_volume": 174780.0,
+      "cum_amount": 503568288.18,
+      "delta_volume": 1494.0,
+      "delta_amount": 4311659.00999999
+    },
+    {
+      "time": "1020",
+      "price": 28.93,
+      "cum_volume": 176915.0,
+      "cum_amount": 509737591.2,
+      "delta_volume": 2135.0,
+      "delta_amount": 6169303.019999981
+    },
+    {
+      "time": "1021",
+      "price": 29.19,
+      "cum_volume": 201149.0,
+      "cum_amount": 580228208.83,
+      "delta_volume": 24234.0,
+      "delta_amount": 70490617.63000005
+    },
+    {
+      "time": "1022",
+      "price": 29.19,
+      "cum_volume": 211544.0,
+      "cum_amount": 610580528.24,
+      "delta_volume": 10395.0,
+      "delta_amount": 30352319.409999967
+    },
+    {
+      "time": "1023",
+      "price": 29.18,
+      "cum_volume": 218507.0,
+      "cum_amount": 630912879.85,
+      "delta_volume": 6963.0,
+      "delta_amount": 20332351.610000014
+    },
+    {
+      "time": "1024",
+      "price": 29.18,
+      "cum_volume": 223192.0,
+      "cum_amount": 644575202.83,
+      "delta_volume": 4685.0,
+      "delta_amount": 13662322.98000002
+    },
+    {
+      "time": "1025",
+      "price": 29.15,
+      "cum_volume": 225983.0,
+      "cum_amount": 652708446.81,
+      "delta_volume": 2791.0,
+      "delta_amount": 8133243.9799999
+    },
+    {
+      "time": "1026",
+      "price": 29.08,
+      "cum_volume": 228948.0,
+      "cum_amount": 661338747.79,
+      "delta_volume": 2965.0,
+      "delta_amount": 8630300.98000002
+    },
+    {
+      "time": "1027",
+      "price": 29.03,
+      "cum_volume": 230297.0,
+      "cum_amount": 665256687.79,
+      "delta_volume": 1349.0,
+      "delta_amount": 3917940.0
+    },
+    {
+      "time": "1028",
+      "price": 29.03,
+      "cum_volume": 233650.0,
+      "cum_amount": 674985924.78,
+      "delta_volume": 3353.0,
+      "delta_amount": 9729236.99000001
+    },
+    {
+      "time": "1029",
+      "price": 29.02,
+      "cum_volume": 235954.0,
+      "cum_amount": 681671119.77,
+      "delta_volume": 2304.0,
+      "delta_amount": 6685194.99000001
+    },
+    {
+      "time": "1030",
+      "price": 29.06,
+      "cum_volume": 237464.0,
+      "cum_amount": 686056827.76,
+      "delta_volume": 1510.0,
+      "delta_amount": 4385707.99000001
+    },
+    {
+      "time": "1031",
+      "price": 29.0,
+      "cum_volume": 239641.0,
+      "cum_amount": 692374435.76,
+      "delta_volume": 2177.0,
+      "delta_amount": 6317608.0
+    },
+    {
+      "time": "1032",
+      "price": 28.95,
+      "cum_volume": 241418.0,
+      "cum_amount": 697526001.75,
+      "delta_volume": 1777.0,
+      "delta_amount": 5151565.99000001
+    },
+    {
+      "time": "1033",
+      "price": 28.98,
+      "cum_volume": 242320.0,
+      "cum_amount": 700138821.75,
+      "delta_volume": 902.0,
+      "delta_amount": 2612820.0
+    },
+    {
+      "time": "1034",
+      "price": 28.93,
+      "cum_volume": 243654.0,
+      "cum_amount": 704000651.75,
+      "delta_volume": 1334.0,
+      "delta_amount": 3861830.0
+    },
+    {
+      "time": "1035",
+      "price": 28.96,
+      "cum_volume": 245710.0,
+      "cum_amount": 709949833.75,
+      "delta_volume": 2056.0,
+      "delta_amount": 5949182.0
+    },
+    {
+      "time": "1036",
+      "price": 29.0,
+      "cum_volume": 249754.0,
+      "cum_amount": 721661513.74,
+      "delta_volume": 4044.0,
+      "delta_amount": 11711679.99000001
+    },
+    {
+      "time": "1037",
+      "price": 29.02,
+      "cum_volume": 251859.0,
+      "cum_amount": 727767964.73,
+      "delta_volume": 2105.0,
+      "delta_amount": 6106450.99000001
+    },
+    {
+      "time": "1038",
+      "price": 29.07,
+      "cum_volume": 254618.0,
+      "cum_amount": 735791111.72,
+      "delta_volume": 2759.0,
+      "delta_amount": 8023146.99000001
+    },
+    {
+      "time": "1039",
+      "price": 29.05,
+      "cum_volume": 255792.0,
+      "cum_amount": 739204018.72,
+      "delta_volume": 1174.0,
+      "delta_amount": 3412907.0
+    },
+    {
+      "time": "1040",
+      "price": 29.02,
+      "cum_volume": 259337.0,
+      "cum_amount": 749500517.71,
+      "delta_volume": 3545.0,
+      "delta_amount": 10296498.99000001
+    },
+    {
+      "time": "1041",
+      "price": 29.09,
+      "cum_volume": 260218.0,
+      "cum_amount": 752060320.5,
+      "delta_volume": 881.0,
+      "delta_amount": 2559802.789999962
+    },
+    {
+      "time": "1042",
+      "price": 29.07,
+      "cum_volume": 262585.0,
+      "cum_amount": 758952009.49,
+      "delta_volume": 2367.0,
+      "delta_amount": 6891688.99000001
+    },
+    {
+      "time": "1043",
+      "price": 29.04,
+      "cum_volume": 269447.0,
+      "cum_amount": 778947605.46,
+      "delta_volume": 6862.0,
+      "delta_amount": 19995595.97000003
+    },
+    {
+      "time": "1044",
+      "price": 29.06,
+      "cum_volume": 270842.0,
+      "cum_amount": 783001899.45,
+      "delta_volume": 1395.0,
+      "delta_amount": 4054293.9900000095
+    },
+    {
+      "time": "1045",
+      "price": 29.03,
+      "cum_volume": 271442.0,
+      "cum_amount": 784744392.45,
+      "delta_volume": 600.0,
+      "delta_amount": 1742493.0
+    },
+    {
+      "time": "1046",
+      "price": 29.02,
+      "cum_volume": 272211.0,
+      "cum_amount": 786976312.45,
+      "delta_volume": 769.0,
+      "delta_amount": 2231920.0
+    },
+    {
+      "time": "1047",
+      "price": 29.01,
+      "cum_volume": 273190.0,
+      "cum_amount": 789817368.44,
+      "delta_volume": 979.0,
+      "delta_amount": 2841055.9900000095
+    },
+    {
+      "time": "1048",
+      "price": 28.96,
+      "cum_volume": 274774.0,
+      "cum_amount": 794408454.44,
+      "delta_volume": 1584.0,
+      "delta_amount": 4591086.0
+    },
+    {
+      "time": "1049",
+      "price": 28.97,
+      "cum_volume": 275673.0,
+      "cum_amount": 797012847.44,
+      "delta_volume": 899.0,
+      "delta_amount": 2604393.0
+    },
+    {
+      "time": "1050",
+      "price": 28.99,
+      "cum_volume": 276542.0,
+      "cum_amount": 799530398.44,
+      "delta_volume": 869.0,
+      "delta_amount": 2517551.0
+    },
+    {
+      "time": "1051",
+      "price": 28.98,
+      "cum_volume": 277266.0,
+      "cum_amount": 801628341.44,
+      "delta_volume": 724.0,
+      "delta_amount": 2097943.0
+    },
+    {
+      "time": "1052",
+      "price": 28.97,
+      "cum_volume": 278591.0,
+      "cum_amount": 805465799.44,
+      "delta_volume": 1325.0,
+      "delta_amount": 3837458.0
+    },
+    {
+      "time": "1053",
+      "price": 28.96,
+      "cum_volume": 279241.0,
+      "cum_amount": 807348124.44,
+      "delta_volume": 650.0,
+      "delta_amount": 1882325.0
+    },
+    {
+      "time": "1054",
+      "price": 28.93,
+      "cum_volume": 281112.0,
+      "cum_amount": 812764381.44,
+      "delta_volume": 1871.0,
+      "delta_amount": 5416257.0
+    },
+    {
+      "time": "1055",
+      "price": 28.97,
+      "cum_volume": 282161.0,
+      "cum_amount": 815801855.43,
+      "delta_volume": 1049.0,
+      "delta_amount": 3037473.9899998903
+    },
+    {
+      "time": "1056",
+      "price": 28.93,
+      "cum_volume": 283278.0,
+      "cum_amount": 819034704.43,
+      "delta_volume": 1117.0,
+      "delta_amount": 3232849.0
+    },
+    {
+      "time": "1057",
+      "price": 28.94,
+      "cum_volume": 284027.0,
+      "cum_amount": 821201665.43,
+      "delta_volume": 749.0,
+      "delta_amount": 2166961.0
+    },
+    {
+      "time": "1058",
+      "price": 28.93,
+      "cum_volume": 285836.0,
+      "cum_amount": 826436355.43,
+      "delta_volume": 1809.0,
+      "delta_amount": 5234690.0
+    },
+    {
+      "time": "1059",
+      "price": 28.94,
+      "cum_volume": 286557.0,
+      "cum_amount": 828523250.43,
+      "delta_volume": 721.0,
+      "delta_amount": 2086895.0
+    },
+    {
+      "time": "1100",
+      "price": 28.94,
+      "cum_volume": 287088.0,
+      "cum_amount": 830060447.43,
+      "delta_volume": 531.0,
+      "delta_amount": 1537197.0
+    },
+    {
+      "time": "1101",
+      "price": 29.01,
+      "cum_volume": 289559.0,
+      "cum_amount": 837220983.98,
+      "delta_volume": 2471.0,
+      "delta_amount": 7160536.5500000715
+    },
+    {
+      "time": "1102",
+      "price": 28.97,
+      "cum_volume": 290764.0,
+      "cum_amount": 840713375.98,
+      "delta_volume": 1205.0,
+      "delta_amount": 3492392.0
+    },
+    {
+      "time": "1103",
+      "price": 28.93,
+      "cum_volume": 292005.0,
+      "cum_amount": 844305611.98,
+      "delta_volume": 1241.0,
+      "delta_amount": 3592236.0
+    },
+    {
+      "time": "1104",
+      "price": 28.9,
+      "cum_volume": 294397.0,
+      "cum_amount": 851220851.98,
+      "delta_volume": 2392.0,
+      "delta_amount": 6915240.0
+    },
+    {
+      "time": "1105",
+      "price": 28.89,
+      "cum_volume": 295195.0,
+      "cum_amount": 853526799.98,
+      "delta_volume": 798.0,
+      "delta_amount": 2305948.0
+    },
+    {
+      "time": "1106",
+      "price": 28.86,
+      "cum_volume": 297451.0,
+      "cum_amount": 860041307.98,
+      "delta_volume": 2256.0,
+      "delta_amount": 6514508.0
+    },
+    {
+      "time": "1107",
+      "price": 28.91,
+      "cum_volume": 298840.0,
+      "cum_amount": 864052771.98,
+      "delta_volume": 1389.0,
+      "delta_amount": 4011464.0
+    },
+    {
+      "time": "1108",
+      "price": 28.89,
+      "cum_volume": 299654.0,
+      "cum_amount": 866404359.98,
+      "delta_volume": 814.0,
+      "delta_amount": 2351588.0
+    },
+    {
+      "time": "1109",
+      "price": 28.89,
+      "cum_volume": 300841.0,
+      "cum_amount": 869833309.97,
+      "delta_volume": 1187.0,
+      "delta_amount": 3428949.9900000095
+    },
+    {
+      "time": "1110",
+      "price": 28.85,
+      "cum_volume": 302052.0,
+      "cum_amount": 873330367.97,
+      "delta_volume": 1211.0,
+      "delta_amount": 3497058.0
+    },
+    {
+      "time": "1111",
+      "price": 28.92,
+      "cum_volume": 303974.0,
+      "cum_amount": 878884356.97,
+      "delta_volume": 1922.0,
+      "delta_amount": 5553989.0
+    },
+    {
+      "time": "1112",
+      "price": 28.91,
+      "cum_volume": 304774.0,
+      "cum_amount": 881197030.97,
+      "delta_volume": 800.0,
+      "delta_amount": 2312674.0
+    },
+    {
+      "time": "1113",
+      "price": 28.95,
+      "cum_volume": 306286.0,
+      "cum_amount": 885573792.97,
+      "delta_volume": 1512.0,
+      "delta_amount": 4376762.0
+    },
+    {
+      "time": "1114",
+      "price": 28.97,
+      "cum_volume": 307295.0,
+      "cum_amount": 888495170.97,
+      "delta_volume": 1009.0,
+      "delta_amount": 2921378.0
+    },
+    {
+      "time": "1115",
+      "price": 28.93,
+      "cum_volume": 308283.0,
+      "cum_amount": 891355000.98,
+      "delta_volume": 988.0,
+      "delta_amount": 2859830.0099999905
+    },
+    {
+      "time": "1116",
+      "price": 28.91,
+      "cum_volume": 309123.0,
+      "cum_amount": 893783889.98,
+      "delta_volume": 840.0,
+      "delta_amount": 2428889.0
+    },
+    {
+      "time": "1117",
+      "price": 28.92,
+      "cum_volume": 310228.0,
+      "cum_amount": 896977587.98,
+      "delta_volume": 1105.0,
+      "delta_amount": 3193698.0
+    },
+    {
+      "time": "1118",
+      "price": 28.92,
+      "cum_volume": 311010.0,
+      "cum_amount": 899239073.98,
+      "delta_volume": 782.0,
+      "delta_amount": 2261486.0
+    },
+    {
+      "time": "1119",
+      "price": 28.95,
+      "cum_volume": 311709.0,
+      "cum_amount": 901261489.98,
+      "delta_volume": 699.0,
+      "delta_amount": 2022416.0
+    },
+    {
+      "time": "1120",
+      "price": 28.95,
+      "cum_volume": 312783.0,
+      "cum_amount": 904371133.98,
+      "delta_volume": 1074.0,
+      "delta_amount": 3109644.0
+    },
+    {
+      "time": "1121",
+      "price": 28.95,
+      "cum_volume": 313846.0,
+      "cum_amount": 907448391.98,
+      "delta_volume": 1063.0,
+      "delta_amount": 3077258.0
+    },
+    {
+      "time": "1122",
+      "price": 29.0,
+      "cum_volume": 314581.0,
+      "cum_amount": 909578468.98,
+      "delta_volume": 735.0,
+      "delta_amount": 2130077.0
+    },
+    {
+      "time": "1123",
+      "price": 28.96,
+      "cum_volume": 315403.0,
+      "cum_amount": 911960206.98,
+      "delta_volume": 822.0,
+      "delta_amount": 2381738.0
+    },
+    {
+      "time": "1124",
+      "price": 28.97,
+      "cum_volume": 316166.0,
+      "cum_amount": 914170074.99,
+      "delta_volume": 763.0,
+      "delta_amount": 2209868.0099999905
+    },
+    {
+      "time": "1125",
+      "price": 28.96,
+      "cum_volume": 317338.0,
+      "cum_amount": 917564149.99,
+      "delta_volume": 1172.0,
+      "delta_amount": 3394075.0
+    },
+    {
+      "time": "1126",
+      "price": 28.96,
+      "cum_volume": 318042.0,
+      "cum_amount": 919602585.99,
+      "delta_volume": 704.0,
+      "delta_amount": 2038436.0
+    },
+    {
+      "time": "1127",
+      "price": 28.95,
+      "cum_volume": 318724.0,
+      "cum_amount": 921577491.99,
+      "delta_volume": 682.0,
+      "delta_amount": 1974906.0
+    },
+    {
+      "time": "1128",
+      "price": 28.95,
+      "cum_volume": 319433.0,
+      "cum_amount": 923629984.99,
+      "delta_volume": 709.0,
+      "delta_amount": 2052493.0
+    },
+    {
+      "time": "1129",
+      "price": 28.94,
+      "cum_volume": 321061.0,
+      "cum_amount": 928338496.99,
+      "delta_volume": 1628.0,
+      "delta_amount": 4708512.0
+    },
+    {
+      "time": "1130",
+      "price": 28.98,
+      "cum_volume": 322466.0,
+      "cum_amount": 932405928.99,
+      "delta_volume": 1405.0,
+      "delta_amount": 4067432.0
+    },
+    {
+      "time": "1300",
+      "price": 28.98,
+      "cum_volume": 322466.0,
+      "cum_amount": 932405928.99,
+      "delta_volume": 0.0,
+      "delta_amount": 0.0
+    },
+    {
+      "time": "1301",
+      "price": 28.91,
+      "cum_volume": 326471.0,
+      "cum_amount": 943999761.91,
+      "delta_volume": 4005.0,
+      "delta_amount": 11593832.919999957
+    },
+    {
+      "time": "1302",
+      "price": 28.88,
+      "cum_volume": 327767.0,
+      "cum_amount": 947745030.91,
+      "delta_volume": 1296.0,
+      "delta_amount": 3745269.0
+    },
+    {
+      "time": "1303",
+      "price": 28.86,
+      "cum_volume": 328910.0,
+      "cum_amount": 951044323.91,
+      "delta_volume": 1143.0,
+      "delta_amount": 3299293.0
+    },
+    {
+      "time": "1304",
+      "price": 28.87,
+      "cum_volume": 329783.0,
+      "cum_amount": 953564376.9,
+      "delta_volume": 873.0,
+      "delta_amount": 2520052.9900000095
+    },
+    {
+      "time": "1305",
+      "price": 28.86,
+      "cum_volume": 330670.0,
+      "cum_amount": 956124323.9,
+      "delta_volume": 887.0,
+      "delta_amount": 2559947.0
+    },
+    {
+      "time": "1306",
+      "price": 28.83,
+      "cum_volume": 332459.0,
+      "cum_amount": 961284553.9,
+      "delta_volume": 1789.0,
+      "delta_amount": 5160230.0
+    },
+    {
+      "time": "1307",
+      "price": 28.83,
+      "cum_volume": 334150.0,
+      "cum_amount": 966160524.89,
+      "delta_volume": 1691.0,
+      "delta_amount": 4875970.99000001
+    },
+    {
+      "time": "1308",
+      "price": 28.85,
+      "cum_volume": 336188.0,
+      "cum_amount": 972038089.89,
+      "delta_volume": 2038.0,
+      "delta_amount": 5877565.0
+    },
+    {
+      "time": "1309",
+      "price": 28.84,
+      "cum_volume": 336834.0,
+      "cum_amount": 973901420.88,
+      "delta_volume": 646.0,
+      "delta_amount": 1863330.9900000095
+    },
+    {
+      "time": "1310",
+      "price": 28.84,
+      "cum_volume": 337687.0,
+      "cum_amount": 976361860.88,
+      "delta_volume": 853.0,
+      "delta_amount": 2460440.0
+    },
+    {
+      "time": "1311",
+      "price": 28.86,
+      "cum_volume": 338566.0,
+      "cum_amount": 978897998.88,
+      "delta_volume": 879.0,
+      "delta_amount": 2536138.0
+    },
+    {
+      "time": "1312",
+      "price": 28.84,
+      "cum_volume": 339268.0,
+      "cum_amount": 980923264.88,
+      "delta_volume": 702.0,
+      "delta_amount": 2025266.0
+    },
+    {
+      "time": "1313",
+      "price": 28.84,
+      "cum_volume": 339901.0,
+      "cum_amount": 982748663.88,
+      "delta_volume": 633.0,
+      "delta_amount": 1825399.0
+    },
+    {
+      "time": "1314",
+      "price": 28.86,
+      "cum_volume": 340900.0,
+      "cum_amount": 985631156.87,
+      "delta_volume": 999.0,
+      "delta_amount": 2882492.9900000095
+    },
+    {
+      "time": "1315",
+      "price": 28.87,
+      "cum_volume": 341850.0,
+      "cum_amount": 988374131.87,
+      "delta_volume": 950.0,
+      "delta_amount": 2742975.0
+    },
+    {
+      "time": "1316",
+      "price": 28.84,
+      "cum_volume": 342787.0,
+      "cum_amount": 991078328.87,
+      "delta_volume": 937.0,
+      "delta_amount": 2704197.0
+    },
+    {
+      "time": "1317",
+      "price": 28.85,
+      "cum_volume": 343622.0,
+      "cum_amount": 993487210.87,
+      "delta_volume": 835.0,
+      "delta_amount": 2408882.0
+    },
+    {
+      "time": "1318",
+      "price": 28.85,
+      "cum_volume": 344576.0,
+      "cum_amount": 996239986.87,
+      "delta_volume": 954.0,
+      "delta_amount": 2752776.0
+    },
+    {
+      "time": "1319",
+      "price": 28.86,
+      "cum_volume": 346966.0,
+      "cum_amount": 1003135781.86,
+      "delta_volume": 2390.0,
+      "delta_amount": 6895794.99000001
+    },
+    {
+      "time": "1320",
+      "price": 28.85,
+      "cum_volume": 347827.0,
+      "cum_amount": 1005620591.86,
+      "delta_volume": 861.0,
+      "delta_amount": 2484810.0
+    },
+    {
+      "time": "1321",
+      "price": 28.77,
+      "cum_volume": 350833.0,
+      "cum_amount": 1014279168.85,
+      "delta_volume": 3006.0,
+      "delta_amount": 8658576.99000001
+    },
+    {
+      "time": "1322",
+      "price": 28.79,
+      "cum_volume": 352405.0,
+      "cum_amount": 1018802960.84,
+      "delta_volume": 1572.0,
+      "delta_amount": 4523791.99000001
+    },
+    {
+      "time": "1323",
+      "price": 28.77,
+      "cum_volume": 354176.0,
+      "cum_amount": 1023896995.83,
+      "delta_volume": 1771.0,
+      "delta_amount": 5094034.99000001
+    },
+    {
+      "time": "1324",
+      "price": 28.75,
+      "cum_volume": 355977.0,
+      "cum_amount": 1029075984.82,
+      "delta_volume": 1801.0,
+      "delta_amount": 5178988.99000001
+    },
+    {
+      "time": "1325",
+      "price": 28.72,
+      "cum_volume": 357332.0,
+      "cum_amount": 1032969517.81,
+      "delta_volume": 1355.0,
+      "delta_amount": 3893532.9899998903
+    },
+    {
+      "time": "1326",
+      "price": 28.73,
+      "cum_volume": 359842.0,
+      "cum_amount": 1040178750.8,
+      "delta_volume": 2510.0,
+      "delta_amount": 7209232.99000001
+    },
+    {
+      "time": "1327",
+      "price": 28.7,
+      "cum_volume": 362179.0,
+      "cum_amount": 1046889234.78,
+      "delta_volume": 2337.0,
+      "delta_amount": 6710483.980000019
+    },
+    {
+      "time": "1328",
+      "price": 28.69,
+      "cum_volume": 365259.0,
+      "cum_amount": 1055726999.76,
+      "delta_volume": 3080.0,
+      "delta_amount": 8837764.98000002
+    },
+    {
+      "time": "1329",
+      "price": 28.69,
+      "cum_volume": 366825.0,
+      "cum_amount": 1060220439.74,
+      "delta_volume": 1566.0,
+      "delta_amount": 4493439.980000019
+    },
+    {
+      "time": "1330",
+      "price": 28.69,
+      "cum_volume": 368267.0,
+      "cum_amount": 1064357130.52,
+      "delta_volume": 1442.0,
+      "delta_amount": 4136690.7799999714
+    },
+    {
+      "time": "1331",
+      "price": 28.71,
+      "cum_volume": 369955.0,
+      "cum_amount": 1069201196.51,
+      "delta_volume": 1688.0,
+      "delta_amount": 4844065.99000001
+    },
+    {
+      "time": "1332",
+      "price": 28.74,
+      "cum_volume": 371456.0,
+      "cum_amount": 1073512994.51,
+      "delta_volume": 1501.0,
+      "delta_amount": 4311798.0
+    },
+    {
+      "time": "1333",
+      "price": 28.72,
+      "cum_volume": 372891.0,
+      "cum_amount": 1077635912.51,
+      "delta_volume": 1435.0,
+      "delta_amount": 4122918.0
+    },
+    {
+      "time": "1334",
+      "price": 28.72,
+      "cum_volume": 374239.0,
+      "cum_amount": 1081506798.51,
+      "delta_volume": 1348.0,
+      "delta_amount": 3870886.0
+    },
+    {
+      "time": "1335",
+      "price": 28.7,
+      "cum_volume": 375198.0,
+      "cum_amount": 1084260198.51,
+      "delta_volume": 959.0,
+      "delta_amount": 2753400.0
+    },
+    {
+      "time": "1336",
+      "price": 28.71,
+      "cum_volume": 376334.0,
+      "cum_amount": 1087521258.5,
+      "delta_volume": 1136.0,
+      "delta_amount": 3261059.9900000095
+    },
+    {
+      "time": "1337",
+      "price": 28.73,
+      "cum_volume": 377155.0,
+      "cum_amount": 1089878990.5,
+      "delta_volume": 821.0,
+      "delta_amount": 2357732.0
+    },
+    {
+      "time": "1338",
+      "price": 28.76,
+      "cum_volume": 378112.0,
+      "cum_amount": 1092629918.5,
+      "delta_volume": 957.0,
+      "delta_amount": 2750928.0
+    },
+    {
+      "time": "1339",
+      "price": 28.74,
+      "cum_volume": 378816.0,
+      "cum_amount": 1094653666.5,
+      "delta_volume": 704.0,
+      "delta_amount": 2023748.0
+    },
+    {
+      "time": "1340",
+      "price": 28.74,
+      "cum_volume": 379355.0,
+      "cum_amount": 1096202583.5,
+      "delta_volume": 539.0,
+      "delta_amount": 1548917.0
+    },
+    {
+      "time": "1341",
+      "price": 28.76,
+      "cum_volume": 380058.0,
+      "cum_amount": 1098223435.5,
+      "delta_volume": 703.0,
+      "delta_amount": 2020852.0
+    },
+    {
+      "time": "1342",
+      "price": 28.76,
+      "cum_volume": 380691.0,
+      "cum_amount": 1100043716.5,
+      "delta_volume": 633.0,
+      "delta_amount": 1820281.0
+    },
+    {
+      "time": "1343",
+      "price": 28.74,
+      "cum_volume": 381893.0,
+      "cum_amount": 1103499143.5,
+      "delta_volume": 1202.0,
+      "delta_amount": 3455427.0
+    },
+    {
+      "time": "1344",
+      "price": 28.72,
+      "cum_volume": 383404.0,
+      "cum_amount": 1107839339.49,
+      "delta_volume": 1511.0,
+      "delta_amount": 4340195.99000001
+    },
+    {
+      "time": "1345",
+      "price": 28.72,
+      "cum_volume": 384444.0,
+      "cum_amount": 1110826295.49,
+      "delta_volume": 1040.0,
+      "delta_amount": 2986956.0
+    },
+    {
+      "time": "1346",
+      "price": 28.71,
+      "cum_volume": 385302.0,
+      "cum_amount": 1113290069.49,
+      "delta_volume": 858.0,
+      "delta_amount": 2463774.0
+    },
+    {
+      "time": "1347",
+      "price": 28.72,
+      "cum_volume": 386556.0,
+      "cum_amount": 1116891181.49,
+      "delta_volume": 1254.0,
+      "delta_amount": 3601112.0
+    },
+    {
+      "time": "1348",
+      "price": 28.74,
+      "cum_volume": 386988.0,
+      "cum_amount": 1118132364.49,
+      "delta_volume": 432.0,
+      "delta_amount": 1241183.0
+    },
+    {
+      "time": "1349",
+      "price": 28.76,
+      "cum_volume": 387601.0,
+      "cum_amount": 1119894428.49,
+      "delta_volume": 613.0,
+      "delta_amount": 1762064.0
+    },
+    {
+      "time": "1350",
+      "price": 28.73,
+      "cum_volume": 388455.0,
+      "cum_amount": 1122349033.49,
+      "delta_volume": 854.0,
+      "delta_amount": 2454605.0
+    },
+    {
+      "time": "1351",
+      "price": 28.74,
+      "cum_volume": 389154.0,
+      "cum_amount": 1124356909.49,
+      "delta_volume": 699.0,
+      "delta_amount": 2007876.0
+    },
+    {
+      "time": "1352",
+      "price": 28.71,
+      "cum_volume": 390694.0,
+      "cum_amount": 1128779751.48,
+      "delta_volume": 1540.0,
+      "delta_amount": 4422841.99000001
+    },
+    {
+      "time": "1353",
+      "price": 28.72,
+      "cum_volume": 391570.0,
+      "cum_amount": 1131295108.48,
+      "delta_volume": 876.0,
+      "delta_amount": 2515357.0
+    },
+    {
+      "time": "1354",
+      "price": 28.75,
+      "cum_volume": 393065.0,
+      "cum_amount": 1135591180.48,
+      "delta_volume": 1495.0,
+      "delta_amount": 4296072.0
+    },
+    {
+      "time": "1355",
+      "price": 28.77,
+      "cum_volume": 394093.0,
+      "cum_amount": 1138547703.48,
+      "delta_volume": 1028.0,
+      "delta_amount": 2956523.0
+    },
+    {
+      "time": "1356",
+      "price": 28.77,
+      "cum_volume": 395018.0,
+      "cum_amount": 1141209402.48,
+      "delta_volume": 925.0,
+      "delta_amount": 2661699.0
+    },
+    {
+      "time": "1357",
+      "price": 28.78,
+      "cum_volume": 395766.0,
+      "cum_amount": 1143361652.48,
+      "delta_volume": 748.0,
+      "delta_amount": 2152250.0
+    },
+    {
+      "time": "1358",
+      "price": 28.8,
+      "cum_volume": 397969.0,
+      "cum_amount": 1149703680.48,
+      "delta_volume": 2203.0,
+      "delta_amount": 6342028.0
+    },
+    {
+      "time": "1359",
+      "price": 28.79,
+      "cum_volume": 398976.0,
+      "cum_amount": 1152603033.48,
+      "delta_volume": 1007.0,
+      "delta_amount": 2899353.0
+    },
+    {
+      "time": "1400",
+      "price": 28.82,
+      "cum_volume": 402507.0,
+      "cum_amount": 1162790972.48,
+      "delta_volume": 3531.0,
+      "delta_amount": 10187939.0
+    },
+    {
+      "time": "1401",
+      "price": 28.77,
+      "cum_volume": 405914.0,
+      "cum_amount": 1172601046.47,
+      "delta_volume": 3407.0,
+      "delta_amount": 9810073.99000001
+    },
+    {
+      "time": "1402",
+      "price": 28.72,
+      "cum_volume": 407043.0,
+      "cum_amount": 1175845388.47,
+      "delta_volume": 1129.0,
+      "delta_amount": 3244342.0
+    },
+    {
+      "time": "1403",
+      "price": 28.71,
+      "cum_volume": 408801.0,
+      "cum_amount": 1180893701.47,
+      "delta_volume": 1758.0,
+      "delta_amount": 5048313.0
+    },
+    {
+      "time": "1404",
+      "price": 28.7,
+      "cum_volume": 412106.0,
+      "cum_amount": 1190376939.47,
+      "delta_volume": 3305.0,
+      "delta_amount": 9483238.0
+    },
+    {
+      "time": "1405",
+      "price": 28.69,
+      "cum_volume": 412976.0,
+      "cum_amount": 1192873311.46,
+      "delta_volume": 870.0,
+      "delta_amount": 2496371.9900000095
+    },
+    {
+      "time": "1406",
+      "price": 28.71,
+      "cum_volume": 413777.0,
+      "cum_amount": 1195172317.46,
+      "delta_volume": 801.0,
+      "delta_amount": 2299006.0
+    },
+    {
+      "time": "1407",
+      "price": 28.71,
+      "cum_volume": 414733.0,
+      "cum_amount": 1197917796.46,
+      "delta_volume": 956.0,
+      "delta_amount": 2745479.0
+    },
+    {
+      "time": "1408",
+      "price": 28.7,
+      "cum_volume": 416041.0,
+      "cum_amount": 1201672321.46,
+      "delta_volume": 1308.0,
+      "delta_amount": 3754525.0
+    },
+    {
+      "time": "1409",
+      "price": 28.68,
+      "cum_volume": 417532.0,
+      "cum_amount": 1205949603.46,
+      "delta_volume": 1491.0,
+      "delta_amount": 4277282.0
+    },
+    {
+      "time": "1410",
+      "price": 28.68,
+      "cum_volume": 419263.0,
+      "cum_amount": 1210914354.46,
+      "delta_volume": 1731.0,
+      "delta_amount": 4964751.0
+    },
+    {
+      "time": "1411",
+      "price": 28.69,
+      "cum_volume": 420158.0,
+      "cum_amount": 1213481318.45,
+      "delta_volume": 895.0,
+      "delta_amount": 2566963.9900000095
+    },
+    {
+      "time": "1412",
+      "price": 28.68,
+      "cum_volume": 421354.0,
+      "cum_amount": 1216911818.45,
+      "delta_volume": 1196.0,
+      "delta_amount": 3430500.0
+    },
+    {
+      "time": "1413",
+      "price": 28.63,
+      "cum_volume": 424549.0,
+      "cum_amount": 1226068144.45,
+      "delta_volume": 3195.0,
+      "delta_amount": 9156326.0
+    },
+    {
+      "time": "1414",
+      "price": 28.62,
+      "cum_volume": 426100.0,
+      "cum_amount": 1230506861.45,
+      "delta_volume": 1551.0,
+      "delta_amount": 4438717.0
+    },
+    {
+      "time": "1415",
+      "price": 28.64,
+      "cum_volume": 427540.0,
+      "cum_amount": 1234629115.44,
+      "delta_volume": 1440.0,
+      "delta_amount": 4122253.9900000095
+    },
+    {
+      "time": "1416",
+      "price": 28.65,
+      "cum_volume": 428809.0,
+      "cum_amount": 1238264577.44,
+      "delta_volume": 1269.0,
+      "delta_amount": 3635462.0
+    },
+    {
+      "time": "1417",
+      "price": 28.63,
+      "cum_volume": 430015.0,
+      "cum_amount": 1241717931.44,
+      "delta_volume": 1206.0,
+      "delta_amount": 3453354.0
+    },
+    {
+      "time": "1418",
+      "price": 28.64,
+      "cum_volume": 431064.0,
+      "cum_amount": 1244721427.44,
+      "delta_volume": 1049.0,
+      "delta_amount": 3003496.0
+    },
+    {
+      "time": "1419",
+      "price": 28.64,
+      "cum_volume": 431944.0,
+      "cum_amount": 1247241399.44,
+      "delta_volume": 880.0,
+      "delta_amount": 2519972.0
+    },
+    {
+      "time": "1420",
+      "price": 28.67,
+      "cum_volume": 432846.0,
+      "cum_amount": 1249826307.43,
+      "delta_volume": 902.0,
+      "delta_amount": 2584907.9900000095
+    },
+    {
+      "time": "1421",
+      "price": 28.65,
+      "cum_volume": 434749.0,
+      "cum_amount": 1255278266.43,
+      "delta_volume": 1903.0,
+      "delta_amount": 5451959.0
+    },
+    {
+      "time": "1422",
+      "price": 28.66,
+      "cum_volume": 435698.0,
+      "cum_amount": 1257996986.43,
+      "delta_volume": 949.0,
+      "delta_amount": 2718720.0
+    },
+    {
+      "time": "1423",
+      "price": 28.67,
+      "cum_volume": 436898.0,
+      "cum_amount": 1261436417.43,
+      "delta_volume": 1200.0,
+      "delta_amount": 3439431.0
+    },
+    {
+      "time": "1424",
+      "price": 28.69,
+      "cum_volume": 437884.0,
+      "cum_amount": 1264264208.43,
+      "delta_volume": 986.0,
+      "delta_amount": 2827791.0
+    },
+    {
+      "time": "1425",
+      "price": 28.7,
+      "cum_volume": 440511.0,
+      "cum_amount": 1271801829.42,
+      "delta_volume": 2627.0,
+      "delta_amount": 7537620.99000001
+    },
+    {
+      "time": "1426",
+      "price": 28.69,
+      "cum_volume": 441829.0,
+      "cum_amount": 1275582061.42,
+      "delta_volume": 1318.0,
+      "delta_amount": 3780232.0
+    },
+    {
+      "time": "1427",
+      "price": 28.7,
+      "cum_volume": 443572.0,
+      "cum_amount": 1280584137.42,
+      "delta_volume": 1743.0,
+      "delta_amount": 5002076.0
+    },
+    {
+      "time": "1428",
+      "price": 28.71,
+      "cum_volume": 444846.0,
+      "cum_amount": 1284241624.42,
+      "delta_volume": 1274.0,
+      "delta_amount": 3657487.0
+    },
+    {
+      "time": "1429",
+      "price": 28.71,
+      "cum_volume": 445822.0,
+      "cum_amount": 1287043819.42,
+      "delta_volume": 976.0,
+      "delta_amount": 2802195.0
+    },
+    {
+      "time": "1430",
+      "price": 28.73,
+      "cum_volume": 447282.0,
+      "cum_amount": 1291238227.42,
+      "delta_volume": 1460.0,
+      "delta_amount": 4194408.0
+    },
+    {
+      "time": "1431",
+      "price": 28.69,
+      "cum_volume": 449267.0,
+      "cum_amount": 1296936728.41,
+      "delta_volume": 1985.0,
+      "delta_amount": 5698500.99000001
+    },
+    {
+      "time": "1432",
+      "price": 28.7,
+      "cum_volume": 450092.0,
+      "cum_amount": 1299304489.41,
+      "delta_volume": 825.0,
+      "delta_amount": 2367761.0
+    },
+    {
+      "time": "1433",
+      "price": 28.71,
+      "cum_volume": 450910.0,
+      "cum_amount": 1301652638.41,
+      "delta_volume": 818.0,
+      "delta_amount": 2348149.0
+    },
+    {
+      "time": "1434",
+      "price": 28.69,
+      "cum_volume": 452324.0,
+      "cum_amount": 1305711177.41,
+      "delta_volume": 1414.0,
+      "delta_amount": 4058539.0
+    },
+    {
+      "time": "1435",
+      "price": 28.69,
+      "cum_volume": 453449.0,
+      "cum_amount": 1308939106.41,
+      "delta_volume": 1125.0,
+      "delta_amount": 3227929.0
+    },
+    {
+      "time": "1436",
+      "price": 28.7,
+      "cum_volume": 454861.0,
+      "cum_amount": 1312990794.41,
+      "delta_volume": 1412.0,
+      "delta_amount": 4051688.0
+    },
+    {
+      "time": "1437",
+      "price": 28.7,
+      "cum_volume": 456071.0,
+      "cum_amount": 1316463216.41,
+      "delta_volume": 1210.0,
+      "delta_amount": 3472422.0
+    },
+    {
+      "time": "1438",
+      "price": 28.69,
+      "cum_volume": 457680.0,
+      "cum_amount": 1321079857.4,
+      "delta_volume": 1609.0,
+      "delta_amount": 4616640.99000001
+    },
+    {
+      "time": "1439",
+      "price": 28.69,
+      "cum_volume": 458706.0,
+      "cum_amount": 1324023279.4,
+      "delta_volume": 1026.0,
+      "delta_amount": 2943422.0
+    },
+    {
+      "time": "1440",
+      "price": 28.69,
+      "cum_volume": 459757.0,
+      "cum_amount": 1327039001.4,
+      "delta_volume": 1051.0,
+      "delta_amount": 3015722.0
+    },
+    {
+      "time": "1441",
+      "price": 28.7,
+      "cum_volume": 461819.0,
+      "cum_amount": 1332955420.4,
+      "delta_volume": 2062.0,
+      "delta_amount": 5916419.0
+    },
+    {
+      "time": "1442",
+      "price": 28.72,
+      "cum_volume": 465562.0,
+      "cum_amount": 1343700982.4,
+      "delta_volume": 3743.0,
+      "delta_amount": 10745562.0
+    },
+    {
+      "time": "1443",
+      "price": 28.72,
+      "cum_volume": 467198.0,
+      "cum_amount": 1348399378.39,
+      "delta_volume": 1636.0,
+      "delta_amount": 4698395.99000001
+    },
+    {
+      "time": "1444",
+      "price": 28.72,
+      "cum_volume": 469054.0,
+      "cum_amount": 1353729282.39,
+      "delta_volume": 1856.0,
+      "delta_amount": 5329904.0
+    },
+    {
+      "time": "1445",
+      "price": 28.75,
+      "cum_volume": 471576.0,
+      "cum_amount": 1360977588.39,
+      "delta_volume": 2522.0,
+      "delta_amount": 7248306.0
+    },
+    {
+      "time": "1446",
+      "price": 28.72,
+      "cum_volume": 473781.0,
+      "cum_amount": 1367315019.39,
+      "delta_volume": 2205.0,
+      "delta_amount": 6337431.0
+    },
+    {
+      "time": "1447",
+      "price": 28.73,
+      "cum_volume": 476236.0,
+      "cum_amount": 1374368126.39,
+      "delta_volume": 2455.0,
+      "delta_amount": 7053107.0
+    },
+    {
+      "time": "1448",
+      "price": 28.73,
+      "cum_volume": 477579.0,
+      "cum_amount": 1378226276.39,
+      "delta_volume": 1343.0,
+      "delta_amount": 3858150.0
+    },
+    {
+      "time": "1449",
+      "price": 28.72,
+      "cum_volume": 479456.0,
+      "cum_amount": 1383617912.38,
+      "delta_volume": 1877.0,
+      "delta_amount": 5391635.99000001
+    },
+    {
+      "time": "1450",
+      "price": 28.73,
+      "cum_volume": 481021.0,
+      "cum_amount": 1388113367.38,
+      "delta_volume": 1565.0,
+      "delta_amount": 4495455.0
+    },
+    {
+      "time": "1451",
+      "price": 28.72,
+      "cum_volume": 483706.0,
+      "cum_amount": 1395824766.38,
+      "delta_volume": 2685.0,
+      "delta_amount": 7711399.0
+    },
+    {
+      "time": "1452",
+      "price": 28.74,
+      "cum_volume": 487688.0,
+      "cum_amount": 1407264117.38,
+      "delta_volume": 3982.0,
+      "delta_amount": 11439351.0
+    },
+    {
+      "time": "1453",
+      "price": 28.74,
+      "cum_volume": 490650.0,
+      "cum_amount": 1415776476.38,
+      "delta_volume": 2962.0,
+      "delta_amount": 8512359.0
+    },
+    {
+      "time": "1454",
+      "price": 28.75,
+      "cum_volume": 494106.0,
+      "cum_amount": 1425707470.37,
+      "delta_volume": 3456.0,
+      "delta_amount": 9930993.989999771
+    },
+    {
+      "time": "1455",
+      "price": 28.77,
+      "cum_volume": 497104.0,
+      "cum_amount": 1434328456.37,
+      "delta_volume": 2998.0,
+      "delta_amount": 8620986.0
+    },
+    {
+      "time": "1456",
+      "price": 28.76,
+      "cum_volume": 500718.0,
+      "cum_amount": 1444725096.37,
+      "delta_volume": 3614.0,
+      "delta_amount": 10396640.0
+    },
+    {
+      "time": "1457",
+      "price": 28.77,
+      "cum_volume": 505758.0,
+      "cum_amount": 1459224609.18,
+      "delta_volume": 5040.0,
+      "delta_amount": 14499512.810000181
+    },
+    {
+      "time": "1458",
+      "price": 28.77,
+      "cum_volume": 505790.0,
+      "cum_amount": 1459316669.18,
+      "delta_volume": 32.0,
+      "delta_amount": 92060.0
+    },
+    {
+      "time": "1459",
+      "price": 28.77,
+      "cum_volume": 505790.0,
+      "cum_amount": 1459316669.18,
+      "delta_volume": 0.0,
+      "delta_amount": 0.0
+    },
+    {
+      "time": "1500",
+      "price": 28.77,
+      "cum_volume": 512302.0,
+      "cum_amount": 1478051689.12,
+      "delta_volume": 6512.0,
+      "delta_amount": 18735019.93999982
+    }
+  ],
+  "observations": [
+    {
+      "runner_time_cst": "2026-08-12 16:24:44.754",
+      "runner_time_utc": "2026-08-12T08:24:44.754695+00:00",
+      "run_id": 31578165774,
+      "run_attempt": 1,
+      "head_sha": "5849db40c4bfb761a686ea7c75aa923fe83de0f1",
+      "source": "GITHUB_ACTIONS",
+      "captured_point_count": 242
+    }
+  ],
+  "source_anomalies": {
+    "duplicate_times": [],
+    "unexpected_times": [
+      "1506",
+      "1507",
+      "1508",
+      "1509",
+      "1510",
+      "1511",
+      "1512",
+      "1513",
+      "1514",
+      "1515",
+      "1516",
+      "1517",
+      "1518",
+      "1519",
+      "1520",
+      "1521",
+      "1522",
+      "1523",
+      "1524",
+      "1525",
+      "1526",
+      "1527",
+      "1528",
+      "1529",
+      "1530"
+    ],
+    "invalid_row_count": 0
+  },
+  "conflicts": [],
+  "updated_at_cst": "2026-08-12 16:24:44.754",
+  "coverage": {
+    "status": "COMPLETE",
+    "observed_count": 242,
+    "expected_count": 242,
+    "missing_count": 0,
+    "missing_times": [],
+    "first_time": "0930",
+    "last_time": "1500"
+  },
+  "continuity": {
+    "status": "PASS",
+    "reason_codes": [],
+    "cumulative_error_times": []
+  },
+  "finality": {
+    "status": "FINAL",
+    "reason_codes": []
+  },
+  "replay": {
+    "contract_version": "v1",
+    "eligible": true,
+    "reason_codes": []
+  },
+  "status": "REPLAY_READY"
+}
