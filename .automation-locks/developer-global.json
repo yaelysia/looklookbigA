@@ -1,13 +1,13 @@
 {
   "kind": "looklookbigA-auto-worker-lease",
-  "state": "ACTIVE",
-  "token": "auto-20260812T170225Z-53-validate-4c91d7a2",
+  "state": "IDLE",
+  "token": null,
   "work_item": "issue-53/fix-validation-ready",
   "acquired_at": "2026-08-12T17:02:25+00:00",
   "lease_until": "2026-08-12T17:52:25+00:00",
-  "released_at": null,
-  "last_token": "auto-20260812T160121Z-53-rerun-artifact-b7c4e812",
-  "last_checkpoint": "FIX_RERUN_ARTIFACT_OVERWRITE_SUBMITTED",
+  "released_at": "2026-08-12T17:05:30+00:00",
+  "last_token": "auto-20260812T170225Z-53-validate-4c91d7a2",
+  "last_checkpoint": "RERUN_RUNTIME_VALIDATION_TRIGGERED",
   "last_head_sha": "e69b704399d6938318174cfffdce8f44e363bcdc",
-  "note": "Validate exact-head CI and resolved rerun artifact blocker on PR #66; if acceptance is complete, prepare Ready for Review while preserving MANUAL_GATE_REQUIRED for workflow changes."
+  "note": "PR 66 exact-head gate passed. Runtime validation attempt 2 was triggered on workflow run 31616266304. Next run should inspect that attempt and its newly produced artifacts before Ready for Review."
 }
