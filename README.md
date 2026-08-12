@@ -27,7 +27,8 @@
 - **20～60 日日 K 背景**：MA5 / MA10 / MA20 / MA60、ATR14、5 / 10 / 20 日高低、20 日收益、日线 swing high / low。
 - **支撑 / 压力上下文**：综合均线、昨日 OHLC、近期高低和日线拐点生成可解释的候选价位及共振强度。
 - **公告 / 公司事件**：从巨潮资讯官方披露源获取 detail stock 最近 7 / 30 / 90 日公告，输出稳定 `event_id`、事件类型、发布时间、官方 PDF、重要性、结构化事实、事件关联、缓存和 provider health；重要公告可从官方 PDF 原文做确定性事实抽取。已经成功得到的官方 PDF facts 在后续较弱 FAST refresh 或失败的 FULL re-enrichment 中不会被擦除。
-- **快照增量变化**：自动比较上一份完整归档快照，输出价格 / 成交额 / 分时 / 资金行为 / 基本面 / 股权资本结构 / 相对强弱 / 板块排名 / 市场环境 / 新增或更新事件的 `before / after / delta` 和显著性原因。资金相对强弱只在 peer universe 可比时计算变化；融资数据只在新的披露交易日出现时报告变化；基本面区分新报告期与同报告期修订；股权资本结构只报告新披露期、同期间修订或持久事件状态变化。master Realtime 优先使用同一 run 的前一次成功 attempt，否则使用上一条成功 run，并严格校验 exact `market-history-state` 的 run / attempt / head SHA。
+- **未来事件日历**：为 detail stock 输出 `upcoming_events`，只复用当前快照中能够证明日期语义的官方公司事件、解禁与回购/增减持计划事实；提供非重叠 7 / 30 / 90 天窗口、最近事件、交易日邻近、同日事件重叠、跨来源去重以及统一 provenance / freshness / quality。模糊 `effective_date` 或无法证明的未来日期会 fail closed，不从历史财报发布时间猜测下一次披露日期；详见 `docs/UPCOMING_EVENTS.md`。
+- **快照增量变化**：自动比较上一份完整归档快照，输出价格 / 成交额 / 分时 / 资金行为 / 基本面 / 股权资本结构 / 未来事件 / 相对强弱 / 板块排名 / 市场环境 / 新增或更新事件的 `before / after / delta` 和显著性原因。未来事件只报告新增、移出 upcoming、明确完成/取消、日期/状态变化以及进入 30 日 / 7 日窗口；普通逐日倒计时不制造变化噪声。master Realtime 优先使用同一 run 的前一次成功 attempt，否则使用上一条成功 run，并严格校验 exact `market-history-state` 的 run / attempt / head SHA。
 - **统一 provenance / freshness / quality / trust / SLA**：重要原始数据和派生数据统一携带来源、时间、freshness、quality、Source Trust 和 Freshness SLA；顶层提供适合 LLM 消费的质量摘要。
 - **历史缓存**：主仓库使用独立 `market-data` 分支持久保存日 K、完整分钟记录、公司事件、融资融券低频缓存、财务报表低频缓存和盘中快照。后台 writer 采用加锁、暂存校验和领域合并；迟到 run 可补齐归档/分钟，但不能回退 latest manifest。
 - **实时价格保险**：历史缓存、历史快照、公司事件缓存、资金缓存、财务缓存和日 K 数据被禁止进入 `quote.latest`。盘中实时 quote 失效时，只允许降级到仍然 LIVE 的当日分钟价；两者都不新鲜时当前价直接标记不可用。
@@ -56,6 +57,7 @@
 - `docs/CAPITAL_FLOW.md`
 - `docs/FUNDAMENTALS.md`
 - `docs/OWNERSHIP_AND_CAPITAL.md`
+- `docs/UPCOMING_EVENTS.md`
 - `docs/MARKET_CALENDAR.md`
 - `docs/MARKET_HISTORY.md`
 - `docs/RELATIVE_STRENGTH_WINDOWS.md`
@@ -86,7 +88,7 @@ config/quote_watchlist.json
 }
 ```
 
-`detail_codes` 会抓实时 quote、分钟线、日 K、官方公司事件，并生成资金/成交行为、基本面与完整分析上下文；`light_codes` / group member 主要用于批量板块对照。
+`detail_codes` 会抓实时 quote、分钟线、日 K、官方公司事件，并生成资金/成交行为、基本面、未来事件日历与完整分析上下文；`light_codes` / group member 主要用于批量板块对照。
 
 `event_lookback_days` 允许 `7 / 30 / 90`，默认 `30`。它只控制 detail stock 的公告查询窗口，不影响行情实时性。
 
@@ -223,6 +225,6 @@ reusable workflow 未显式覆盖 `source_ref` 时，会使用 `job.workflow_sha
 - CNINFO PDF 初始 URL、每次 redirect 和最终 URL 均限制在官方 HTTPS host；
 - required `pre-merge-security-gate` 在 `master` / `v1` 上无 paths 条件，任何 PR 都必须通过；
 - required reusable smoke 强制 FULL，push selftest 额外覆盖 FAST；
-- Safety tests 覆盖 live-price、source resilience、配置边界、资金行为与融资 provider 口径、财务累计→单季度归一化、TTM 连续性、财务趋势 evidence、partial-report cache continuity、event coverage、PDF facts、Source Trust/Freshness SLA、交易日历、exact-attempt artifact、history 单调合并与完整分钟 replay。
+- Safety tests 覆盖 live-price、source resilience、配置边界、资金行为与融资 provider 口径、财务累计→单季度归一化、TTM 连续性、财务趋势 evidence、partial-report cache continuity、upcoming-events date/dedupe/trading-day/changes/quality contract、event coverage、PDF facts、Source Trust/Freshness SLA、交易日历、exact-attempt artifact、history 单调合并与完整分钟 replay。
 
 稳定分支与发布流程见 `docs/STABLE_V1.md`。

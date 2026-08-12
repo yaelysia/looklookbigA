@@ -9,7 +9,7 @@
   "base_branch": "master",
   "base_sha_at_lock": "ce9a968f0a95e1a3ba62be6cee5965d993aca79b",
   "locked_at": "2026-08-13T03:02:12+08:00",
-  "state": "WAITING",
-  "checkpoint": "ISSUE_48_QUALITY_GATE_SUBMITTED",
-  "next_action": "Inspect exact-head CI/live reusable smoke for the upcoming-events quality-contract and required-gate checkpoint. If green, complete README/UPCOMING_EVENTS snapshot-schema documentation and final acceptance review, then remove .automation-locks/** before Ready. Workflow changes in this checkpoint require MANUAL_GATE_REQUIRED at final merge."
+  "state": "DEVELOPING",
+  "checkpoint": "ISSUE_48_DOCS_ACCEPTANCE_SUBMITTED",
+  "next_action": "Inspect exact-head CI for the README/schema-doc checkpoint. Final acceptance reconciliation found one remaining date-certainty contract gap: implement explicit CONFIRMED_RANGE semantics for proven execution windows (and define fail-closed handling for EXPECTED_WINDOW/UNKNOWN without inventing dates), with focused tests. Keep Draft and do not remove the issue lock until that acceptance group is closed."
 }
