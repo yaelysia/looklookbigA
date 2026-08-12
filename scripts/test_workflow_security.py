@@ -135,6 +135,9 @@ def test_intraday_fast_workflow_contract():
 
     assert "event_fact_continuity.install(company_events, company_event_facts)" in runner
     assert "history_continuity.install_manifest_revision(history_store)" in runner
+    assert runner.index(
+        '"minute_history", minute_history.finalize_snapshot'
+    ) < runner.index('"intraday_metrics", intraday_metrics.finalize_snapshot')
 
     assert "execution_mode:" in reusable
     assert "default: AUTO" in reusable

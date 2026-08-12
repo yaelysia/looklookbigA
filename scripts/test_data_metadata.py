@@ -216,6 +216,10 @@ def test_cache_and_derived_provenance_are_distinguishable():
     intraday = data["detail_stocks"]["002558"]["intraday"]
     assert intraday["metadata"]["source_tier"] == "DERIVED"
     assert intraday["provenance"]["algorithm"] == "intraday_structure_metrics_v1"
+    assert intraday["provenance"]["derived_from"] == [
+        "detail_stocks.002558.quote",
+        "detail_stocks.002558.minute_history",
+    ]
     print("PASS cache_and_derived_provenance")
 
 

@@ -1,6 +1,19 @@
 import json
 import statistics
+from datetime import datetime
 from pathlib import Path
+
+import market_calendar
+import minute_history
+
+
+INTRADAY_METRICS_VERSION = "v1"
+_GUARD_FIELDS = (
+    "current_price_valid",
+    "current_price_source_class",
+    "current_price_provider",
+    "current_price_guard",
+)
 
 
 def _as_float(value):
@@ -275,6 +288,101 @@ def build_intraday_metrics(quote, mins):
     return result
 
 
+def _canonical_minute_clock(snapshot, document, points):
+    if not points or not document.get("session_date"):
+        return None, None, "UNKNOWN"
+    label = str(points[-1].get("time") or "")
+    try:
+        minute_time = datetime.strptime(
+            f"{document['session_date']} {label}", "%Y-%m-%d %H%M"
+        ).replace(tzinfo=market_calendar.CST)
+        now = minute_history._snapshot_time(snapshot)
+    except (TypeError, ValueError):
+        return None, None, "UNKNOWN"
+
+    lag_seconds = max(0, int((now - minute_time).total_seconds()))
+    same_day = minute_time.date() == now.date()
+    if market_calendar.in_market_window(now):
+        freshness = "LIVE" if same_day and lag_seconds <= 180 else "STALE"
+    else:
+        freshness = "CURRENT_SESSION" if same_day else "LAST_SESSION"
+    return minute_time.strftime("%Y-%m-%d %H:%M:%S"), lag_seconds, freshness
+
+
+def _project_legacy_minutes(snapshot, item, document, points, intraday):
+    previous = item.get("minutes") or {}
+    provider_observation = previous.get("provider_observation")
+    if not isinstance(provider_observation, dict):
+        provider_observation = {
+            "source": previous.get("source"),
+            "date": previous.get("date"),
+            "count": previous.get("count"),
+            "last_time": previous.get("last_time"),
+            "last_price": previous.get("last_price"),
+            "market_time_cst": previous.get("market_time_cst"),
+        }
+
+    market_time, lag_seconds, freshness = _canonical_minute_clock(
+        snapshot, document, points
+    )
+    value = dict(previous)
+    value.update(
+        {
+            "date": str(document.get("session_date") or "").replace("-", "") or None,
+            "freshness": freshness,
+            "count": len(points),
+            "last_time": points[-1].get("time") if points else None,
+            "last_price": _as_float(points[-1].get("price")) if points else None,
+            "trend_5m_percent": intraday.get("trend_5m_percent"),
+            "trend_15m_percent": intraday.get("trend_15m_percent"),
+            "first_10": points[:10],
+            "last_15": points[-15:],
+            "market_time_cst": market_time,
+            "lag_seconds": lag_seconds,
+            "provider_observation": provider_observation,
+            "normalization": {
+                "authority": "minute_history",
+                "record_id": document.get("record_id"),
+                "calendar_trimmed": True,
+                "calendar_status": (
+                    document.get("calendar_expectation") or {}
+                ).get("status"),
+                "unexpected_provider_times": list(
+                    (document.get("source_anomalies") or {}).get("unexpected_times")
+                    or []
+                ),
+            },
+        }
+    )
+    item["minutes"] = value
+    return value
+
+
+def _canonical_intraday(snapshot, code, item):
+    document = minute_history.load_from_snapshot(snapshot, code)
+    points = list(document.get("points") or [])
+    previous = item.get("intraday") or {}
+    intraday = build_intraday_metrics(item.get("quote"), points)
+    for field in _GUARD_FIELDS:
+        if field in previous:
+            intraday[field] = previous[field]
+
+    minutes = _project_legacy_minutes(snapshot, item, document, points, intraday)
+    guard = intraday.get("current_price_guard")
+    if isinstance(guard, dict):
+        guard["minute_freshness"] = minutes.get("freshness")
+        guard["minute_lag_seconds"] = minutes.get("lag_seconds")
+
+    intraday["canonical_minute_history"] = {
+        "record_id": document.get("record_id"),
+        "session_date": document.get("session_date"),
+        "status": document.get("status"),
+        "coverage": document.get("coverage"),
+        "source_contract": "CALENDAR_TRIMMED_MINUTE_HISTORY_ONLY",
+    }
+    return intraday
+
+
 def install(base):
     minute_cache = {}
     original_tencent_minutes = base.tencent_minutes
@@ -306,15 +414,34 @@ def install(base):
 def finalize_snapshot(snapshot_path):
     path = Path(snapshot_path)
     data = json.loads(path.read_text(encoding="utf-8"))
-    data["schema_version"] = 4
-    data.setdefault("features", {})["intraday_structure_metrics"] = "v1"
+    data["schema_version"] = max(int(data.get("schema_version") or 0), 4)
+    data.setdefault("features", {})[
+        "intraday_structure_metrics"
+    ] = INTRADAY_METRICS_VERSION
 
     errors = []
     for code, item in data.get("detail_stocks", {}).items():
         minutes = item.get("minutes") or {}
-        intraday = item.get("intraday") or {}
-        if (minutes.get("count") or 0) > 0 and not intraday:
-            errors.append(f"{code}: missing intraday metrics")
+        previous_intraday = item.get("intraday") or {}
+        try:
+            intraday = _canonical_intraday(data, code, item)
+            item["intraday"] = intraday
+            minutes = item.get("minutes") or {}
+        except Exception as exc:
+            unavailable = {
+                "status": "CANONICAL_MINUTE_HISTORY_UNAVAILABLE",
+                "minute_count": 0,
+                "error": f"{type(exc).__name__}: {exc}",
+                "source_contract": "NO_RAW_PROVIDER_FALLBACK",
+            }
+            for field in _GUARD_FIELDS:
+                if field in previous_intraday:
+                    unavailable[field] = previous_intraday[field]
+            item["intraday"] = unavailable
+            if (minutes.get("count") or 0) > 0:
+                errors.append(
+                    f"{code}: raw minute rows exist but canonical minute history is unavailable"
+                )
             continue
 
         pos = _as_float(intraday.get("day_range_position_percent"))
@@ -343,4 +470,9 @@ def finalize_snapshot(snapshot_path):
         raise RuntimeError("intraday metric validation failed: " + "; ".join(errors))
 
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
-    print("SNAPSHOT_SCHEMA_UPGRADED schema_version=4 feature=intraday_structure_metrics:v1", flush=True)
+    print(
+        "SNAPSHOT_SCHEMA_UPGRADED "
+        f"schema_version={data['schema_version']} "
+        f"feature=intraday_structure_metrics:{INTRADAY_METRICS_VERSION}",
+        flush=True,
+    )
