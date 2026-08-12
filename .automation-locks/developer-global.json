@@ -1,13 +1,13 @@
 {
   "kind": "looklookbigA-auto-worker-lease",
-  "state": "IDLE",
-  "token": null,
-  "work_item": "issue-48/upcoming-events-core",
-  "acquired_at": "2026-08-12T19:02:12+00:00",
-  "lease_until": "2026-08-12T19:52:12+00:00",
-  "released_at": "2026-08-12T19:14:37+00:00",
+  "state": "ACTIVE",
+  "token": "auto-20260812T200205Z-48-event-semantics-4c72a1e6",
+  "work_item": "issue-48/confirmed-event-semantics",
+  "acquired_at": "2026-08-12T20:02:05+00:00",
+  "lease_until": "2026-08-12T20:52:05+00:00",
+  "released_at": null,
   "last_token": "auto-20260812T190212Z-48-upcoming-events-8c4e91d2",
   "last_checkpoint": "ISSUE_48_CORE_WINDOWS_SUBMITTED",
   "last_head_sha": "1164f21ee59e60d0eb3a0780ddb80a234feda93d",
-  "note": "Started Issue #48 / Draft PR #67 from current master and submitted the first upcoming-events core slice: explicit unlock and ownership-plan dates only, fail-closed generic dates, exact source-event dedupe, non-overlapping 7/30/90/later buckets, snapshot integration, and focused tests (4/4 locally). Exact-head Pre-merge Security Gate run 31631612095 is queued; next run must inspect CI before extending event coverage."
+  "note": "Resume Issue #48 after exact-head core-window CI passed. This lease is limited to additional confirmed high-value event-date semantics plus tightly related semantic dedupe/trading-day proximity where safe."
 }
