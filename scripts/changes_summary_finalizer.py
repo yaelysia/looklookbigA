@@ -1,6 +1,8 @@
 import json
 from pathlib import Path
 
+import upcoming_events_changes
+
 
 def recount(changes):
     if not isinstance(changes, dict):
@@ -25,6 +27,7 @@ def recount(changes):
 
 
 def finalize_snapshot(snapshot_path):
+    upcoming_events_changes.finalize_snapshot(snapshot_path)
     path = Path(snapshot_path)
     snapshot = json.loads(path.read_text(encoding="utf-8"))
     changes = snapshot.get("changes_since_previous")
