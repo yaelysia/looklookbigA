@@ -1,11 +1,13 @@
 {
   "kind": "looklookbigA-auto-worker-lease",
-  "state": "ACTIVE",
-  "token": "auto-20260812T000124Z-50-institutional-4f8c2d71",
+  "state": "IDLE",
+  "token": null,
   "work_item": "issue-50/institutional-holdings",
   "acquired_at": "2026-08-12T00:01:24+00:00",
   "lease_until": "2026-08-12T00:51:24+00:00",
-  "start_head_sha": "c6be596d2a3bfea9da66df36463d8cbee3925ef0",
-  "checkpoint_target": "ISSUE_50_INSTITUTIONAL_HOLDINGS_SUBMITTED",
-  "note": "Top-holders exact-head CI passed. This lease is limited to the institutional_holdings report-period slice, focused tests, checkpoint persistence, and CI trigger verification."
+  "released_at": "2026-08-12T00:09:18+00:00",
+  "last_token": "auto-20260812T000124Z-50-institutional-4f8c2d71",
+  "last_checkpoint": "ISSUE_50_INSTITUTIONAL_HOLDINGS_SUBMITTED",
+  "last_head_sha": "e75dd3f6e89b2e2ca4d61fc5aa4bdfbed91d3923",
+  "note": "Top-holders exact-head CI passed. Submitted only institutional_holdings: up to four disclosed report periods, provider-declared institution types, fail-closed aggregates, explicit disclosure lag/fund completeness caveat, adjacent-period deltas, focused tests, and FAST deferral. Exact-head Pre-merge Security Gate run 31549153180 is in progress; next run must inspect CI and live reusable-smoke provider compatibility before shareholder_count work."
 }
