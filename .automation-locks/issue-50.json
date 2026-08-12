@@ -10,6 +10,6 @@
   "base_sha_at_lock": "555213ea5ece24628b9e0acd550c9fd28e539a1e",
   "locked_at": "2026-08-11T20:02:52+00:00",
   "state": "WAITING",
-  "checkpoint": "ISSUE_50_SHAREHOLDER_COUNT_SUBMITTED",
-  "next_action": "Inspect exact-head CI and live reusable-smoke output for shareholder_count. Confirm Eastmoney gdrs/provider field compatibility and 3/6/12m trend structure. If green, continue with the next bounded ownership/capital module; otherwise fix only the shareholder-count provider contract."
+  "checkpoint": "ISSUE_50_PLANS_UNLOCKS_SUBMITTED",
+  "next_action": "Inspect exact-head CI/live reusable smoke for event-derived buyback_and_holder_plans + unlocks. If green, next budget-driven checkpoint may implement pledges_and_capital_tools plus tightly related structural risk facts; keep cross-module trends/signals, changes integration, required-gate wiring, docs/schema finalization, and Ready cleanup pending."
 }
