@@ -114,6 +114,78 @@ master 每轮开始会优先恢复同一 run 的前一次成功 attempt；若不
 
 `performance.decision_snapshot_ready_ms` 是 Python engine 从 runner 启动到决策数据完成的耗时；master 在 runner 启动前执行的 exact-baseline API 查询 / artifact restore，以及 checkout / artifact upload 等属于 GitHub Actions 端到端开销，不包含在该指标内。
 
+## LLM / Agent 立即刷新实时行情
+
+LLM / Agent 需要“现在重新抓一次”时，**首选新的 `workflow_dispatch`**。新的 dispatch 会创建新的 workflow run，并允许显式选择 `AUTO / INTRADAY_FAST / FULL`；这是语义最清晰的刷新方式。
+
+如果 Agent 工具没有 `workflow_dispatch`，但提供 GitHub Actions 的单 job rerun，可以把最近一次可信 `master` run 的 `fetch-quotes` job 作为兼容 fallback。这个 fallback 会重新执行实时采集和 artifact 上传，但它**不是一条新的 dispatch**，必须保留更严格的 run / attempt / artifact 身份校验。
+
+为保证同一个 workflow run 的后续 attempt 能重复发布同名产物，`fetch-quotes` 对 `realtime-snapshot` 和 `market-history-state` 的 `actions/upload-artifact` 均显式设置 `overwrite: true`。rerun 会替换该 run 内的旧同名 artifact，并产生新的 artifact identity；因此下面仍以“新 artifact ID 不在 rerun 前基线集合中 + `created_at` 不早于 rerun 开始时间”作为 fail-closed 识别条件。若没有观察到新的 artifact identity，则不能把旧 artifact 当成本次刷新结果。
+
+### 兼容 fallback 的选择条件
+
+执行 rerun 前先读取当前 `master` SHA，记为 `M`，然后只接受同时满足以下条件的历史 run：
+
+- workflow 为 `.github/workflows/realtime-quotes.yml` / `Realtime A-share Quotes`；
+- `head_branch == master`；
+- `head_sha == M`，禁止为了“能 rerun”退回更旧 commit；
+- 原 run 已 `completed + success`，并且其中 `fetch-quotes` job 成功；
+- 用于通用“立即刷新”时，不复用带旧 Alpha operation identity 的 run。当前 workflow 对 identity-bound dispatch 使用 `alpha-refresh corr=...` run name；除非调用方明确是在恢复同一 operation identity，否则应优先选择普通 `push` run 或其他没有该 identity 的可信 run。
+
+如果当前 `master` 没有满足条件的成功 run，则这个兼容路径应 fail closed：改用 `workflow_dispatch`，或先等待/产生当前 `master` 的可信成功 run；不要 rerun 旧 SHA 后把结果称为当前版本数据。
+
+### `rerun_workflow_job` 操作顺序
+
+1. 记录候选 run 的 `run_id`、当前 `run_attempt=A`、`head_sha=M`，以及 rerun 前该 run 下所有 artifact ID。
+2. 从该 run 的 jobs 中精确选择名称为 `fetch-quotes` 的成功 job，并调用 `rerun_workflow_job(job_id)`。
+3. 轮询**同一个 `run_id`**，直到 `run_attempt > A` 且最新 attempt `completed + success`；同时再次读取最新 attempt 的 jobs，确认 `fetch-quotes` 本身成功。
+4. 重新列出该 run 的 artifacts。只接受名称为 `realtime-snapshot`、`workflow_run.id == run_id`、`workflow_run.head_sha == M`，且 **artifact ID 不在 rerun 前基线集合中** 的新 artifact。
+5. 新 artifact 还应满足 `created_at` 不早于本次 rerun 的开始时间。若出现多个新候选，按 `created_at`、再按 artifact ID 取最新；如果无法唯一证明 artifact 来自本次 attempt，则不要读取旧 artifact 冒充本次刷新结果。
+6. 下载该 artifact 中的 `snapshot.json` 后，再进入行情分析。
+
+`realtime-snapshot` 当前由 `fetch-quotes` job 上传，另一个 `market-history-state` artifact 只用于历史连续性；不要把 `market-history-state` 或 `market-data` 当作实时现价来源。
+
+### rerun 与新 dispatch 的差异
+
+`rerun_workflow_job` 复用原 run 的 `run_id`、`head_sha`、workflow 定义以及原 event/input 上下文。它会产生新的 attempt，但不能像新 dispatch 一样切换到更新后的 commit 或重新指定新的 workflow inputs。
+
+因此：
+
+- 原 run 是普通 `push` 时，`mode` 没有 dispatch input，当前 workflow 会按 `AUTO` 解析；
+- 如果需要明确指定 `FULL` 或 `INTRADAY_FAST`，应使用新的 `workflow_dispatch`；
+- 如果 `master` 在原 run 后已经前进，rerun 仍会执行旧 `head_sha`，此时不能作为当前版本刷新；
+- identity-bound 的旧 dispatch 不应被当成通用 refresh run 重用，以免把旧 correlation / command identity 带入新的业务语义。
+
+### 实时价格安全边界
+
+无论是新 dispatch 还是 job rerun，**artifact 生成成功都不等于“当前价一定可用”**。读取 `snapshot.json` 后仍必须校验：
+
+- detail stock 的 `current_price_guard`（调用层如另有 `live_price_guard`，也必须同时通过）；
+- quote / minute 的 `freshness`、`market_time_cst`、`lag_seconds`；
+- source / provider quality 与降级状态；
+- 当前价是否来自本次仍然 LIVE 的 quote，或允许的当日 LIVE minute fallback。
+
+历史 snapshot、`market-data`、日 K、公司事件、资金/财务/股权缓存都不能进入当前价判定。若实时 quote 与允许的当日分钟价都不满足 freshness，必须把当前价视为 unavailable，而不是回退到旧 artifact。
+
+### 可直接给 Agent 的操作指令
+
+```text
+Read current master SHA M.
+Find the newest successful Realtime A-share Quotes run on master
+whose head_sha is exactly M and which is not an unrelated identity-bound alpha-refresh run.
+Find its successful fetch-quotes job.
+Record run_id, baseline run_attempt, rerun start time, and all existing artifact IDs.
+Call rerun_workflow_job(fetch-quotes job_id).
+Poll the same run until run_attempt increases and the latest attempt succeeds.
+Verify fetch-quotes succeeded in that attempt.
+List artifacts again and select only a newly created realtime-snapshot artifact
+for the same run_id/head_sha whose ID was not present before the rerun.
+If the new artifact cannot be identified unambiguously, fail closed.
+Download snapshot.json.
+Validate current_price_guard / live-price freshness / source quality before using any current price.
+Never use historical snapshots, market-data, or caches as the current price.
+```
+
 ## 在其他仓库复用
 
 项目提供 reusable workflow：

@@ -377,6 +377,7 @@ jobs:
             alpha-artifact-manifest.json
           if-no-files-found: error
           retention-days: 1
+          overwrite: true
 
       - name: Upload market history state
         if: always()
@@ -386,3 +387,4 @@ jobs:
           path: .market-data/history
           if-no-files-found: error
           retention-days: 1
+          overwrite: true
