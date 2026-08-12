@@ -60,22 +60,64 @@ def select_previous_success(payload, current_run_id=None):
     return candidates[0]
 
 
-def resolve_previous_success(repository, token, current_run_id=None):
+def _eligible_success(run):
+    if not isinstance(run, dict) or run.get("conclusion") != "success":
+        return False
+    if run.get("head_branch") != "master":
+        return False
+    path = str(run.get("path") or "")
+    return not path or path == WORKFLOW_PATH
+
+
+def resolve_previous_success(
+    repository,
+    token,
+    current_run_id=None,
+    current_run_attempt=None,
+):
     repository = str(repository or "").strip()
     if "/" not in repository or repository.count("/") != 1:
         raise ValueError("GITHUB_REPOSITORY must be owner/repo")
     owner, repo = repository.split("/", 1)
-    endpoint = (
+    try:
+        current = int(current_run_id) if current_run_id not in (None, "") else None
+        attempt = int(current_run_attempt) if current_run_attempt not in (None, "") else 1
+    except (TypeError, ValueError) as exc:
+        raise ValueError("current workflow run id/attempt must be integers") from exc
+    if attempt < 1:
+        raise ValueError("current workflow run attempt must be positive")
+
+    repository_path = (
         "/repos/"
         + urllib.parse.quote(owner, safe="")
         + "/"
         + urllib.parse.quote(repo, safe="")
+    )
+    if current is not None:
+        for previous_attempt in range(attempt - 1, 0, -1):
+            candidate = _request_json(
+                f"{repository_path}/actions/runs/{current}/attempts/{previous_attempt}",
+                token,
+            )
+            if _eligible_success(candidate):
+                selected = dict(candidate)
+                selected["run_attempt"] = previous_attempt
+                selected["baseline_kind"] = "SAME_RUN_PREVIOUS_SUCCESSFUL_ATTEMPT"
+                return selected
+
+    endpoint = (
+        repository_path
         + "/actions/workflows/"
         + urllib.parse.quote(WORKFLOW_FILE, safe="")
         + "/runs?branch=master&status=success&per_page=20"
     )
     payload = _request_json(endpoint, token)
-    return select_previous_success(payload, current_run_id=current_run_id)
+    selected = select_previous_success(payload, current_run_id=current)
+    if selected:
+        selected = dict(selected)
+        selected["run_attempt"] = int(selected.get("run_attempt") or 1)
+        selected["baseline_kind"] = "PREVIOUS_SUCCESSFUL_RUN"
+    return selected
 
 
 def _write_outputs(path, values):
@@ -93,23 +135,34 @@ def main():
     repository = os.environ.get("GITHUB_REPOSITORY")
     token = os.environ.get("GITHUB_TOKEN")
     current_run_id = os.environ.get("GITHUB_RUN_ID")
-    previous = resolve_previous_success(repository, token, current_run_id=current_run_id)
+    current_run_attempt = os.environ.get("GITHUB_RUN_ATTEMPT")
+    previous = resolve_previous_success(
+        repository,
+        token,
+        current_run_id=current_run_id,
+        current_run_attempt=current_run_attempt,
+    )
     if not previous:
         outputs = {
             "run_id": "",
+            "run_attempt": "",
             "started_at": "",
             "head_sha": "",
+            "baseline_kind": "",
         }
         print("HISTORY_BASELINE_RESOLVE previous_success=NONE", flush=True)
     else:
         outputs = {
             "run_id": previous.get("id"),
+            "run_attempt": previous.get("run_attempt") or 1,
             "started_at": previous.get("run_started_at") or previous.get("created_at") or "",
             "head_sha": previous.get("head_sha") or "",
+            "baseline_kind": previous.get("baseline_kind") or "",
         }
         print(
             "HISTORY_BASELINE_RESOLVE "
-            f"run_id={outputs['run_id']} started_at={outputs['started_at']} "
+            f"run_id={outputs['run_id']} attempt={outputs['run_attempt']} "
+            f"kind={outputs['baseline_kind']} started_at={outputs['started_at']} "
             f"head_sha={outputs['head_sha']}",
             flush=True,
         )

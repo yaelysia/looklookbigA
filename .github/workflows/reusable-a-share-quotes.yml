@@ -44,6 +44,10 @@ on:
         type: number
         default: 1
 
+concurrency:
+  group: looklookbiga-reusable-${{ github.repository_id }}-${{ inputs.cache_namespace }}
+  cancel-in-progress: false
+
 jobs:
   quotes:
     runs-on: ubuntu-latest

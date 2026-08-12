@@ -1,9 +1,13 @@
 import argparse
+import contextlib
 import json
 import os
 import shutil
+import tempfile
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
+
+import fcntl
 
 
 CST = timezone(timedelta(hours=8))
@@ -19,7 +23,13 @@ def _load_json(path):
 def _write_json(path, data):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+    payload = json.dumps(data, ensure_ascii=False, indent=2)
+    with tempfile.NamedTemporaryFile(
+        "w", encoding="utf-8", dir=path.parent, prefix=path.name + ".", delete=False
+    ) as handle:
+        handle.write(payload)
+        temporary = Path(handle.name)
+    os.replace(temporary, path)
 
 
 def _parse_time(value):
@@ -58,6 +68,7 @@ def manifest_revision(manifest):
     return {
         "run_id": run_id,
         "attempt": attempt,
+        "head_sha": str(manifest.get("latest_head_sha") or "").lower() or None,
         "time": dt,
         "timestamp": timestamp,
     }
@@ -126,15 +137,40 @@ def _replace_tree(destination, source):
     staged.replace(destination)
 
 
-def hydrate_from_exact_artifact(current_root, artifact_root, expected_run_id=None):
+def _validate_expected_identity(manifest, expected_run_id=None, expected_run_attempt=None, expected_head_sha=None):
+    revision = manifest_revision(manifest)
+    expected_run = _as_int(expected_run_id)
+    expected_attempt = _as_int(expected_run_attempt)
+    expected_sha = str(expected_head_sha or "").lower() or None
+    if expected_run is not None and revision["run_id"] != expected_run:
+        raise ValueError(
+            f"history run mismatch: expected={expected_run} manifest={revision['run_id']}"
+        )
+    if expected_attempt is not None and revision["attempt"] != expected_attempt:
+        raise ValueError(
+            "history run attempt mismatch: "
+            f"expected={expected_attempt} manifest={revision['attempt']}"
+        )
+    if expected_sha is not None and revision["head_sha"] != expected_sha:
+        raise ValueError(
+            f"history head SHA mismatch: expected={expected_sha} manifest={revision['head_sha']}"
+        )
+    return revision
+
+
+def hydrate_from_exact_artifact(
+    current_root,
+    artifact_root,
+    expected_run_id=None,
+    expected_run_attempt=None,
+    expected_head_sha=None,
+):
     artifact_root = Path(artifact_root)
     incoming = validate_history_tree(artifact_root)
-    incoming_run = manifest_revision(incoming)["run_id"]
-    expected = _as_int(expected_run_id)
-    if expected is not None and incoming_run is not None and incoming_run != expected:
-        raise ValueError(
-            f"exact history artifact run mismatch: expected={expected} manifest={incoming_run}"
-        )
+    incoming_revision = _validate_expected_identity(
+        incoming, expected_run_id, expected_run_attempt, expected_head_sha
+    )
+    incoming_run = incoming_revision["run_id"]
 
     current_root = Path(current_root)
     current = _load_json(current_root / "manifest.json") if current_root.exists() else None
@@ -154,17 +190,25 @@ def hydrate_from_exact_artifact(current_root, artifact_root, expected_run_id=Non
     selected = validate_history_tree(current_root)
     print(
         "HISTORY_BASELINE source=exact-previous-success-artifact "
-        f"run_id={expected or manifest_revision(selected)['run_id']} "
+        f"run_id={incoming_run} attempt={incoming_revision['attempt']} "
         f"snapshot={selected.get('latest_snapshot')}",
         flush=True,
     )
     return True
 
 
-def verify_fallback_at_least(current_root, expected_run_id=None, expected_started_at=None):
+def verify_fallback_at_least(
+    current_root,
+    expected_run_id=None,
+    expected_run_attempt=None,
+    expected_head_sha=None,
+    expected_started_at=None,
+):
     manifest = validate_history_tree(current_root)
     revision = manifest_revision(manifest)
     expected = _as_int(expected_run_id)
+    expected_attempt = _as_int(expected_run_attempt)
+    expected_sha = str(expected_head_sha or "").lower() or None
     expected_time = _parse_time(expected_started_at)
 
     # New manifests can prove continuity with both run id and time. During the
@@ -176,6 +220,18 @@ def verify_fallback_at_least(current_root, expected_run_id=None, expected_starte
                 f"market-data baseline is behind latest successful realtime run: "
                 f"baseline={revision['run_id']} expected_at_least={expected}"
             )
+        if revision["run_id"] == expected and expected_attempt is not None:
+            if revision["attempt"] < expected_attempt:
+                raise RuntimeError(
+                    "market-data baseline is behind expected workflow attempt: "
+                    f"baseline={revision['attempt']} expected_at_least={expected_attempt}"
+                )
+            if (
+                revision["attempt"] == expected_attempt
+                and expected_sha is not None
+                and revision["head_sha"] != expected_sha
+            ):
+                raise RuntimeError("market-data baseline exact attempt has a different head SHA")
         if expected_time is not None and revision["time"] is not None and revision["time"] < expected_time:
             raise RuntimeError(
                 "market-data baseline timestamp predates latest successful realtime run"
@@ -194,43 +250,190 @@ def verify_fallback_at_least(current_root, expected_run_id=None, expected_starte
     return True
 
 
-def persist_if_newer(current_root, incoming_root, expected_run_id=None):
+@contextlib.contextmanager
+def _history_lock(root):
+    root = Path(root)
+    root.parent.mkdir(parents=True, exist_ok=True)
+    lock_path = root.parent / (root.name + ".lock")
+    with lock_path.open("a+", encoding="utf-8") as handle:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX)
+        yield
+
+
+def _recover_interrupted_swap(destination):
+    destination = Path(destination)
+    backup = destination.parent / (destination.name + ".previous")
+    if not destination.exists() and backup.exists():
+        backup.replace(destination)
+    elif destination.exists() and backup.exists():
+        shutil.rmtree(backup)
+    for stale in destination.parent.glob(destination.name + ".merge.*"):
+        if stale.is_dir():
+            shutil.rmtree(stale)
+
+
+def _commit_staged_tree(destination, staged):
+    destination = Path(destination)
+    staged = Path(staged)
+    backup = destination.parent / (destination.name + ".previous")
+    if backup.exists():
+        shutil.rmtree(backup)
+    if destination.exists():
+        destination.replace(backup)
+    try:
+        staged.replace(destination)
+    except Exception:
+        if backup.exists() and not destination.exists():
+            backup.replace(destination)
+        raise
+    if backup.exists():
+        shutil.rmtree(backup)
+
+
+def _copy_file(source, destination):
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(source, destination)
+
+
+def _merge_tree(current_root, incoming_root, staged_root, incoming_wins):
+    current_root = Path(current_root)
+    incoming_root = Path(incoming_root)
+    staged_root = Path(staged_root)
+    if current_root.exists():
+        shutil.copytree(current_root, staged_root, symlinks=False, dirs_exist_ok=True)
+    else:
+        staged_root.mkdir(parents=True)
+
+    changed = False
+    for source in sorted(path for path in incoming_root.rglob("*") if path.is_file()):
+        rel = source.relative_to(incoming_root)
+        if rel == Path("manifest.json"):
+            continue
+        destination = staged_root / rel
+        if not destination.exists():
+            _copy_file(source, destination)
+            changed = True
+            continue
+        if source.read_bytes() == destination.read_bytes():
+            continue
+        if rel.parts and rel.parts[0] == "snapshots":
+            raise ValueError(f"immutable history archive conflict: {rel.as_posix()}")
+        if rel.parts and rel.parts[0] == "minutes" and source.suffix == ".json":
+            import minute_history
+
+            current_document = _load_json(destination)
+            incoming_document = _load_json(source)
+            merged = minute_history.merge_documents(
+                current_document,
+                incoming_document,
+                prefer="incoming" if incoming_wins else "current",
+            )
+            if merged != current_document:
+                _write_json(destination, merged)
+                changed = True
+            continue
+        if incoming_wins:
+            _copy_file(source, destination)
+            changed = True
+    return changed
+
+
+def persist_if_newer(
+    current_root,
+    incoming_root,
+    expected_run_id=None,
+    expected_run_attempt=None,
+    expected_head_sha=None,
+):
     current_root = Path(current_root)
     incoming_root = Path(incoming_root)
     incoming = validate_history_tree(incoming_root)
-    incoming_revision = manifest_revision(incoming)
-    expected = _as_int(expected_run_id)
-    if expected is not None and incoming_revision["run_id"] is not None and incoming_revision["run_id"] != expected:
-        raise ValueError(
-            f"incoming persistence run mismatch: expected={expected} manifest={incoming_revision['run_id']}"
-        )
+    incoming_revision = _validate_expected_identity(
+        incoming, expected_run_id, expected_run_attempt, expected_head_sha
+    )
 
-    current = _load_json(current_root / "manifest.json") if current_root.exists() else None
-    if isinstance(current, dict):
-        try:
-            ordering = compare_revisions(incoming, current)
-        except ValueError:
+    with _history_lock(current_root):
+        _recover_interrupted_swap(current_root)
+        current = _load_json(current_root / "manifest.json") if current_root.exists() else None
+        if isinstance(current, dict):
+            validate_history_tree(current_root)
+            try:
+                ordering = compare_revisions(incoming, current)
+            except ValueError:
+                ordering = 1
+            if ordering == 0:
+                current_revision = manifest_revision(current)
+                if (
+                    incoming.get("latest_snapshot") != current.get("latest_snapshot")
+                    or incoming_revision["head_sha"] != current_revision["head_sha"]
+                ):
+                    raise ValueError("equal history revisions claim contradictory latest snapshots")
+        else:
             ordering = 1
-        if ordering <= 0:
-            print(
-                "HISTORY_PERSIST monotonic_skip=true "
-                f"incoming_run={incoming_revision['run_id']} "
-                f"current_run={manifest_revision(current)['run_id']}",
-                flush=True,
-            )
-            return False
 
-    _replace_tree(current_root, incoming_root)
+        current_root.parent.mkdir(parents=True, exist_ok=True)
+        staged = Path(tempfile.mkdtemp(prefix=current_root.name + ".merge.", dir=current_root.parent))
+        try:
+            changed = _merge_tree(
+                current_root,
+                incoming_root,
+                staged,
+                incoming_wins=ordering > 0,
+            )
+            winner = dict(incoming if ordering > 0 or not isinstance(current, dict) else current)
+            winner_changed = not isinstance(current, dict) or ordering > 0
+            changed = changed or winner_changed
+            if not changed:
+                shutil.rmtree(staged)
+                print(
+                    "HISTORY_PERSIST idempotent_skip=true "
+                    f"incoming_run={incoming_revision['run_id']} attempt={incoming_revision['attempt']}",
+                    flush=True,
+                )
+                return False
+            winner["schema_version"] = max(int(winner.get("schema_version") or 0), 3)
+            winner["last_merged_run_id"] = incoming_revision["run_id"]
+            winner["last_merged_run_attempt"] = incoming_revision["attempt"]
+            winner["persisted_at_utc"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
+            _write_json(staged / "manifest.json", winner)
+            validate_history_tree(staged)
+            _commit_staged_tree(current_root, staged)
+        finally:
+            if staged.exists():
+                shutil.rmtree(staged)
+
     persisted = validate_history_tree(current_root)
-    persisted["persisted_run_id"] = expected or manifest_revision(persisted)["run_id"]
-    persisted["persisted_at_utc"] = datetime.now(timezone.utc).isoformat(timespec="seconds")
-    _write_json(current_root / "manifest.json", persisted)
     print(
-        "HISTORY_PERSIST monotonic_write=true "
-        f"run_id={persisted.get('persisted_run_id')} snapshot={persisted.get('latest_snapshot')}",
+        "HISTORY_PERSIST monotonic_merge=true "
+        f"latest_run={manifest_revision(persisted)['run_id']} "
+        f"merged_run={incoming_revision['run_id']} snapshot={persisted.get('latest_snapshot')}",
         flush=True,
     )
     return True
+
+
+def finalize_snapshot(snapshot_path):
+    path = Path(snapshot_path)
+    data = json.loads(path.read_text(encoding="utf-8"))
+    run_id = _as_int(os.environ.get("GITHUB_RUN_ID"))
+    attempt = _as_int(os.environ.get("GITHUB_RUN_ATTEMPT")) or 1
+    head_sha = str(os.environ.get("GITHUB_SHA") or "").lower() or None
+    data["observation"] = {
+        "runner_time_cst": data.get("runner_time_cst"),
+        "runner_time_utc": data.get("runner_time_utc"),
+        "run_id": run_id if run_id is not None else "local",
+        "run_attempt": attempt,
+        "head_sha": head_sha,
+        "source": "GITHUB_ACTIONS" if run_id is not None else "LOCAL",
+    }
+    data["schema_version"] = max(int(data.get("schema_version") or 0), 19)
+    data.setdefault("features", {})["observation_identity"] = "v1"
+    _write_json(path, data)
+    print(
+        "OBSERVATION_IDENTITY "
+        f"run_id={data['observation']['run_id']} attempt={attempt} head_sha={head_sha}",
+        flush=True,
+    )
 
 
 def install_manifest_revision(history_store):
@@ -240,11 +443,18 @@ def install_manifest_revision(history_store):
 
     def build_manifest(data, archive_rel):
         manifest = original(data, archive_rel)
-        run_id = _as_int(os.environ.get("GITHUB_RUN_ID"))
-        attempt = _as_int(os.environ.get("GITHUB_RUN_ATTEMPT")) or 1
+        observation = data.get("observation") or {}
+        run_id = _as_int(observation.get("run_id") or os.environ.get("GITHUB_RUN_ID"))
+        attempt = _as_int(
+            observation.get("run_attempt") or os.environ.get("GITHUB_RUN_ATTEMPT")
+        ) or 1
         if run_id is not None:
             manifest["latest_run_id"] = run_id
             manifest["latest_run_attempt"] = attempt
+            manifest["latest_head_sha"] = observation.get("head_sha") or os.environ.get("GITHUB_SHA")
+            if observation:
+                manifest["latest_observation"] = dict(observation)
+        manifest["schema_version"] = max(int(manifest.get("schema_version") or 0), 3)
         return manifest
 
     history_store._build_manifest = build_manifest
@@ -259,24 +469,48 @@ def main(argv=None):
     hydrate.add_argument("--current", required=True)
     hydrate.add_argument("--incoming", required=True)
     hydrate.add_argument("--expected-run-id")
+    hydrate.add_argument("--expected-run-attempt")
+    hydrate.add_argument("--expected-head-sha")
 
     verify = sub.add_parser("verify")
     verify.add_argument("--current", required=True)
     verify.add_argument("--expected-run-id")
+    verify.add_argument("--expected-run-attempt")
+    verify.add_argument("--expected-head-sha")
     verify.add_argument("--expected-started-at")
 
     persist = sub.add_parser("persist")
     persist.add_argument("--current", required=True)
     persist.add_argument("--incoming", required=True)
     persist.add_argument("--expected-run-id")
+    persist.add_argument("--expected-run-attempt")
+    persist.add_argument("--expected-head-sha")
 
     args = parser.parse_args(argv)
     if args.command == "hydrate":
-        hydrate_from_exact_artifact(args.current, args.incoming, args.expected_run_id)
+        hydrate_from_exact_artifact(
+            args.current,
+            args.incoming,
+            args.expected_run_id,
+            args.expected_run_attempt,
+            args.expected_head_sha,
+        )
     elif args.command == "verify":
-        verify_fallback_at_least(args.current, args.expected_run_id, args.expected_started_at)
+        verify_fallback_at_least(
+            args.current,
+            args.expected_run_id,
+            args.expected_run_attempt,
+            args.expected_head_sha,
+            args.expected_started_at,
+        )
     elif args.command == "persist":
-        persist_if_newer(args.current, args.incoming, args.expected_run_id)
+        persist_if_newer(
+            args.current,
+            args.incoming,
+            args.expected_run_id,
+            args.expected_run_attempt,
+            args.expected_head_sha,
+        )
 
 
 if __name__ == "__main__":

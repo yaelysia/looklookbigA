@@ -65,19 +65,21 @@ Eastmoney.status = SKIPPED_FAST_PATH
 
 全市场 breadth 很重要，但不是盘中当前价的 critical dependency。真实 Actions 测试证明，即使设置短 socket timeout，上游连接、多页查询或失败路径仍可能制造 >10 秒长尾。
 
-因此 FAST 的最终规则是：
+因此 FAST 的规则是按交易会话分段做受控引导：
 
 ```text
-不在 decision critical path 发 breadth 网络请求
+交易日 acquisition window 内首次 FAST
         ↓
-只允许复用 same-session 且 age <= 600s 的完整 breadth cache
+按 CN_A:<session_date>:MORNING|AFTERNOON 加锁认领唯一 owner
         ↓
-没有可信 cache
+owner 获取一次完整 breadth；同段后续刷新只读历史状态缓存
         ↓
-显式 ERROR / market_environment 降低 confidence
+PENDING / FAILED / STALE / UNVERIFIED 显式降级，不伪装成新鲜数据
 ```
 
-FAST 不会为了补 breadth 使用截断 sample，也不会跨 session 复用昨天的广度。
+上午从 09:25 acquisition window 开始，下午从 12:55 acquisition window 开始，两个分段分别最多成功引导一次。失败在 60 秒退避后允许重试；owner 的 300 秒租约过期后允许崩溃恢复。成功缓存超过 600 秒只会返回 `STALE`，不会在同一分段偷偷再次抓取；下一分段或下一交易日使用新 key。主工作流按 ref、reusable workflow 按 caller repository 与 cache namespace 使用 `cancel-in-progress=false` barrier 串行化共享历史状态的 Actions run，进程内文件锁再防止同一 run 的重复 owner。
+
+状态记录持久化到 `market-history-state`。breadth / market environment 明确输出 `session_date`、`session_segment`、`bootstrap_state`、`bootstrap_at`、`cache_age_seconds`，并以 `source_session`、`fetched_at`、`age_seconds`、`freshness_status`、`bootstrap_revision` 保留缓存来源与新鲜度证据。FAST 不跨 session 复用昨天的广度。
 
 `FULL` 仍执行完整 full-universe + 严格 fallback breadth 采集。
 
@@ -191,7 +193,7 @@ best run                         ~9.15s
 另一轮 breadth/index 长尾         ~16.54s
 ```
 
-第二轮结果促使 breadth 完全退出 critical path，并将 FAST indices 改为单次 Tencent batch、events 与 market collection 重叠。
+第二轮结果曾促使 breadth 退出每轮刷新路径，并将 FAST indices 改为单次 Tencent batch、events 与 market collection 重叠。现在的新会话状态机只在上午/下午分段首次 FAST 做一次受控 bootstrap，避免重新引入“每轮都抓全市场”的长尾。
 
 最终 continuity hardening 后的 exact-head reusable FAST selftest：
 

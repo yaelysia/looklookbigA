@@ -201,7 +201,8 @@ def install(base):
             overall = LAST_BREADTH.get("overall") or {}
             print(
                 "MARKET_BREADTH "
-                f"status={LAST_BREADTH['status']} coverage={LAST_BREADTH['covered_count']}/{LAST_BREADTH['reported_total_count']} "
+                f"status={LAST_BREADTH.get('status')} "
+                f"coverage={LAST_BREADTH.get('covered_count')}/{LAST_BREADTH.get('reported_total_count')} "
                 f"up/down/flat/unavailable={overall.get('up_count')}/{overall.get('down_count')}/"
                 f"{overall.get('flat_count')}/{overall.get('unavailable_change_count')} "
                 f"session={LAST_BREADTH.get('market_session_date')} freshness={LAST_BREADTH.get('freshness')} "
@@ -867,6 +868,16 @@ def build_market_environment(snapshot, breadth=None):
             "breadth_freshness_basis": (breadth or {}).get("freshness_basis"),
             "breadth_sample_coverage_percent": ((breadth or {}).get("sampling") or {}).get("sample_coverage_percent"),
             "breadth_all_strata_covered": ((breadth or {}).get("sampling") or {}).get("all_strata_covered"),
+            "breadth_bootstrap_state": (breadth or {}).get("bootstrap_state"),
+            "breadth_bootstrap_key": (breadth or {}).get("bootstrap_key"),
+            "breadth_session_segment": (breadth or {}).get("session_segment"),
+            "breadth_bootstrap_at": (breadth or {}).get("bootstrap_at"),
+            "breadth_cache_age_seconds": (breadth or {}).get("cache_age_seconds"),
+            "breadth_source_session": (breadth or {}).get("source_session"),
+            "breadth_fetched_at": (breadth or {}).get("fetched_at"),
+            "breadth_freshness_status": (breadth or {}).get("freshness_status"),
+            "breadth_bootstrap_revision": (breadth or {}).get("bootstrap_revision"),
+            "breadth_quality": (breadth or {}).get("quality"),
         },
         "summary": _summary_text(index_summary, breadth, regime, style, group_summary, confidence),
     }
@@ -876,8 +887,9 @@ def finalize_snapshot(snapshot_path):
     path = Path(snapshot_path)
     data = json.loads(path.read_text(encoding="utf-8"))
     data["market_environment"] = build_market_environment(data, LAST_BREADTH)
-    data["schema_version"] = max(int(data.get("schema_version") or 0), 9)
+    data["schema_version"] = max(int(data.get("schema_version") or 0), 22)
     data.setdefault("features", {})["market_environment"] = "v1"
+    data.setdefault("features", {})["breadth_bootstrap"] = "v1"
     path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
     result = data["market_environment"]
@@ -888,7 +900,12 @@ def finalize_snapshot(snapshot_path):
         f"index_coverage={result['indices']['covered_count']}/{result['indices']['expected_count']} "
         f"breadth={breadth.get('status')} estimated={breadth.get('estimated')} "
         f"session={breadth.get('market_session_date')} freshness={breadth.get('freshness')} "
+        f"bootstrap={breadth.get('bootstrap_state')} segment={breadth.get('session_segment')} "
         f"style={result['style']['status']}",
         flush=True,
     )
-    print("SNAPSHOT_SCHEMA_UPGRADED schema_version=9 feature=market_environment:v1", flush=True)
+    print(
+        "SNAPSHOT_SCHEMA_UPGRADED schema_version=22 "
+        "features=market_environment:v1,breadth_bootstrap:v1",
+        flush=True,
+    )

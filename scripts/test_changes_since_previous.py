@@ -70,6 +70,14 @@ def _snapshot(
         "schema_version": schema,
         "runner_time_cst": timestamp,
         "runner_time_utc": None,
+        "observation": {
+            "runner_time_cst": timestamp,
+            "runner_time_utc": None,
+            "run_id": int(timestamp[11:13] + timestamp[14:16] + timestamp[17:19]),
+            "run_attempt": 1,
+            "head_sha": "a" * 40,
+            "source": "GITHUB_ACTIONS",
+        },
         "features": {},
         "detail_stocks": {
             "002558": {
@@ -199,6 +207,8 @@ def test_stock_group_market_changes_keep_before_after_and_significance():
     result = changes.build_changes(previous, current, "snapshots/prev.json")
     assert result["status"] == "OK"
     assert result["baseline"]["interval_seconds"] == 900.0
+    assert result["baseline"]["previous_observation"]["run_id"] == 101500
+    assert result["baseline"]["current_observation"]["run_id"] == 103000
 
     stock = result["stocks"]["002558"]
     assert stock["price_change"]["latest"]["before"] == 10.0
@@ -246,11 +256,13 @@ def test_legacy_baseline_is_partial_but_available_fields_compare():
     previous = _snapshot("2026-08-07 10:15:00", latest=10.0, schema=8)
     previous.pop("market_environment")
     previous.pop("data_quality")
+    previous.pop("observation")
     current = _snapshot("2026-08-07 10:30:00", latest=10.2)
     result = changes.build_changes(previous, current, "snapshots/legacy.json")
     assert result["status"] == "PARTIAL"
     assert "BASELINE_MISSING_MARKET_ENVIRONMENT" in result["baseline"]["quality_flags"]
     assert "BASELINE_PREDATES_DATA_PROVENANCE" in result["baseline"]["quality_flags"]
+    assert "BASELINE_PREDATES_OBSERVATION_IDENTITY" in result["baseline"]["quality_flags"]
     assert result["stocks"]["002558"]["price_change"]["latest"]["delta"] == 0.2
     assert result["market"]["available"] is False
     print("PASS legacy_baseline_partial")

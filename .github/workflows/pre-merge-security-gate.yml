@@ -60,6 +60,16 @@ jobs:
         run: python3 scripts/test_event_fact_continuity.py
       - name: Run history read-after-write continuity tests
         run: python3 scripts/test_history_continuity.py
+      - name: Run exact-attempt history artifact tests
+        run: python3 scripts/test_history_artifact.py
+      - name: Run authoritative A-share calendar tests
+        run: python3 scripts/test_market_calendar.py
+      - name: Run complete minute-history tests
+        run: python3 scripts/test_minute_history.py
+      - name: Run synchronized relative-strength window tests
+        run: python3 scripts/test_relative_strength_windows.py
+      - name: Run FAST breadth bootstrap state-machine tests
+        run: python3 scripts/test_breadth_bootstrap.py
       - name: Run changes-since-previous tests
         run: python3 scripts/test_changes_since_previous.py
       - name: Run changes comparability regression tests

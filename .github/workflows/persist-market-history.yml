@@ -40,12 +40,16 @@ jobs:
           persist-credentials: false
 
       - name: Restore generated history state from completed realtime run
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: market-history-state
-          path: .incoming-history
-          run-id: ${{ github.event.workflow_run.id }}
-          github-token: ${{ github.token }}
+        shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: >-
+          python3 .engine/scripts/history_artifact.py
+          --current .incoming-history
+          --run-id '${{ github.event.workflow_run.id }}'
+          --run-attempt '${{ github.event.workflow_run.run_attempt }}'
+          --head-sha '${{ github.event.workflow_run.head_sha }}'
 
       - name: Apply monotonic history update
         shell: bash
@@ -54,6 +58,8 @@ jobs:
           --current history
           --incoming .incoming-history
           --expected-run-id '${{ github.event.workflow_run.id }}'
+          --expected-run-attempt '${{ github.event.workflow_run.run_attempt }}'
+          --expected-head-sha '${{ github.event.workflow_run.head_sha }}'
 
       - name: Persist market history
         shell: bash
