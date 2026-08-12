@@ -1,13 +1,13 @@
 {
   "kind": "looklookbigA-auto-worker-lease",
-  "state": "ACTIVE",
-  "token": "auto-20260812T083130Z-50-base-conflict-6b14c9a2",
+  "state": "IDLE",
+  "token": null,
   "work_item": "issue-50/base-sync-conflict",
   "acquired_at": "2026-08-12T08:31:30+00:00",
   "lease_until": "2026-08-12T09:21:30+00:00",
-  "released_at": null,
-  "last_token": "auto-20260812T060821Z-50-event-state-e3ea4d85",
-  "last_checkpoint": "ISSUE_50_PLANS_UNLOCKS_SUBMITTED",
+  "released_at": "2026-08-12T08:32:20+00:00",
+  "last_token": "auto-20260812T083130Z-50-base-conflict-6b14c9a2",
+  "last_checkpoint": "BASE_MERGE_CONFLICT_MANUAL",
   "last_head_sha": "fdcc3e98bc24a882d8ab18644914eb84448dcb44",
-  "note": "Urgent base-sync reconciliation after PR #64 merged to master. Current master is 5849db40c4bfb761a686ea7c75aa923fe83de0f1; PR #58 is mergeable=false/dirty and requires manual base conflict resolution before further Issue #50 development."
+  "note": "PR #58 cannot be auto-synced to master@5849db40c4bfb761a686ea7c75aa923fe83de0f1 because GitHub reports mergeable=false/dirty/rebaseable=false. The only changed-file intersection with the newly merged master batch is scripts/realtime_quotes_watchlist_runner.py. PR body records BASE_MERGE_CONFLICT_MANUAL; human conflict resolution is required before further Issue #50 development."
 }
