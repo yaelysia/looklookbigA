@@ -1,13 +1,13 @@
 {
   "kind": "looklookbigA-auto-worker-lease",
-  "state": "ACTIVE",
-  "token": "auto-20260812T060821Z-50-event-state-e3ea4d85",
+  "state": "IDLE",
+  "token": null,
   "work_item": "issue-50/ownership-state-plans-unlocks",
   "acquired_at": "2026-08-12T06:08:21+00:00",
   "lease_until": "2026-08-12T06:58:21+00:00",
-  "released_at": null,
-  "last_token": "auto-20260812T010232Z-50-shareholder-952fb305",
-  "last_checkpoint": "ISSUE_50_SHAREHOLDER_COUNT_SUBMITTED",
-  "last_head_sha": "7c61c5243bd522b942191250958fac071d6675e2",
-  "note": "Resume Issue #50 after shareholder-count exact-head CI/live smoke passed. This lease is limited to the event-derived ownership-state checkpoint: buyback/holder plans plus unlock state, with fail-closed semantics and focused tests."
+  "released_at": "2026-08-12T06:18:19+00:00",
+  "last_token": "auto-20260812T060821Z-50-event-state-e3ea4d85",
+  "last_checkpoint": "ISSUE_50_PLANS_UNLOCKS_SUBMITTED",
+  "last_head_sha": "fdcc3e98bc24a882d8ab18644914eb84448dcb44",
+  "note": "Submitted event-derived ownership state: buyback/holder plans plus unlock state. OPEN is not treated as ACTIVE, remaining values are fail-closed, unlock windows are 7/30/90/180d with explicit-share-only ratios, event-history coverage is explicit, focused tests passed 4/4 locally, and exact-head Pre-merge Security Gate run 31569467899 is in progress."
 }
