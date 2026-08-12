@@ -1,13 +1,13 @@
 {
   "kind": "looklookbigA-auto-worker-lease",
-  "state": "ACTIVE",
-  "token": "auto-20260812T220500Z-48-upcoming-docs-4b91c2e7",
+  "state": "IDLE",
+  "token": null,
   "work_item": "issue-48/upcoming-events-docs-quality",
   "acquired_at": "2026-08-12T22:05:00+00:00",
   "lease_until": "2026-08-12T22:55:00+00:00",
-  "released_at": null,
-  "last_token": "auto-20260812T210138Z-48-upcoming-changes-7d2e9b41",
-  "last_checkpoint": "ISSUE_48_CHANGES_INTEGRATION_SUBMITTED",
-  "last_head_sha": "0a015714b69bf691be98eb255c6f805cacc52b1c",
-  "note": "Resuming Issue #48 after exact-head CI success. This checkpoint will reconcile README/snapshot documentation, required-gate coverage, and final provenance/freshness/quality contracts for upcoming_events without expanding into unproven date sources."
+  "released_at": "2026-08-12T22:14:00+00:00",
+  "last_token": "auto-20260812T220500Z-48-upcoming-docs-4b91c2e7",
+  "last_checkpoint": "ISSUE_48_QUALITY_GATE_SUBMITTED",
+  "last_head_sha": "962d05d2686b4d9d307234362b6c344640cad386",
+  "note": "Submitted upcoming-events unified provenance/freshness/quality contract and required-gate completion entrypoint. Local focused contract check passed; exact-head Pre-merge Security Gate run 31645931275 was triggered. README/dedicated schema docs and final Ready cleanup remain; workflow change requires MANUAL_GATE_REQUIRED."
 }
