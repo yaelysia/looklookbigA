@@ -1,13 +1,13 @@
 {
   "kind": "looklookbigA-auto-worker-lease",
-  "state": "ACTIVE",
-  "token": "auto-20260812T210138Z-48-upcoming-changes-7d2e9b41",
+  "state": "IDLE",
+  "token": null,
   "work_item": "issue-48/upcoming-events-changes",
   "acquired_at": "2026-08-12T21:01:38+00:00",
   "lease_until": "2026-08-12T21:51:38+00:00",
-  "released_at": null,
-  "last_token": "auto-20260812T200205Z-48-event-semantics-4c72a1e6",
-  "last_checkpoint": "ISSUE_48_EVENT_CALENDAR_CONTEXT_SUBMITTED",
-  "last_head_sha": "a79f7f5b799d81826412f151b407045ed6029a4d",
-  "note": "Resume Issue #48 after exact-head event-calendar CI passed. This lease is limited to upcoming_events -> changes_since_previous semantic integration and focused tests."
+  "released_at": "2026-08-12T21:10:30+00:00",
+  "last_token": "auto-20260812T210138Z-48-upcoming-changes-7d2e9b41",
+  "last_checkpoint": "ISSUE_48_CHANGES_INTEGRATION_SUBMITTED",
+  "last_head_sha": "0a015714b69bf691be98eb255c6f805cacc52b1c",
+  "note": "Submitted upcoming_events -> changes_since_previous semantic integration: stable event matching, new/date/status/removal changes, source-evidenced completion/cancellation, 30d/7d inward threshold transitions, fail-closed comparability, per-stock reasons and summary counters. Focused tests passed 5/5; exact-head Pre-merge Security Gate run 31641210041 is in progress."
 }
