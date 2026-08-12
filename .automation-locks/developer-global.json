@@ -1,13 +1,13 @@
 {
   "kind": "looklookbigA-auto-worker-lease",
-  "state": "IDLE",
-  "token": null,
-  "work_item": "issue-53/fix-validation-ready",
-  "acquired_at": "2026-08-12T17:02:25+00:00",
-  "lease_until": "2026-08-12T17:52:25+00:00",
-  "released_at": "2026-08-12T17:05:30+00:00",
+  "state": "ACTIVE",
+  "token": "auto-20260812T175945Z-53-ready-7f3a8c21",
+  "work_item": "issue-53/runtime-validated-ready",
+  "acquired_at": "2026-08-12T17:59:45+00:00",
+  "lease_until": "2026-08-12T18:49:45+00:00",
+  "released_at": null,
   "last_token": "auto-20260812T170225Z-53-validate-4c91d7a2",
   "last_checkpoint": "RERUN_RUNTIME_VALIDATION_TRIGGERED",
   "last_head_sha": "e69b704399d6938318174cfffdce8f44e363bcdc",
-  "note": "PR 66 exact-head gate passed. Runtime validation attempt 2 was triggered on workflow run 31616266304. Next run should inspect that attempt and its newly produced artifacts before Ready for Review."
+  "note": "Runtime validation attempt 2 on run 31616266304 completed successfully with successful fetch-quotes and fresh replacement artifacts. This lease is limited to final state reconciliation and Ready-for-Review transition; workflow changes remain manual-gate-only for merge."
 }
