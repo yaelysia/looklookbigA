@@ -48,6 +48,7 @@ def test_pre_merge_gate_is_unconditional_for_protected_branches():
     assert 'if: ${{ always() }}' in text
     assert "enable_history_cache: false" in text
     assert "Run event fact continuity tests" in text
+    assert "Run history read-after_write continuity tests" not in text
     assert "Run history read-after-write continuity tests" in text
     assert "Run exact-attempt history artifact tests" in text
     assert "Run authoritative A-share calendar tests" in text
@@ -189,6 +190,23 @@ def test_realtime_history_read_after_write_barrier():
     print("PASS realtime_exact_previous_run_read_barrier")
 
 
+def test_realtime_rerun_artifact_uploads_are_overwrite_safe():
+    realtime = (WORKFLOW_DIR / "realtime-quotes.yml").read_text(encoding="utf-8")
+    readme = Path("README.md").read_text(encoding="utf-8")
+
+    realtime_block = realtime.split("- name: Upload realtime snapshot", 1)[1].split(
+        "- name: Upload market history state", 1
+    )[0]
+    history_block = realtime.split("- name: Upload market history state", 1)[1]
+    assert "name: realtime-snapshot" in realtime_block
+    assert "overwrite: true" in realtime_block
+    assert "name: market-history-state" in history_block
+    assert "overwrite: true" in history_block
+    assert "artifact ID 不在 rerun 前基线集合中" in readme
+    assert "overwrite: true" in readme
+    print("PASS realtime_rerun_artifact_overwrite_contract")
+
+
 def test_background_history_persistence_is_master_only_and_monotonic():
     text = (WORKFLOW_DIR / "persist-market-history.yml").read_text(encoding="utf-8")
     assert "workflow_run:" in text
@@ -229,6 +247,7 @@ def main():
         test_event_pdf_redirects_stay_on_official_host,
         test_intraday_fast_workflow_contract,
         test_realtime_history_read_after_write_barrier,
+        test_realtime_rerun_artifact_uploads_are_overwrite_safe,
         test_background_history_persistence_is_master_only_and_monotonic,
     ]
     for test in tests:

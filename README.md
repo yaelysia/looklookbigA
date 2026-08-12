@@ -120,6 +120,8 @@ LLM / Agent 需要“现在重新抓一次”时，**首选新的 `workflow_disp
 
 如果 Agent 工具没有 `workflow_dispatch`，但提供 GitHub Actions 的单 job rerun，可以把最近一次可信 `master` run 的 `fetch-quotes` job 作为兼容 fallback。这个 fallback 会重新执行实时采集和 artifact 上传，但它**不是一条新的 dispatch**，必须保留更严格的 run / attempt / artifact 身份校验。
 
+为保证同一个 workflow run 的后续 attempt 能重复发布同名产物，`fetch-quotes` 对 `realtime-snapshot` 和 `market-history-state` 的 `actions/upload-artifact` 均显式设置 `overwrite: true`。rerun 会替换该 run 内的旧同名 artifact，并产生新的 artifact identity；因此下面仍以“新 artifact ID 不在 rerun 前基线集合中 + `created_at` 不早于 rerun 开始时间”作为 fail-closed 识别条件。若没有观察到新的 artifact identity，则不能把旧 artifact 当成本次刷新结果。
+
 ### 兼容 fallback 的选择条件
 
 执行 rerun 前先读取当前 `master` SHA，记为 `M`，然后只接受同时满足以下条件的历史 run：
