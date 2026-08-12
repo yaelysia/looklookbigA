@@ -7,7 +7,7 @@ import market_calendar
 import minute_history
 
 
-INTRADAY_METRICS_VERSION = "v2"
+INTRADAY_METRICS_VERSION = "v1"
 _GUARD_FIELDS = (
     "current_price_valid",
     "current_price_source_class",
@@ -422,17 +422,22 @@ def finalize_snapshot(snapshot_path):
     errors = []
     for code, item in data.get("detail_stocks", {}).items():
         minutes = item.get("minutes") or {}
+        previous_intraday = item.get("intraday") or {}
         try:
             intraday = _canonical_intraday(data, code, item)
             item["intraday"] = intraday
             minutes = item.get("minutes") or {}
         except Exception as exc:
-            item["intraday"] = {
+            unavailable = {
                 "status": "CANONICAL_MINUTE_HISTORY_UNAVAILABLE",
                 "minute_count": 0,
                 "error": f"{type(exc).__name__}: {exc}",
                 "source_contract": "NO_RAW_PROVIDER_FALLBACK",
             }
+            for field in _GUARD_FIELDS:
+                if field in previous_intraday:
+                    unavailable[field] = previous_intraday[field]
+            item["intraday"] = unavailable
             if (minutes.get("count") or 0) > 0:
                 errors.append(
                     f"{code}: raw minute rows exist but canonical minute history is unavailable"

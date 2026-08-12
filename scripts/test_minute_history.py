@@ -264,7 +264,7 @@ def test_intraday_and_legacy_minutes_use_calendar_trimmed_canonical_points():
             intraday = item["intraday"]
 
             assert result["schema_version"] == 20
-            assert result["features"]["intraday_structure_metrics"] == "v2"
+            assert result["features"]["intraday_structure_metrics"] == "v1"
             assert minutes["count"] == 242
             assert minutes["last_time"] == "1500"
             assert minutes["market_time_cst"] == "2026-08-10 15:00:00"
@@ -318,6 +318,35 @@ def test_intraday_does_not_fallback_to_raw_minutes_without_canonical_history():
             raise AssertionError("raw provider minutes must not be used as fallback")
 
 
+def test_intraday_preserves_live_guard_when_canonical_history_is_unavailable():
+    with tempfile.TemporaryDirectory() as tmp:
+        snapshot = _snapshot("2026-08-10 15:06:00")
+        item = snapshot["detail_stocks"]["002558"]
+        guard = {
+            "status": "WARNING",
+            "minute_freshness": "UNKNOWN",
+            "minute_lag_seconds": None,
+            "hard_violations": [],
+        }
+        item["minutes"] = {"count": 0}
+        item["intraday"] = {
+            "current_price_valid": False,
+            "current_price_source_class": "UNAVAILABLE",
+            "current_price_provider": None,
+            "current_price_guard": guard,
+        }
+        snapshot_path = Path(tmp) / "snapshot.json"
+        snapshot_path.write_text(json.dumps(snapshot), encoding="utf-8")
+
+        intraday_metrics.finalize_snapshot(snapshot_path)
+        result = json.loads(snapshot_path.read_text(encoding="utf-8"))
+        intraday = result["detail_stocks"]["002558"]["intraday"]
+        assert intraday["status"] == "CANONICAL_MINUTE_HISTORY_UNAVAILABLE"
+        assert intraday["source_contract"] == "NO_RAW_PROVIDER_FALLBACK"
+        assert intraday["current_price_valid"] is False
+        assert intraday["current_price_guard"] == guard
+
+
 def main():
     tests = [
         test_complete_closed_session_is_replay_eligible,
@@ -326,6 +355,7 @@ def main():
         test_snapshot_locator_reader_and_late_writer_union,
         test_intraday_and_legacy_minutes_use_calendar_trimmed_canonical_points,
         test_intraday_does_not_fallback_to_raw_minutes_without_canonical_history,
+        test_intraday_preserves_live_guard_when_canonical_history_is_unavailable,
     ]
     for test in tests:
         test()

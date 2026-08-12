@@ -342,7 +342,7 @@ def _decorate_detail(snapshot, fetched_at):
                     f"detail_stocks.{code}.quote",
                     f"detail_stocks.{code}.minute_history",
                 ],
-                "algorithm": "intraday_structure_metrics_v2",
+                "algorithm": "intraday_structure_metrics_v1",
             }
 
         daily = item.get("daily_context")
