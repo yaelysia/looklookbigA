@@ -4,8 +4,8 @@
   "source": "Eastmoney",
   "source_tier": "PRIMARY_PROVIDER",
   "data_semantics": "Exchange-published margin data redistributed by a market-data provider",
-  "fetched_at": "2026-08-12T16:24:44+08:00",
-  "source_url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPTA_WEB_RZRQ_GGMX&columns=ALL&filter=%28SCODE%3D%22002558%22%29&sortColumns=DATE&sortTypes=-1&pageNumber=1&pageSize=24&source=WEB&client=WEB&_=1786523099429",
+  "fetched_at": "2026-08-12T18:09:08+08:00",
+  "source_url": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPTA_WEB_RZRQ_GGMX&columns=ALL&filter=%28SCODE%3D%22002558%22%29&sortColumns=DATE&sortTypes=-1&pageNumber=1&pageSize=24&source=WEB&client=WEB&_=1786529370125",
   "records": [
     {
       "trade_date": "2026-08-11",

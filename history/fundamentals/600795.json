@@ -3,7 +3,7 @@
   "code": "600795",
   "source": "Eastmoney",
   "source_tier": "PRIMARY_PROVIDER",
-  "fetched_at": "2026-08-12T16:24:44+08:00",
+  "fetched_at": "2026-08-12T18:09:08+08:00",
   "first_seen_by_version": {
     "2026-03-31|2026-04-29T00:00:00": "2026-08-12T16:24:44+08:00",
     "2025-12-31|2026-04-15T00:00:00": "2026-08-12T16:24:44+08:00",
@@ -47,10 +47,10 @@
     "2016-06-30|2016-08-30T00:00:00": "2026-08-12T16:24:44+08:00"
   },
   "source_urls": {
-    "main": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_LICO_FN_CPD&columns=ALL&filter=%28SECURITY_CODE%3D%22600795%22%29&sortColumns=REPORTDATE&sortTypes=-1&pageNumber=1&pageSize=40&source=WEB&client=WEB&_=1786523097452",
-    "income": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_DMSK_FN_INCOME&columns=ALL&filter=%28SECURITY_CODE%3D%22600795%22%29&sortColumns=REPORT_DATE&sortTypes=-1&pageNumber=1&pageSize=40&source=WEB&client=WEB&_=1786523097452",
-    "balance": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_DMSK_FN_BALANCE&columns=ALL&filter=%28SECURITY_CODE%3D%22600795%22%29&sortColumns=REPORT_DATE&sortTypes=-1&pageNumber=1&pageSize=40&source=WEB&client=WEB&_=1786523097453",
-    "cashflow": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_DMSK_FN_CASHFLOW&columns=ALL&filter=%28SECURITY_CODE%3D%22600795%22%29&sortColumns=REPORT_DATE&sortTypes=-1&pageNumber=1&pageSize=40&source=WEB&client=WEB&_=1786523097453"
+    "main": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_LICO_FN_CPD&columns=ALL&filter=%28SECURITY_CODE%3D%22600795%22%29&sortColumns=REPORTDATE&sortTypes=-1&pageNumber=1&pageSize=40&source=WEB&client=WEB&_=1786529368202",
+    "income": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_DMSK_FN_INCOME&columns=ALL&filter=%28SECURITY_CODE%3D%22600795%22%29&sortColumns=REPORT_DATE&sortTypes=-1&pageNumber=1&pageSize=40&source=WEB&client=WEB&_=1786529368204",
+    "balance": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_DMSK_FN_BALANCE&columns=ALL&filter=%28SECURITY_CODE%3D%22600795%22%29&sortColumns=REPORT_DATE&sortTypes=-1&pageNumber=1&pageSize=40&source=WEB&client=WEB&_=1786529368205",
+    "cashflow": "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_DMSK_FN_CASHFLOW&columns=ALL&filter=%28SECURITY_CODE%3D%22600795%22%29&sortColumns=REPORT_DATE&sortTypes=-1&pageNumber=1&pageSize=40&source=WEB&client=WEB&_=1786529368205"
   },
   "raw": {
     "main": [
