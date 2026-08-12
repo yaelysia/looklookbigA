@@ -1,13 +1,13 @@
 {
   "kind": "looklookbigA-auto-worker-lease",
-  "state": "ACTIVE",
-  "token": "auto-20260812T010232Z-50-shareholder-952fb305",
+  "state": "IDLE",
+  "token": null,
   "work_item": "issue-50/shareholder-count",
   "acquired_at": "2026-08-12T01:02:32+00:00",
   "lease_until": "2026-08-12T01:52:32+00:00",
-  "released_at": null,
-  "last_token": "auto-20260812T000124Z-50-institutional-4f8c2d71",
-  "last_checkpoint": "ISSUE_50_INSTITUTIONAL_HOLDINGS_SUBMITTED",
-  "last_head_sha": "e75dd3f6e89b2e2ca4d61fc5aa4bdfbed91d3923",
-  "note": "Resume Issue #50 after exact-head institutional-holdings CI/live smoke passed. This lease is limited to the shareholder_count history/trend module checkpoint."
+  "released_at": "2026-08-12T05:21:30+00:00",
+  "last_token": "auto-20260812T010232Z-50-shareholder-952fb305",
+  "last_checkpoint": "ISSUE_50_SHAREHOLDER_COUNT_SUBMITTED",
+  "last_head_sha": "7c61c5243bd522b942191250958fac071d6675e2",
+  "note": "Submitted shareholder_count history/trend module after prior institutional CI/live smoke passed. Exact-head Pre-merge Security Gate run 31566246762 is in progress; next run inspects CI and, if green, may group tightly related buyback/holder-plan and unlock slices under the budget-driven checkpoint rule."
 }
