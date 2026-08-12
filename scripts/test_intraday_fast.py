@@ -114,60 +114,6 @@ def test_fast_unverified_daily_metadata_is_degraded_and_unmeasured():
     assert meta["freshness_sla"]["reason"] == "SESSION_COMPLETENESS_UNVERIFIED"
 
 
-def test_fast_breadth_is_cache_only_and_session_bounded():
-    os.environ["LOOKLOOK_EXECUTION_MODE"] = "INTRADAY_FAST"
-    now = datetime.now(base.CST).replace(microsecond=0)
-    current_session = now.strftime("%Y-%m-%d")
-    indices = {
-        "上证指数": {"quote": {"market_time_cst": current_session + " 10:00:00"}},
-        "深证成指": {"quote": {"market_time_cst": current_session + " 10:00:00"}},
-    }
-
-    with tempfile.TemporaryDirectory() as tmp:
-        old_root = os.environ.get("MARKET_HISTORY_DIR")
-        os.environ["MARKET_HISTORY_DIR"] = tmp
-        root = Path(tmp)
-        try:
-            rel = "snapshots/latest.json"
-            (root / "snapshots").mkdir(parents=True)
-            breadth = {
-                "status": "OK",
-                "source": "Eastmoney clist full-universe",
-                "collected_at_cst": (now - timedelta(seconds=120)).strftime("%Y-%m-%d %H:%M:%S"),
-                "market_session_date": current_session,
-                "freshness": "LIVE",
-                "reported_total_count": 5000,
-                "covered_count": 5000,
-                "overall": {"up_count": 3000, "down_count": 1800, "flat_count": 200},
-            }
-            (root / rel).write_text(
-                json.dumps({"market_environment": {"breadth": breadth}}), encoding="utf-8"
-            )
-            (root / "manifest.json").write_text(
-                json.dumps({"latest_snapshot": rel}), encoding="utf-8"
-            )
-            value = intraday_fast_tail.cache_only_market_breadth(base, now, indices)
-            assert value["fast_path"]["source"] == "HISTORY_CACHE_ONLY"
-            assert value["fast_path"]["network_refresh"] == "DEFERRED_OUTSIDE_CRITICAL_PATH"
-            assert value["fast_path"]["age_seconds"] >= 120
-
-            breadth["market_session_date"] = (now - timedelta(days=1)).strftime("%Y-%m-%d")
-            (root / rel).write_text(
-                json.dumps({"market_environment": {"breadth": breadth}}), encoding="utf-8"
-            )
-            try:
-                intraday_fast_tail.cache_only_market_breadth(base, now, indices)
-            except RuntimeError as exc:
-                assert "CACHE_SESSION_MISMATCH" in str(exc)
-            else:
-                raise AssertionError("cross-session breadth cache must not be reused")
-        finally:
-            if old_root is None:
-                os.environ.pop("MARKET_HISTORY_DIR", None)
-            else:
-                os.environ["MARKET_HISTORY_DIR"] = old_root
-
-
 def test_performance_summary_is_machine_readable_and_accurate():
     os.environ["LOOKLOOK_EXECUTION_MODE"] = "INTRADAY_FAST"
     performance_fast_path.reset_telemetry()
@@ -183,7 +129,7 @@ def test_performance_summary_is_machine_readable_and_accurate():
         assert perf["hard_limit_ms"] == 15000
         assert perf["stages_ms"]["detail_stocks"] == 123.0
         assert "single Tencent Trust-B batch" in perf["fast_path_contract"]["indices"]
-        assert "no network I/O" in perf["fast_path_contract"]["market_breadth"]
+        assert "concurrency-owned bootstrap" in perf["fast_path_contract"]["market_breadth"]
         assert perf["fast_path_contract"]["pdf_facts"] == "deferred to FULL"
 
 
@@ -192,7 +138,6 @@ def main():
         test_auto_mode_uses_market_window,
         test_fast_daily_cache_reuses_only_with_honest_state,
         test_fast_unverified_daily_metadata_is_degraded_and_unmeasured,
-        test_fast_breadth_is_cache_only_and_session_bounded,
         test_performance_summary_is_machine_readable_and_accurate,
     ]
     for test in tests:

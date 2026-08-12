@@ -234,6 +234,41 @@ def test_group_and_market_quality_are_visible_to_llm():
     print("PASS group_and_market_quality")
 
 
+def test_relative_windows_and_stale_breadth_preserve_quality_evidence():
+    source = _clean_snapshot()
+    source["detail_stocks"]["002558"]["relative_strength_windows"] = {
+        "status": "PARTIAL",
+        "session_date": "2026-08-07",
+        "cutoff": "1429",
+        "forming_minute_excluded": "1430",
+        "metadata": {
+            "calendar_status": "IN_PROGRESS",
+            "verification_status": "VERIFIED",
+        },
+        "provenance": {"algorithm": "synchronized_window_return_v1"},
+    }
+    breadth = source["market_environment"]["breadth"]
+    source["market_environment"]["status"] = "PARTIAL"
+    breadth.update(
+        {
+            "status": "PARTIAL",
+            "freshness": "STALE",
+            "bootstrap_state": "STALE",
+            "bootstrap_key": "CN_A:2026-08-07:AFTERNOON",
+        }
+    )
+    data = data_metadata.decorate_snapshot(source)
+    relative = data["detail_stocks"]["002558"]["relative_strength_windows"]
+    assert relative["metadata"]["quality"] == "PARTIAL"
+    assert relative["metadata"]["calendar_status"] == "IN_PROGRESS"
+    assert relative["metadata"]["verification_status"] == "VERIFIED"
+    assert "FORMING_MINUTE_EXCLUDED" in relative["metadata"]["quality_flags"]
+    env_flags = data["market_environment"]["metadata"]["quality_flags"]
+    assert "BREADTH_BOOTSTRAP_STALE" in env_flags
+    assert data["market_environment"]["metadata"]["quality"] == "PARTIAL"
+    print("PASS relative_windows_and_stale_breadth_quality")
+
+
 def test_missing_quote_becomes_critical_failure_without_hiding_error():
     source = _snapshot()
     source["detail_stocks"]["002558"]["quote"] = None
@@ -318,6 +353,7 @@ def main():
         test_session_minute_series_remains_valid_after_market_close,
         test_cache_and_derived_provenance_are_distinguishable,
         test_group_and_market_quality_are_visible_to_llm,
+        test_relative_windows_and_stale_breadth_preserve_quality_evidence,
         test_missing_quote_becomes_critical_failure_without_hiding_error,
         test_noncritical_failed_node_cannot_yield_overall_pass,
         test_missing_minutes_sibling_metadata_is_in_quality_summary,

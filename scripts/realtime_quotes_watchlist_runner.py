@@ -1,6 +1,7 @@
 from concurrent.futures import ThreadPoolExecutor
 
 import alpha_provider_contract
+import breadth_bootstrap
 import capital_flow_changes
 import capital_flow_context
 import capital_flow_history_bridge
@@ -36,11 +37,14 @@ import history_store
 import intraday_fast_tail
 import intraday_metrics
 import live_price_guard
+import market_calendar
 import market_breadth_source
 import market_environment
+import minute_history
 import performance_fast_path
 import quote_resilience
 import realtime_quotes_watchlist as base
+import relative_strength_windows
 import transport_security
 
 
@@ -75,8 +79,11 @@ performance_fast_path.install_concurrent_detail(base)
 if performance_fast_path.is_fast():
     intraday_fast_tail.install_fast_indices(base, quote_resilience)
     market_environment.fetch_market_breadth = (
-        lambda base_obj, now, indices=None: intraday_fast_tail.cache_only_market_breadth(
-            base_obj, now, indices
+        lambda base_obj, now, indices=None: breadth_bootstrap.fetch_market_breadth(
+            base_obj,
+            now,
+            indices,
+            market_breadth_source.fetch_market_breadth,
         )
     )
 else:
@@ -85,6 +92,7 @@ market_environment.install(base)
 
 performance_fast_path.install_fast_daily_cache(history_store, base, daily_k_context)
 intraday_metrics.install(base)
+minute_history.install(base)
 capital_flow_context.install(base)
 live_price_guard.install(base)
 daily_k_context.install(base)
@@ -106,8 +114,24 @@ if __name__ == "__main__":
 
     try:
         performance_fast_path.timed_call("base_collection", base.main)
+        performance_fast_path.timed_call(
+            "market_calendar", market_calendar.finalize_snapshot, base.SNAPSHOT_PATH
+        )
         performance_fast_path.timed_call("intraday_metrics", intraday_metrics.finalize_snapshot, base.SNAPSHOT_PATH)
         performance_fast_path.timed_call("daily_k_context", daily_k_context.finalize_snapshot, base.SNAPSHOT_PATH)
+        performance_fast_path.timed_call(
+            "observation_identity", history_continuity.finalize_snapshot, base.SNAPSHOT_PATH
+        )
+        performance_fast_path.timed_call(
+            "minute_history", minute_history.finalize_snapshot, base.SNAPSHOT_PATH
+        )
+        performance_fast_path.timed_call(
+            "relative_strength_windows",
+            relative_strength_windows.finalize_snapshot,
+            base.SNAPSHOT_PATH,
+            base,
+            runtime_config,
+        )
         performance_fast_path.timed_call("history_prepare", history_store.finalize_snapshot, base.SNAPSHOT_PATH)
         performance_fast_path.timed_call("live_price_guard", live_price_guard.finalize_snapshot, base.SNAPSHOT_PATH)
         performance_fast_path.timed_call("quote_resilience", quote_resilience.finalize_snapshot, base.SNAPSHOT_PATH)

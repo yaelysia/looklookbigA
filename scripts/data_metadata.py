@@ -364,11 +364,37 @@ def _decorate_detail(snapshot, fetched_at):
                 },
             }
 
+        relative_windows = item.get("relative_strength_windows")
+        relative_windows_meta = None
+        if isinstance(relative_windows, dict):
+            calculation_meta = dict(relative_windows.get("metadata") or {})
+            relative_quality = _quality_from_status(relative_windows.get("status"))
+            flags = []
+            if relative_windows.get("forming_minute_excluded"):
+                flags.append("FORMING_MINUTE_EXCLUDED")
+            relative_windows_meta = _derived_metadata(
+                fetched_at,
+                quality=relative_quality,
+                data_time=(
+                    f"{relative_windows.get('session_date')} {relative_windows.get('cutoff')}"
+                    if relative_windows.get("session_date") and relative_windows.get("cutoff")
+                    else None
+                ),
+                flags=flags,
+            )
+            relative_windows_meta["calendar_status"] = calculation_meta.get("calendar_status")
+            relative_windows_meta["verification_status"] = calculation_meta.get(
+                "verification_status"
+            )
+            relative_windows["metadata"] = relative_windows_meta
+
         component_qualities = [quote_meta["quality"], minute_meta["quality"]]
         if intraday_meta:
             component_qualities.append(intraday_meta["quality"])
         if daily_meta:
             component_qualities.append(daily_meta["quality"])
+        if relative_windows_meta:
+            component_qualities.append(relative_windows_meta["quality"])
         detail_quality = _composite_quality(component_qualities)
         detail_flags = []
         legacy_quality = _quality_from_status(item.get("status"))
@@ -388,6 +414,7 @@ def _decorate_detail(snapshot, fetched_at):
                 f"detail_stocks.{code}.minutes",
                 f"detail_stocks.{code}.intraday",
                 f"detail_stocks.{code}.daily_context",
+                f"detail_stocks.{code}.relative_strength_windows",
             ],
         }
 
@@ -519,6 +546,11 @@ def _decorate_system_nodes(snapshot, fetched_at):
             flags.append("BREADTH_ESTIMATED")
         if breadth.get("status") == "ERROR":
             flags.append("BREADTH_UNAVAILABLE")
+        bootstrap_state = breadth.get("bootstrap_state")
+        if bootstrap_state in {"PENDING", "FAILED", "STALE", "UNVERIFIED"}:
+            flags.append(f"BREADTH_BOOTSTRAP_{bootstrap_state}")
+            if quality == "PASS":
+                quality = "DEGRADED"
         market_env["metadata"] = _derived_metadata(
             fetched_at,
             quality=quality,

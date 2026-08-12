@@ -7,6 +7,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 
+import market_calendar
+
 CST = timezone(timedelta(hours=8))
 CONFIG_PATH = Path("config/quote_watchlist.json")
 SNAPSHOT_PATH = Path("snapshot.json")
@@ -138,10 +140,7 @@ def fmt_dt(dt):
 
 
 def in_market_window(now: datetime) -> bool:
-    if now.weekday() >= 5:
-        return False
-    hm = now.hour * 60 + now.minute
-    return (9 * 60 + 25 <= hm <= 11 * 60 + 35) or (12 * 60 + 55 <= hm <= 15 * 60 + 5)
+    return market_calendar.in_market_window(now)
 
 
 def freshness(now: datetime, quote_dt):

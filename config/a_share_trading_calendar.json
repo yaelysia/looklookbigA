@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "calendar_version": "sse-cn-a-2024-2026@2025-12-22",
+  "market": "CN_A",
+  "timezone": "Asia/Shanghai",
+  "valid_from": "2024-01-01",
+  "valid_through": "2026-12-31",
+  "as_of": "2025-12-22",
+  "regular_weekdays": [0, 1, 2, 3, 4],
+  "source": {
+    "authority": "Shanghai Stock Exchange",
+    "trust": "A",
+    "method": "EXPLICIT_OFFICIAL_CLOSURE_CALENDAR",
+    "documents": [
+      {
+        "year": 2024,
+        "published_at": "2023-12-26",
+        "url": "https://www.sse.com.cn/disclosure/dealinstruc/closed/c/c_20231226_5733941.shtml"
+      },
+      {
+        "year": 2025,
+        "published_at": "2024-12-23",
+        "url": "https://www.sse.com.cn/disclosure/dealinstruc/closed/c/c_20241223_10767110.shtml"
+      },
+      {
+        "year": 2026,
+        "published_at": "2025-12-22",
+        "url": "https://www.sse.com.cn/disclosure/dealinstruc/closed/c/c_20251222_10802510.shtml"
+      }
+    ]
+  },
+  "closed_ranges": [
+    {"start": "2024-01-01", "end": "2024-01-01", "reason": "NEW_YEAR"},
+    {"start": "2024-02-09", "end": "2024-02-17", "reason": "SPRING_FESTIVAL"},
+    {"start": "2024-04-04", "end": "2024-04-06", "reason": "QINGMING"},
+    {"start": "2024-05-01", "end": "2024-05-05", "reason": "LABOUR_DAY"},
+    {"start": "2024-06-10", "end": "2024-06-10", "reason": "DRAGON_BOAT"},
+    {"start": "2024-09-15", "end": "2024-09-17", "reason": "MID_AUTUMN"},
+    {"start": "2024-10-01", "end": "2024-10-07", "reason": "NATIONAL_DAY"},
+    {"start": "2025-01-01", "end": "2025-01-01", "reason": "NEW_YEAR"},
+    {"start": "2025-01-28", "end": "2025-02-04", "reason": "SPRING_FESTIVAL"},
+    {"start": "2025-04-04", "end": "2025-04-06", "reason": "QINGMING"},
+    {"start": "2025-05-01", "end": "2025-05-05", "reason": "LABOUR_DAY"},
+    {"start": "2025-05-31", "end": "2025-06-02", "reason": "DRAGON_BOAT"},
+    {"start": "2025-10-01", "end": "2025-10-08", "reason": "NATIONAL_DAY_MID_AUTUMN"},
+    {"start": "2026-01-01", "end": "2026-01-03", "reason": "NEW_YEAR"},
+    {"start": "2026-02-15", "end": "2026-02-23", "reason": "SPRING_FESTIVAL"},
+    {"start": "2026-04-04", "end": "2026-04-06", "reason": "QINGMING"},
+    {"start": "2026-05-01", "end": "2026-05-05", "reason": "LABOUR_DAY"},
+    {"start": "2026-06-19", "end": "2026-06-21", "reason": "DRAGON_BOAT"},
+    {"start": "2026-09-25", "end": "2026-09-27", "reason": "MID_AUTUMN"},
+    {"start": "2026-10-01", "end": "2026-10-07", "reason": "NATIONAL_DAY"}
+  ],
+  "session": {
+    "preopen_at": "09:15",
+    "morning_start": "09:30",
+    "morning_end": "11:30",
+    "afternoon_start": "13:00",
+    "afternoon_end": "15:00",
+    "daily_bar_final_after": "15:05",
+    "acquisition_windows": [
+      ["09:25", "11:35"],
+      ["12:55", "15:05"]
+    ],
+    "minute_label_ranges": [
+      ["09:30", "11:30"],
+      ["13:00", "15:00"]
+    ],
+    "minute_finality_grace_seconds": 15
+  }
+}
