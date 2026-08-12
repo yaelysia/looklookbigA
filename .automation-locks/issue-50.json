@@ -10,6 +10,6 @@
   "base_sha_at_lock": "555213ea5ece24628b9e0acd550c9fd28e539a1e",
   "locked_at": "2026-08-11T20:02:52+00:00",
   "state": "WAITING",
-  "checkpoint": "ISSUE_50_INSTITUTIONAL_HOLDINGS_SUBMITTED",
-  "next_action": "Inspect exact-head CI and live reusable-smoke result for institutional_holdings. If green and the live section is structurally available, next run may implement only shareholder_count history/trends; keep plans, unlocks, pledges, signals, changes integration, required-gate wiring, and docs pending."
+  "checkpoint": "ISSUE_50_SHAREHOLDER_COUNT_SUBMITTED",
+  "next_action": "Inspect exact-head CI and live reusable-smoke output for shareholder_count. Confirm Eastmoney gdrs/provider field compatibility and 3/6/12m trend structure. If green, continue with the next bounded ownership/capital module; otherwise fix only the shareholder-count provider contract."
 }
