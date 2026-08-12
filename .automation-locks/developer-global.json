@@ -1,13 +1,13 @@
 {
   "kind": "looklookbigA-auto-worker-lease",
-  "state": "IDLE",
-  "token": null,
-  "work_item": "issue-48/upcoming-events-docs-quality",
-  "acquired_at": "2026-08-12T22:05:00+00:00",
-  "lease_until": "2026-08-12T22:55:00+00:00",
-  "released_at": "2026-08-12T22:14:00+00:00",
+  "state": "ACTIVE",
+  "token": "auto-20260812T230523Z-48-docs-finalize-9c41e2b7",
+  "work_item": "issue-48/upcoming-events-docs-finalize",
+  "acquired_at": "2026-08-12T23:05:23+00:00",
+  "lease_until": "2026-08-12T23:55:23+00:00",
+  "released_at": null,
   "last_token": "auto-20260812T220500Z-48-upcoming-docs-4b91c2e7",
   "last_checkpoint": "ISSUE_48_QUALITY_GATE_SUBMITTED",
   "last_head_sha": "962d05d2686b4d9d307234362b6c344640cad386",
-  "note": "Submitted upcoming-events unified provenance/freshness/quality contract and required-gate completion entrypoint. Local focused contract check passed; exact-head Pre-merge Security Gate run 31645931275 was triggered. README/dedicated schema docs and final Ready cleanup remain; workflow change requires MANUAL_GATE_REQUIRED."
+  "note": "Acquired for exact-head CI reconciliation, README/schema documentation, final acceptance review, and Ready cleanup for Issue #48."
 }
