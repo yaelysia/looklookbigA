@@ -1,13 +1,13 @@
 {
   "kind": "looklookbigA-auto-worker-lease",
-  "state": "ACTIVE",
-  "token": "auto-20260812T230523Z-48-docs-finalize-9c41e2b7",
+  "state": "IDLE",
+  "token": null,
   "work_item": "issue-48/upcoming-events-docs-finalize",
   "acquired_at": "2026-08-12T23:05:23+00:00",
   "lease_until": "2026-08-12T23:55:23+00:00",
-  "released_at": null,
-  "last_token": "auto-20260812T220500Z-48-upcoming-docs-4b91c2e7",
-  "last_checkpoint": "ISSUE_48_QUALITY_GATE_SUBMITTED",
-  "last_head_sha": "962d05d2686b4d9d307234362b6c344640cad386",
-  "note": "Acquired for exact-head CI reconciliation, README/schema documentation, final acceptance review, and Ready cleanup for Issue #48."
+  "released_at": "2026-08-12T23:12:20+00:00",
+  "last_token": "auto-20260812T230523Z-48-docs-finalize-9c41e2b7",
+  "last_checkpoint": "ISSUE_48_DOCS_ACCEPTANCE_SUBMITTED",
+  "last_head_sha": "2ef7f6df27085c85d34ecdf813fde5c90f35f4b9",
+  "note": "Previous exact-head quality gate was green. Submitted README and dedicated upcoming-events schema documentation, then final acceptance reconciliation identified a remaining CONFIRMED_RANGE/date-certainty contract gap. New exact-head Pre-merge Security Gate run 31649947793 triggered; PR remains Draft and MANUAL_GATE_REQUIRED."
 }
