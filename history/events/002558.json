@@ -5,7 +5,7 @@
   "source": "CNINFO",
   "source_tier": "OFFICIAL",
   "covered_start_date": "2026-07-14",
-  "updated_at_cst": "2026-08-13T10:04:11+08:00",
+  "updated_at_cst": "2026-08-13T10:43:00+08:00",
   "query_status": "OK",
   "event_count": 1,
   "events": [
@@ -30,7 +30,7 @@
         "dates": []
       },
       "freshness": "RECENT_7D",
-      "fetched_at": "2026-08-13T10:04:11+08:00",
+      "fetched_at": "2026-08-13T10:43:00+08:00",
       "status": "OPEN",
       "related_event_id": null,
       "supersedes_event_id": null
