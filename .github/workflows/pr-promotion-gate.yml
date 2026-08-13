@@ -1,0 +1,45 @@
+name: PR Promotion Gate
+
+on:
+  workflow_run:
+    workflows:
+      - Pre-merge Security Gate
+    types:
+      - completed
+  pull_request_target:
+    branches:
+      - master
+      - v1
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - edited
+
+permissions:
+  contents: read
+  actions: read
+  issues: read
+  pull-requests: write
+
+concurrency:
+  group: pr-promotion-${{ github.repository_id }}-${{ github.event.workflow_run.head_branch || github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    if: >-
+      ${{ github.event_name != 'workflow_run' ||
+          (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'pull_request') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Checkout trusted default-branch gate code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - name: Evaluate exact-head promotion policy
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 scripts/github_pr_lifecycle_gate.py promote

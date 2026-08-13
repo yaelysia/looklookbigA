@@ -24,6 +24,8 @@ jobs:
         run: python3 scripts/test_config_security.py
       - name: Run workflow supply-chain and transport tests
         run: python3 scripts/test_workflow_security.py
+      - name: Run PR lifecycle policy tests
+        run: python3 scripts/test_pr_lifecycle_policy.py
       - name: Run Alpha provider contract regression tests
         run: python3 scripts/test_alpha_provider_contract.py
       - name: Run Alpha semantic command identity tests
