@@ -1,117 +1,32 @@
 # GitHub-native PR lifecycle gates
 
-`looklookbigA` keeps semantic development and review decisions in ChatGPT Scheduled Tasks, but moves deterministic PR lifecycle mutations into workflows that execute trusted code from the repository default branch.
+The default branch owns deterministic PR lifecycle actions. Scheduled Developer writes code/tests/checkpoints; Scheduled Reviewer writes exact structured verdicts.
 
-This split removes Draft/Ready/merge actions from the Scheduled Task critical path while retaining fail-closed identity, CI and trust checks.
+## Lifecycle
 
-## Responsibility split
+Developer finishes work, removes `.automation-locks/**`, and writes `CHECKPOINT=READY_FOR_REVIEW_PREPARED` bound to the current head. Promotion verifies the trusted same-repo PR and linked Issue, current head/base, exact successful `Pre-merge Security Gate`, exact merge-ref parents, and absence of work-lock artifacts before Draft -> Ready.
 
-```text
-Scheduled Developer
-  -> implement / test / fix
-  -> remove .automation-locks/** from final PR tree
-  -> write CHECKPOINT=READY_FOR_REVIEW_PREPARED
-  -> stop
+Reviewer verdict comments contain the marker plus exact `HEAD_SHA`, `BASE_SHA`, `VERDICT`, and `REASON_CODES`. Any identity drift makes a verdict stale. `PASS_AUTOMERGE` is evidence only; the merge gate independently rechecks every predicate.
 
-GitHub PR Promotion Gate
-  -> exact head/base + successful Pre-merge Security Gate
-  -> trusted same-repo PR / Issue
-  -> no work-lock artifact
-  -> Draft -> Ready
+## Risk policy
 
-Scheduled Reviewer
-  -> independent review only
-  -> top-level structured verdict comment
-     CHANGES_REQUIRED | WAITING_* | MANUAL_GATE_REQUIRED | PASS_AUTOMERGE
-  -> never directly merges
+High-risk paths are not an unconditional manual gate. Workflow/action, lifecycle/security, ruleset, dependency, Docker, release/deploy and non-master changes require stronger evidence from the exact successful gate run. Required baseline jobs are `Safety tests`, `Reusable smoke`, and `pre-merge-security-gate`; lifecycle-sensitive changes also require the workflow transport test and lifecycle/atomic-merge regression steps. Missing required evidence rejects auto-merge.
 
-GitHub PR Review Merge Gate
-  -> stale verdict / head / base rejection
-  -> CHANGES_REQUIRED: Ready -> Draft
-  -> PASS_AUTOMERGE: atomic latest-base prerequisite + exact current gate + low-risk path policy + normal exact-head merge
-  -> optional linked-Issue close only when ISSUE_CLOSE_ON_MERGE=true
-  -> dispatch Native Merge Postcheck
-```
+## Atomic merge transport
 
-## Promotion contract
+The merge gate accepts only an active ruleset covering the exact target branch, requiring `pre-merge-security-gate`, with no available bypass path. It chooses one verified server-side transport:
 
-A Draft is eligible only when all of the following are true:
+- When required-status checks are strict, use the normal PR merge API bound to the exact head.
+- When strict mode is off but the ruleset requires pull-request changes and rejects non-fast-forward updates, use the exact GitHub synthetic merge commit validated by the successful gate. Its parents must equal `[current base, current head]`. Re-read PR/head/base immediately before writing, reconfirm the exact gate, then move the target ref to that verified merge commit with `force=false`.
 
-- repository, PR author and head repository are exactly `yaelysia/looklookbigA` / `yaelysia`;
-- PR body contains `<!-- looklookbigA-auto-dev-lock -->`;
-- machine state has `CHECKPOINT=READY_FOR_REVIEW_PREPARED` and `LAST_HEAD=<current head>`;
-- linked machine-state Issue, when present, is authored by `yaelysia`;
-- the exact current head has a successful `Pre-merge Security Gate` run;
-- the merge-ref commit validated by that run has parents exactly `[current base SHA, current head SHA]`;
-- final changed files contain no `.automation-locks/**`.
+A concurrent incompatible base move is rejected by the server-side fast-forward update. The gate does not force-update, rebase, or construct an unverified merge tree. If neither transport is proven, merge fails closed.
 
-The Promotion Gate is triggered both by `workflow_run` completion and trusted `pull_request_target` metadata/synchronize events. `pull_request_target` never checks out PR code: it explicitly checks out the repository default branch with credentials persistence disabled, then re-fetches the candidate PR through the GitHub API.
+The current `Protect master and v1` configuration can therefore use the verified merge-ref fast-forward transport while strict status checks remain off; ordinary automation does not depend on a later human settings change.
 
-## Reviewer verdict contract
+## Postcheck
 
-The reviewer must use a top-level PR comment with:
+After merge, parent identity is verified, `looklookbiga-native-merge-postcheck` is dispatched, and safety tests run against the exact merged SHA. Linked Issues close only when `ISSUE_CLOSE_ON_MERGE=true` and the Issue author is trusted.
 
-```text
-<!-- looklookbigA-auto-review -->
-HEAD_SHA=<current head>
-BASE_SHA=<current base>
-VERDICT=<value>
-REASON_CODES=<csv>
-```
+## Bootstrap
 
-Only comments authored by `yaelysia` are trusted. Any head/base drift makes the verdict stale.
-
-`PASS_AUTOMERGE` means only that independent review found no blocker and the PR is eligible to enter the native auto-merge policy. It is not itself merge authority; the GitHub gate re-validates every condition.
-
-## Native auto-merge exclusions
-
-Native auto-merge is intentionally unavailable for non-`master` bases and for high-risk paths, including:
-
-- `.github/workflows/**`, `.github/actions/**`, CODEOWNERS and Dependabot control files;
-- lifecycle-gate implementation files themselves;
-- security/auth/credential/secret/permission-related paths;
-- release/stable-v1, ruleset/branch-protection and deployment control paths;
-- dependency manifests/lockfiles/requirements and package-manager control files;
-- Docker/base-image and compose control files;
-- `.automation-locks/**`.
-
-These changes require `MANUAL_GATE_REQUIRED`. The gate independently enforces this even if a stale or incorrect reviewer were to emit `PASS_AUTOMERGE`.
-
-## Exact merge binding
-
-Before a native merge, the gate re-fetches:
-
-- PR open/Ready state and mergeability;
-- current head and current base branch SHA;
-- final changed files;
-- linked Issue author;
-- structured verdict author/head/base;
-- an exact successful Pre-merge Security Gate whose merge-ref parents are the current base and head.
-
-The REST merge endpoint can atomically bind `sha=<current head>`, but it has no expected-base SHA parameter. A preflight base re-read alone is therefore insufficient: another merge can advance `master` after that read and before the merge request.
-
-For every `PASS_AUTOMERGE` event, `scripts/pr_lifecycle_atomic_base.py` runs before the merge gate and fails closed unless the exact target base ref is covered by an **active ruleset that explicitly names that ref**, requires the `pre-merge-security-gate` status check, and has `strict_required_status_checks_policy=true`. When GitHub exposes bypass information, a bypassable ruleset is not accepted as this prerequisite. Under that strict policy, a base move makes the PR out-of-date and GitHub rejects the merge rather than allowing the newer, unvalidated base to land.
-
-The existing immediate head/base re-read remains a defense-in-depth check. The returned merge commit parent verification remains an audit/reconciliation check only; it is not treated as the base-CAS guarantee because it runs after the merge is irreversible. No force update, admin bypass or ruleset bypass is used.
-
-At the time this contract was added, repository ruleset `Protect master and v1` had `strict_required_status_checks_policy=false`. Therefore native `PASS_AUTOMERGE` intentionally remains disabled until that repository setting is manually changed to strict (or an equivalent atomic latest-base mechanism is introduced). `CHANGES_REQUIRED` demotion and other non-merge verdict handling continue to work without that prerequisite.
-
-## GITHUB_TOKEN event suppression and postcheck
-
-A merge performed with Actions `GITHUB_TOKEN` may not create ordinary downstream workflow events. Native auto-merge therefore explicitly creates a `repository_dispatch` event after a successful merge.
-
-`Native Merge Postcheck` checks out the exact returned merge SHA, first verifies that the merge parents still match the validated base/head pair carried in the dispatch payload, then replays the pre-merge safety command catalog through `scripts/pr_native_postcheck.py` and runs an exact-SHA `INTRADAY_FAST` reusable smoke. This keeps native merges from silently losing the validation that push-triggered repository workflows historically supplied.
-
-## Linked Issue closure
-
-Issue closure is explicit, not inferred. Developer machine state may set:
-
-```text
-ISSUE_CLOSE_ON_MERGE=true
-```
-
-Only then, after a successful native merge, may the gate close the linked Issue, and only if that Issue is authored by `yaelysia`. Multi-stage Issues such as stable-v1 promotions must use `false`.
-
-## Bootstrap rule
-
-Changes to these workflows/scripts are themselves trust-boundary changes and therefore cannot be auto-merged by the gate they define. Their implementation PR must be reviewed and merged through the existing manual gate.
+PR #69 is a one-time bootstrap because the new default-branch gates cannot govern themselves before landing. Its temporary bootstrap authority uses the same exact head/base/CI and atomic-merge requirements. After #69 enters `master`, the exception ends and ordinary lifecycle actions remain GitHub-native.
