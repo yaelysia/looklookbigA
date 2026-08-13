@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "market": "CN_A",
+  "session_date": "2026-08-13",
+  "session_segment": "MORNING",
+  "required": true,
+  "state": "PENDING",
+  "reason": null,
+  "bootstrap_key": "CN_A:2026-08-13:MORNING",
+  "bootstrap_state": "FAILED",
+  "owner": null,
+  "attempts": 1,
+  "claimed_at": "2026-08-13T09:26:15+08:00",
+  "lease_expires_at": null,
+  "bootstrap_at": null,
+  "next_retry_at": "2026-08-13T09:27:15+08:00",
+  "bootstrap_revision": {
+    "run_id": 31628029722,
+    "run_attempt": 3,
+    "head_sha": "ce9a968f0a95e1a3ba62be6cee5965d993aca79b",
+    "process_id": 2213,
+    "thread_id": 140448366585536
+  },
+  "breadth": null,
+  "error": "RuntimeError: market breadth full-universe and stratified fallbacks both failed: full=RemoteDisconnected: Remote end closed connection without response; sample=RuntimeError: incomplete stratified breadth coverage; no universe extrapolation allowed: {\"required_strata\": 8, \"successful_strata\": 7, \"failed_strata\": [{\"index\": 5, \"page_start\": 37, \"page_end\": 44, \"target_page\": 40, \"error\": \"RuntimeError: stratum 5 pages 37-44 failed: page 40: HTTPError: HTTP Error 502: Bad Gateway; page 39: HTTPError: HTTP Error 502: Bad Gateway; page 41: HTTPError: HTTP Error 502: Bad Gateway\"}]}",
+  "failed_at": "2026-08-13T09:26:15+08:00"
+}
