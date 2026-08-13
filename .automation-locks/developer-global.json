@@ -1,14 +1,14 @@
 {
   "kind": "looklookbigA-auto-worker-lease",
   "schema_version": 2,
-  "state": "IDLE",
-  "lease_id": null,
+  "state": "ACTIVE",
+  "lease_id": "lease-20260813T080259Z-68-blocker-a7b7e63f",
   "work_item": "issue-68/pr-69-exact-base-race-blocker",
-  "acquired_at": "2026-08-13T07:01:10+00:00",
-  "expires_at": "2026-08-13T07:51:10+00:00",
+  "acquired_at": "2026-08-13T08:02:59+00:00",
+  "expires_at": "2026-08-13T08:52:59+00:00",
   "released_at": "2026-08-13T07:04:30+00:00",
   "last_lease_id": "lease-20260813T070110Z-68-blocker-7f31a6c2",
   "last_checkpoint": "CHANGES_REQUIRED_WAITING_DRAFT_BOOTSTRAP",
   "last_head_sha": "1a25b82f1eb38e673bdb4d0194975dfbe9a02bb3",
-  "note": "PR #69 has a trusted current-head CHANGES_REQUIRED for EXACT_BASE_MERGE_RACE / RULESET_STRICT_STATUS_DISABLED. Active ruleset strict_required_status_checks_policy=false was independently confirmed. PR remains Ready; bootstrap native demotion gate is not authoritative until merged, so Scheduled Developer made no code change and is waiting for Draft before fixing the blocker."
+  "note": "Resuming Issue #68 / PR #69 under the explicit bootstrap CHANGES_REQUIRED demotion exception. Exact current head/base and trusted verdict will be revalidated before any business write."
 }
