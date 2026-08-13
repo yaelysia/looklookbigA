@@ -1,14 +1,14 @@
 {
   "kind": "looklookbigA-auto-worker-lease",
   "schema_version": 2,
-  "state": "ACTIVE",
-  "lease_id": "lease-20260813T080259Z-68-blocker-a7b7e63f",
+  "state": "IDLE",
+  "lease_id": null,
   "work_item": "issue-68/pr-69-exact-base-race-blocker",
   "acquired_at": "2026-08-13T08:02:59+00:00",
   "expires_at": "2026-08-13T08:52:59+00:00",
-  "released_at": "2026-08-13T07:04:30+00:00",
-  "last_lease_id": "lease-20260813T070110Z-68-blocker-7f31a6c2",
-  "last_checkpoint": "CHANGES_REQUIRED_WAITING_DRAFT_BOOTSTRAP",
+  "released_at": "2026-08-13T08:04:25+00:00",
+  "last_lease_id": "lease-20260813T080259Z-68-blocker-a7b7e63f",
+  "last_checkpoint": "BOOTSTRAP_DEMOTION_TOOL_BLOCKED",
   "last_head_sha": "1a25b82f1eb38e673bdb4d0194975dfbe9a02bb3",
-  "note": "Resuming Issue #68 / PR #69 under the explicit bootstrap CHANGES_REQUIRED demotion exception. Exact current head/base and trusted verdict will be revalidated before any business write."
+  "note": "Trusted current-head/current-base CHANGES_REQUIRED was revalidated. The single permitted PR #69 Ready-to-Draft bootstrap transition was attempted but blocked by the ChatGPT/OpenAI tool safety layer before completion; a follow-up PR-body checkpoint write was also safety-blocked. No bypass was attempted and no PR code changed while Ready. Retry the narrow demotion exception on the next run; final disposition remains MANUAL_GATE_REQUIRED."
 }
