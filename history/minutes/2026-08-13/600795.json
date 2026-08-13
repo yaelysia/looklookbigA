@@ -7,10 +7,10 @@
   "source": "Tencent 1-minute cumulative series",
   "calendar_expectation": {
     "calendar_version": "sse-cn-a-2024-2026@2025-12-22",
-    "evaluated_at_cst": "2026-08-13T13:32:47+08:00",
+    "evaluated_at_cst": "2026-08-13T13:33:34+08:00",
     "status": "IN_PROGRESS",
     "verification_status": "VERIFIED",
-    "forming_minute": "1332",
+    "forming_minute": "1333",
     "expected_times": [
       "0930",
       "0931",
@@ -164,7 +164,8 @@
       "1328",
       "1329",
       "1330",
-      "1331"
+      "1331",
+      "1332"
     ]
   },
   "points": [
@@ -1391,6 +1392,14 @@
       "cum_amount": 315669765.48,
       "delta_volume": 2531.0,
       "delta_amount": 1278531.0
+    },
+    {
+      "time": "1332",
+      "price": 5.06,
+      "cum_volume": 626151.0,
+      "cum_amount": 316298081.48,
+      "delta_volume": 1243.0,
+      "delta_amount": 628316.0
     }
   ],
   "observations": [
@@ -1492,6 +1501,15 @@
       "head_sha": "ce9a968f0a95e1a3ba62be6cee5965d993aca79b",
       "source": "GITHUB_ACTIONS",
       "captured_point_count": 153
+    },
+    {
+      "runner_time_cst": "2026-08-13 13:33:34.109",
+      "runner_time_utc": "2026-08-13T05:33:34.109471+00:00",
+      "run_id": 31670537271,
+      "run_attempt": 2,
+      "head_sha": "8a7b9fd700598e3b7cf382da0d9c48653d9d5746",
+      "source": "GITHUB_ACTIONS",
+      "captured_point_count": 154
     }
   ],
   "source_anomalies": {
@@ -1517,7 +1535,8 @@
       "1330",
       "1331",
       "1332",
-      "1333"
+      "1333",
+      "1334"
     ],
     "invalid_row_count": 0
   },
@@ -1536,17 +1555,22 @@
       "time": "1130",
       "current_digest": "fc36492ec8d23f9d9414d5c5ff7bbff4f51b987282c0caecd338f8a675f5f264",
       "incoming_digest": "13bb41e07ea340ae107a58ec6810e594e60a69c6ba7ee3cc25ebc61041dcf8b8"
+    },
+    {
+      "time": "1130",
+      "current_digest": "fc36492ec8d23f9d9414d5c5ff7bbff4f51b987282c0caecd338f8a675f5f264",
+      "incoming_digest": "13bb41e07ea340ae107a58ec6810e594e60a69c6ba7ee3cc25ebc61041dcf8b8"
     }
   ],
-  "updated_at_cst": "2026-08-13 13:32:47.865",
+  "updated_at_cst": "2026-08-13 13:33:34.109",
   "coverage": {
     "status": "COMPLETE",
-    "observed_count": 153,
-    "expected_count": 153,
+    "observed_count": 154,
+    "expected_count": 154,
     "missing_count": 0,
     "missing_times": [],
     "first_time": "0930",
-    "last_time": "1331"
+    "last_time": "1332"
   },
   "continuity": {
     "status": "PASS",
