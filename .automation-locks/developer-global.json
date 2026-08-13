@@ -1,13 +1,14 @@
 {
   "kind": "looklookbigA-auto-worker-lease",
-  "state": "IDLE",
-  "token": null,
-  "work_item": "issue-48/upcoming-events-docs-reconcile",
-  "acquired_at": "2026-08-13T01:00:00+00:00",
-  "lease_until": "2026-08-13T01:50:00+00:00",
-  "released_at": "2026-08-13T01:03:30+00:00",
-  "last_token": "auto-20260813T0100Z-48-docs-9f3c6a7d",
+  "schema_version": 2,
+  "state": "ACTIVE",
+  "lease_id": "lease-20260813T021100Z-48-finalize-6f8b3c21",
+  "work_item": "issue-48/final-acceptance-ready",
+  "acquired_at": "2026-08-13T02:11:00+00:00",
+  "expires_at": "2026-08-13T03:01:00+00:00",
+  "released_at": null,
+  "last_lease_id": null,
   "last_checkpoint": "ISSUE_48_DATE_CERTAINTY_DOCS_SUBMITTED",
   "last_head_sha": "57b314138f14cbe27913baeca16481373cb5678a",
-  "note": "Reconciled docs/UPCOMING_EVENTS.md with implemented CONFIRMED_DATE / CONFIRMED_RANGE / guarded EXPECTED_WINDOW / UNKNOWN fail-closed semantics, date_confidence, range anchoring/bucketing, active-range end-boundary behavior and exclusion metadata. Exact-head Pre-merge Security Gate run 31656409341 triggered and is in progress. PR remains Draft and MANUAL_GATE_REQUIRED."
+  "note": "Lease schema v2: lease_id is a non-credential random fencing identifier; expires_at replaces lease_until. Acquired for Issue #48 final acceptance, work-lock cleanup, and Ready transition."
 }
