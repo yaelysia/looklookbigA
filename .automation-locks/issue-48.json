@@ -9,7 +9,7 @@
   "base_branch": "master",
   "base_sha_at_lock": "ce9a968f0a95e1a3ba62be6cee5965d993aca79b",
   "locked_at": "2026-08-13T03:02:12+08:00",
-  "state": "DEVELOPING",
-  "checkpoint": "ISSUE_48_DOCS_ACCEPTANCE_SUBMITTED",
-  "next_action": "Inspect exact-head CI for the README/schema-doc checkpoint. Final acceptance reconciliation found one remaining date-certainty contract gap: implement explicit CONFIRMED_RANGE semantics for proven execution windows (and define fail-closed handling for EXPECTED_WINDOW/UNKNOWN without inventing dates), with focused tests. Keep Draft and do not remove the issue lock until that acceptance group is closed."
+  "state": "WAITING",
+  "checkpoint": "ISSUE_48_DATE_CERTAINTY_SUBMITTED",
+  "next_action": "Inspect exact-head CI/reusable smoke for the date-certainty checkpoint. If green, reconcile docs with CONFIRMED_RANGE / EXPECTED_WINDOW / UNKNOWN semantics, run final acceptance/diff review, then remove .automation-locks/** and prepare Ready for Review. Keep MANUAL_GATE_REQUIRED because required workflow changed in this PR."
 }

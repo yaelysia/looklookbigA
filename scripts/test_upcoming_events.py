@@ -104,33 +104,50 @@ def _stock():
     }
 
 
+def _all_events(value):
+    return [
+        item
+        for bucket in ("next_7d", "next_30d", "next_90d", "later")
+        for item in value[bucket]
+    ]
+
+
 def test_normalizes_unlock_and_explicit_plan_windows():
     value = upcoming_events.build_upcoming_events(_stock(), "2026-08-13")
     assert value["status"] == "PARTIAL"
-    assert value["calendar_summary"]["event_count"] == 4
+    assert value["calendar_summary"]["event_count"] == 3
     assert len(value["next_7d"]) == 2
-    assert len(value["next_30d"]) == 1
+    assert len(value["next_30d"]) == 0
     assert len(value["next_90d"]) == 0
     assert len(value["later"]) == 1
 
     unlock = [item for item in value["next_7d"] if item["event_type"] == "UNLOCK"][0]
     assert unlock["event_date"] == "2026-08-20"
     assert unlock["date_certainty"] == "CONFIRMED_DATE"
+    assert unlock["date_confidence"] == "HIGH"
     assert unlock["days_until_event"] == 7
     assert len(unlock["source_relations"]) == 2
     assert unlock["details"]["unlock_shares"] == 100.0
 
-    start = [item for item in value["next_7d"] if item["event_type"] == "BUYBACK_WINDOW_START"][0]
-    assert start["event_date"] == "2026-08-15"
-    end = value["next_30d"][0]
-    assert end["event_type"] == "BUYBACK_WINDOW_END"
-    assert end["event_date"] == "2026-09-01"
+    plan_range = [
+        item for item in value["next_7d"] if item["event_type"] == "BUYBACK_EXECUTION_WINDOW"
+    ][0]
+    assert plan_range["event_date"] == "2026-08-15"
+    assert plan_range["date_end"] == "2026-09-01"
+    assert plan_range["date_certainty"] == "CONFIRMED_RANGE"
+    assert plan_range["date_confidence"] == "HIGH"
+    assert plan_range["details"]["range_anchor_policy"].endswith("calendar bucket uses start")
+
+    end = value["later"][0]
+    assert end["event_type"] == "HOLDER_DECREASE_WINDOW_END"
+    assert end["event_date"] == "2026-12-15"
+    assert end["date_certainty"] == "CONFIRMED_DATE"
 
 
 def test_generic_effective_date_is_fail_closed():
     value = upcoming_events.build_upcoming_events(_stock(), "2026-08-13")
     assert value["metadata"]["excluded_unproven_company_event_count"] == 1
-    assert all(item["event_type"] != "M&A" for bucket in ("next_7d", "next_30d", "next_90d", "later") for item in value[bucket])
+    assert all(item["event_type"] != "M&A" for item in _all_events(value))
 
 
 def test_terminal_or_past_plan_dates_are_not_emitted():
@@ -138,12 +155,61 @@ def test_terminal_or_past_plan_dates_are_not_emitted():
     stock["ownership_and_capital"]["buyback_and_holder_plans"]["buybacks"]["history"][0]["status"] = "COMPLETED"
     stock["ownership_and_capital"]["buyback_and_holder_plans"]["holder_decrease_plans"]["history"][0]["window_end_date"] = "2026-08-01"
     value = upcoming_events.build_upcoming_events(stock, "2026-08-13")
-    types = [
-        item["event_type"]
-        for bucket in ("next_7d", "next_30d", "next_90d", "later")
-        for item in value[bucket]
-    ]
-    assert types == ["UNLOCK"]
+    assert [item["event_type"] for item in _all_events(value)] == ["UNLOCK"]
+
+
+def test_active_confirmed_range_emits_only_future_end_boundary():
+    stock = _stock()
+    item = stock["ownership_and_capital"]["buyback_and_holder_plans"]["buybacks"]["history"][0]
+    item["window_start_date"] = "2026-08-01"
+    item["window_end_date"] = "2026-09-01"
+    stock["ownership_and_capital"]["buyback_and_holder_plans"]["holder_decrease_plans"]["history"] = []
+    value = upcoming_events.build_upcoming_events(stock, "2026-08-13")
+    buyback = [item for item in _all_events(value) if item["event_type"].startswith("BUYBACK_")]
+    assert len(buyback) == 1
+    assert buyback[0]["event_type"] == "BUYBACK_WINDOW_END"
+    assert buyback[0]["event_date"] == "2026-09-01"
+    assert buyback[0]["date_end"] is None
+    assert buyback[0]["date_certainty"] == "CONFIRMED_DATE"
+    assert buyback[0]["details"]["execution_window_started"] is True
+
+
+def test_expected_window_requires_explicit_official_basis_and_unknown_fails_closed():
+    stock = _stock()
+    plans = stock["ownership_and_capital"]["buyback_and_holder_plans"]
+    plans["holder_decrease_plans"]["history"] = []
+    item = plans["buybacks"]["history"][0]
+    item["window_date_certainty"] = "EXPECTED_WINDOW"
+
+    value = upcoming_events.build_upcoming_events(stock, "2026-08-13")
+    assert not any(event["event_type"].startswith("BUYBACK_") for event in _all_events(value))
+    exclusions = value["metadata"]["excluded_plan_date_semantics"]
+    assert exclusions["expected_window_without_official_basis"] == 1
+
+    item["window_semantics_source"] = "OFFICIAL_EXPECTED_WINDOW"
+    value = upcoming_events.build_upcoming_events(stock, "2026-08-13")
+    expected = [event for event in _all_events(value) if event["event_type"] == "BUYBACK_EXPECTED_WINDOW"]
+    assert len(expected) == 1
+    assert expected[0]["date_certainty"] == "EXPECTED_WINDOW"
+    assert expected[0]["date_confidence"] == "MEDIUM"
+    assert expected[0]["date_end"] == "2026-09-01"
+
+    item["window_date_certainty"] = "UNKNOWN"
+    value = upcoming_events.build_upcoming_events(stock, "2026-08-13")
+    assert not any(event["event_type"].startswith("BUYBACK_") for event in _all_events(value))
+    assert value["metadata"]["excluded_plan_date_semantics"]["unknown_window"] == 1
+
+
+def test_invalid_confirmed_range_is_fail_closed():
+    stock = _stock()
+    plans = stock["ownership_and_capital"]["buyback_and_holder_plans"]
+    plans["holder_decrease_plans"]["history"] = []
+    item = plans["buybacks"]["history"][0]
+    item["window_start_date"] = "2026-09-01"
+    item["window_end_date"] = "2026-08-15"
+    value = upcoming_events.build_upcoming_events(stock, "2026-08-13")
+    assert not any(event["event_type"].startswith("BUYBACK_") for event in _all_events(value))
+    assert value["metadata"]["excluded_plan_date_semantics"]["invalid_confirmed_range"] == 1
 
 
 def test_finalize_attaches_snapshot_feature_and_schema():
@@ -163,12 +229,13 @@ def test_finalize_attaches_snapshot_feature_and_schema():
         snapshot = json.loads(path.read_text(encoding="utf-8"))
         assert snapshot["schema_version"] == 18
         assert snapshot["features"]["upcoming_events"] == "v1"
-        assert snapshot["detail_stocks"]["002558"]["upcoming_events"]["nearest"]["event_type"] == "BUYBACK_WINDOW_START"
+        assert snapshot["detail_stocks"]["002558"]["upcoming_events"]["nearest"]["event_type"] == "BUYBACK_EXECUTION_WINDOW"
         assert snapshot["upcoming_events_summary"]["implemented_sources"] == [
             "official_company_unlock_dates",
             "ownership_unlock_state",
             "ownership_plan_explicit_windows",
         ]
+        assert "OFFICIAL_EXPECTED_WINDOW_ONLY" in snapshot["upcoming_events_summary"]["date_policy"]
 
 
 def main():
@@ -176,6 +243,9 @@ def main():
         test_normalizes_unlock_and_explicit_plan_windows,
         test_generic_effective_date_is_fail_closed,
         test_terminal_or_past_plan_dates_are_not_emitted,
+        test_active_confirmed_range_emits_only_future_end_boundary,
+        test_expected_window_requires_explicit_official_basis_and_unknown_fails_closed,
+        test_invalid_confirmed_range_is_fail_closed,
         test_finalize_attaches_snapshot_feature_and_schema,
     ]
     for test in tests:

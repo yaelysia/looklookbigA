@@ -7,6 +7,8 @@ UPCOMING_EVENTS_VERSION = "v1"
 SNAPSHOT_SCHEMA_VERSION = 18
 WINDOWS = (7, 30, 90)
 CST = timezone(timedelta(hours=8))
+DATE_CERTAINTIES = ("CONFIRMED_DATE", "CONFIRMED_RANGE", "EXPECTED_WINDOW", "UNKNOWN")
+OFFICIAL_EXPECTED_WINDOW_SOURCE = "OFFICIAL_EXPECTED_WINDOW"
 PLAN_BUCKETS = {
     "buybacks": "BUYBACK",
     "holder_increase_plans": "HOLDER_INCREASE",
@@ -64,14 +66,28 @@ def _source_relation(layer, source_event_id, source):
     return value
 
 
-def _normalized_event(source_event_id, event_type, title, event_date, importance, source_relation, details):
+def _normalized_event(
+    source_event_id,
+    event_type,
+    title,
+    event_date,
+    importance,
+    source_relation,
+    details,
+    *,
+    date_end=None,
+    date_certainty="CONFIRMED_DATE",
+    date_confidence="HIGH",
+):
+    identity_tail = f"{event_date}:{date_end}" if date_end else event_date
     return {
-        "event_id": f"upcoming:{source_event_id or event_type}:{event_type}:{event_date}",
+        "event_id": f"upcoming:{source_event_id or event_type}:{event_type}:{identity_tail}",
         "event_type": event_type,
         "title": title,
         "event_date": event_date,
-        "date_end": None,
-        "date_certainty": "CONFIRMED_DATE",
+        "date_end": date_end,
+        "date_certainty": date_certainty,
+        "date_confidence": date_confidence,
         "days_until_event": None,
         "importance": importance or "MEDIUM",
         "status": "UPCOMING",
@@ -182,15 +198,46 @@ def _ownership_unlock_candidates(stock, as_of):
     return emitted, unlocks.get("status") or "UNKNOWN"
 
 
+def _plan_relation(bucket_name, source_event_id, item):
+    return _source_relation(
+        f"ownership_and_capital.buyback_and_holder_plans.{bucket_name}",
+        source_event_id,
+        item.get("provenance") or {},
+    )
+
+
+def _plan_details(base_type, item, **extra):
+    value = {
+        "plan_event_type": base_type,
+        "active_execution_window": item.get("active_execution_window"),
+        "plan_status": item.get("status"),
+    }
+    value.update(extra)
+    return value
+
+
 def _ownership_plan_candidates(stock, as_of):
     context = (stock or {}).get("ownership_and_capital")
     if not isinstance(context, dict):
-        return [], "UNAVAILABLE"
+        return [], "UNAVAILABLE", {
+            "invalid_confirmed_range": 0,
+            "expected_window_without_official_basis": 0,
+            "unknown_window": 0,
+        }
     plans = context.get("buyback_and_holder_plans")
     if not isinstance(plans, dict):
-        return [], "UNAVAILABLE"
+        return [], "UNAVAILABLE", {
+            "invalid_confirmed_range": 0,
+            "expected_window_without_official_basis": 0,
+            "unknown_window": 0,
+        }
 
     emitted = []
+    excluded = {
+        "invalid_confirmed_range": 0,
+        "expected_window_without_official_basis": 0,
+        "unknown_window": 0,
+    }
     for bucket_name, base_type in PLAN_BUCKETS.items():
         bucket = plans.get(bucket_name)
         if not isinstance(bucket, dict):
@@ -201,20 +248,110 @@ def _ownership_plan_candidates(stock, as_of):
             status = str(item.get("status") or "").upper()
             if status in {"COMPLETED", "CANCELLED"}:
                 continue
+
             source_event_id = item.get("event_id")
-            relation = _source_relation(
-                f"ownership_and_capital.buyback_and_holder_plans.{bucket_name}",
-                source_event_id,
-                item.get("provenance") or {},
+            relation = _plan_relation(bucket_name, source_event_id, item)
+            start = _date(item.get("window_start_date"))
+            end = _date(item.get("window_end_date"))
+            declared = str(item.get("window_date_certainty") or "").upper()
+
+            if declared == "UNKNOWN":
+                excluded["unknown_window"] += 1
+                continue
+
+            if declared == "EXPECTED_WINDOW":
+                semantics_source = str(item.get("window_semantics_source") or "").upper()
+                source_tier = str(relation.get("source_tier") or "").upper()
+                if (
+                    not start
+                    or not end
+                    or end < start
+                    or semantics_source != OFFICIAL_EXPECTED_WINDOW_SOURCE
+                    or source_tier != "OFFICIAL"
+                ):
+                    excluded["expected_window_without_official_basis"] += 1
+                    continue
+                if end < as_of or start < as_of:
+                    continue
+                emitted.append(
+                    _normalized_event(
+                        source_event_id,
+                        f"{base_type}_EXPECTED_WINDOW",
+                        f"{item.get('title') or base_type}: official expected execution window",
+                        start,
+                        "MEDIUM",
+                        relation,
+                        _plan_details(
+                            base_type,
+                            item,
+                            date_semantics_source=OFFICIAL_EXPECTED_WINDOW_SOURCE,
+                            range_anchor_policy="event_date=start; date_end=end; calendar bucket uses start",
+                        ),
+                        date_end=end,
+                        date_certainty="EXPECTED_WINDOW",
+                        date_confidence="MEDIUM",
+                    )
+                )
+                continue
+
+            if declared not in {"", "CONFIRMED_DATE", "CONFIRMED_RANGE"}:
+                excluded["unknown_window"] += 1
+                continue
+
+            if start and end and end < start:
+                excluded["invalid_confirmed_range"] += 1
+                continue
+
+            if start and end and end >= as_of:
+                if start >= as_of:
+                    emitted.append(
+                        _normalized_event(
+                            source_event_id,
+                            f"{base_type}_EXECUTION_WINDOW",
+                            f"{item.get('title') or base_type}: confirmed execution window",
+                            start,
+                            "MEDIUM",
+                            relation,
+                            _plan_details(
+                                base_type,
+                                item,
+                                date_semantics_source="OFFICIAL_EXPLICIT_WINDOW_BOUNDS",
+                                range_anchor_policy="event_date=start; date_end=end; calendar bucket uses start",
+                            ),
+                            date_end=end,
+                            date_certainty="CONFIRMED_RANGE",
+                        )
+                    )
+                    continue
+
+                emitted.append(
+                    _normalized_event(
+                        source_event_id,
+                        f"{base_type}_WINDOW_END",
+                        f"{item.get('title') or base_type}: execution window ends",
+                        end,
+                        "MEDIUM",
+                        relation,
+                        _plan_details(
+                            base_type,
+                            item,
+                            date_semantics_source="OFFICIAL_EXPLICIT_WINDOW_END",
+                            execution_window_started=True,
+                        ),
+                    )
+                )
+                continue
+
+            future_boundaries = (
+                (start, "WINDOW_START", "execution window starts", "window_start_date"),
+                (end, "WINDOW_END", "execution window ends", "window_end_date"),
             )
-            for field, suffix, label in (
-                ("window_start_date", "WINDOW_START", "execution window starts"),
-                ("window_end_date", "WINDOW_END", "execution window ends"),
-            ):
-                event_date = _date(item.get(field))
+            emitted_boundary = False
+            for event_date, suffix, label, field in future_boundaries:
                 days = _days_until(event_date, as_of)
                 if days is None or days < 0:
                     continue
+                emitted_boundary = True
                 emitted.append(
                     _normalized_event(
                         source_event_id,
@@ -223,14 +360,17 @@ def _ownership_plan_candidates(stock, as_of):
                         event_date,
                         "MEDIUM",
                         relation,
-                        {
-                            "plan_event_type": base_type,
-                            "active_execution_window": item.get("active_execution_window"),
-                            "plan_status": item.get("status"),
-                        },
+                        _plan_details(
+                            base_type,
+                            item,
+                            date_semantics_source="OFFICIAL_EXPLICIT_BOUNDARY",
+                            semantic_field=field,
+                        ),
                     )
                 )
-    return emitted, plans.get("status") or "UNKNOWN"
+            if not start and not end and not emitted_boundary:
+                excluded["unknown_window"] += 1
+    return emitted, plans.get("status") or "UNKNOWN", excluded
 
 
 def _merge_sources(existing, incoming):
@@ -266,6 +406,8 @@ def _dedupe(events):
             source_event_id or event.get("event_id"),
             event.get("event_type"),
             event.get("event_date"),
+            event.get("date_end"),
+            event.get("date_certainty"),
         )
         current = merged.get(key)
         if current is None:
@@ -292,7 +434,7 @@ def _window_name(days_until):
 def build_upcoming_events(stock, as_of):
     company, excluded, company_status = _company_unlock_candidates(stock, as_of)
     unlocks, unlock_status = _ownership_unlock_candidates(stock, as_of)
-    plans, plan_status = _ownership_plan_candidates(stock, as_of)
+    plans, plan_status, plan_exclusions = _ownership_plan_candidates(stock, as_of)
     events = _dedupe(company + unlocks + plans)
 
     for event in events:
@@ -339,11 +481,20 @@ def build_upcoming_events(stock, as_of):
             "quality": "PASS" if status == "OK" else "PARTIAL" if status == "PARTIAL" else "FAILED",
             "source_status": source_status,
             "date_certainty_policy": (
-                "emit only type-scoped explicit future dates; generic announcement dates are excluded"
+                "emit only evidence-scoped future dates/ranges; generic announcement dates and unknown windows are excluded"
             ),
-            "window_semantics": "non-overlapping calendar-day buckets: 0-7, 8-30, 31-90, >90",
-            "dedupe_policy": "same source_event_id + normalized event_type + event_date",
+            "date_certainty_contract": {
+                "CONFIRMED_DATE": "one explicit future date or a still-future boundary of an already-started confirmed range",
+                "CONFIRMED_RANGE": "ordered explicit official start/end bounds; emitted only while the whole range is future",
+                "EXPECTED_WINDOW": (
+                    "requires ordered bounds, OFFICIAL source_tier and window_semantics_source=OFFICIAL_EXPECTED_WINDOW; confidence=MEDIUM"
+                ),
+                "UNKNOWN": "never inserted into dated buckets; counted in excluded plan date semantics",
+            },
+            "window_semantics": "non-overlapping calendar-day buckets: 0-7, 8-30, 31-90, >90; ranges are bucketed by start",
+            "dedupe_policy": "same source_event_id + normalized event_type + event_date + date_end + date_certainty",
             "excluded_unproven_company_event_count": excluded,
+            "excluded_plan_date_semantics": plan_exclusions,
             "interpretation_scope": "CONTEXT_ONLY; NO_BULLISH_BEARISH_INFERENCE",
         },
         "provenance": {
@@ -386,7 +537,7 @@ def finalize_snapshot(snapshot_path):
             "ownership_unlock_state",
             "ownership_plan_explicit_windows",
         ],
-        "date_policy": "TYPE_SCOPED_EXPLICIT_DATES_ONLY",
+        "date_policy": "EXPLICIT_CONFIRMED_DATE_OR_RANGE; OFFICIAL_EXPECTED_WINDOW_ONLY; UNKNOWN_FAIL_CLOSED",
     }
     path.write_text(json.dumps(snapshot, ensure_ascii=False, indent=2), encoding="utf-8")
     print(
