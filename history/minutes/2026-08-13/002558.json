@@ -7,10 +7,10 @@
   "source": "Tencent 1-minute cumulative series",
   "calendar_expectation": {
     "calendar_version": "sse-cn-a-2024-2026@2025-12-22",
-    "evaluated_at_cst": "2026-08-13T10:43:00+08:00",
+    "evaluated_at_cst": "2026-08-13T11:05:55+08:00",
     "status": "IN_PROGRESS",
     "verification_status": "VERIFIED",
-    "forming_minute": "1042",
+    "forming_minute": "1105",
     "expected_times": [
       "0930",
       "0931",
@@ -83,7 +83,30 @@
       "1038",
       "1039",
       "1040",
-      "1041"
+      "1041",
+      "1042",
+      "1043",
+      "1044",
+      "1045",
+      "1046",
+      "1047",
+      "1048",
+      "1049",
+      "1050",
+      "1051",
+      "1052",
+      "1053",
+      "1054",
+      "1055",
+      "1056",
+      "1057",
+      "1058",
+      "1059",
+      "1100",
+      "1101",
+      "1102",
+      "1103",
+      "1104"
     ]
   },
   "points": [
@@ -662,6 +685,190 @@
       "cum_amount": 961885986.4,
       "delta_volume": 1583.0,
       "delta_amount": 4601217.819999933
+    },
+    {
+      "time": "1042",
+      "price": 29.07,
+      "cum_volume": 333618.0,
+      "cum_amount": 970136352.13,
+      "delta_volume": 2839.0,
+      "delta_amount": 8250365.730000019
+    },
+    {
+      "time": "1043",
+      "price": 29.04,
+      "cum_volume": 336004.0,
+      "cum_amount": 977069917.13,
+      "delta_volume": 2386.0,
+      "delta_amount": 6933565.0
+    },
+    {
+      "time": "1044",
+      "price": 28.97,
+      "cum_volume": 337126.0,
+      "cum_amount": 980322298.12,
+      "delta_volume": 1122.0,
+      "delta_amount": 3252380.9900000095
+    },
+    {
+      "time": "1045",
+      "price": 28.94,
+      "cum_volume": 338261.0,
+      "cum_amount": 983610553.11,
+      "delta_volume": 1135.0,
+      "delta_amount": 3288254.9900000095
+    },
+    {
+      "time": "1046",
+      "price": 29.02,
+      "cum_volume": 339625.0,
+      "cum_amount": 987566229.19,
+      "delta_volume": 1364.0,
+      "delta_amount": 3955676.080000043
+    },
+    {
+      "time": "1047",
+      "price": 28.94,
+      "cum_volume": 340368.0,
+      "cum_amount": 989718076.09,
+      "delta_volume": 743.0,
+      "delta_amount": 2151846.899999976
+    },
+    {
+      "time": "1048",
+      "price": 28.97,
+      "cum_volume": 341682.0,
+      "cum_amount": 993519610.95,
+      "delta_volume": 1314.0,
+      "delta_amount": 3801534.8600000143
+    },
+    {
+      "time": "1049",
+      "price": 28.95,
+      "cum_volume": 342572.0,
+      "cum_amount": 996097582.94,
+      "delta_volume": 890.0,
+      "delta_amount": 2577971.9900000095
+    },
+    {
+      "time": "1050",
+      "price": 28.9,
+      "cum_volume": 343283.0,
+      "cum_amount": 998155050.93,
+      "delta_volume": 711.0,
+      "delta_amount": 2057467.9899998903
+    },
+    {
+      "time": "1051",
+      "price": 28.91,
+      "cum_volume": 345413.0,
+      "cum_amount": 1004310635.89,
+      "delta_volume": 2130.0,
+      "delta_amount": 6155584.960000038
+    },
+    {
+      "time": "1052",
+      "price": 28.86,
+      "cum_volume": 346394.0,
+      "cum_amount": 1007143016.87,
+      "delta_volume": 981.0,
+      "delta_amount": 2832380.980000019
+    },
+    {
+      "time": "1053",
+      "price": 28.82,
+      "cum_volume": 347877.0,
+      "cum_amount": 1011418184.21,
+      "delta_volume": 1483.0,
+      "delta_amount": 4275167.340000033
+    },
+    {
+      "time": "1054",
+      "price": 28.82,
+      "cum_volume": 348843.0,
+      "cum_amount": 1014203263.19,
+      "delta_volume": 966.0,
+      "delta_amount": 2785078.980000019
+    },
+    {
+      "time": "1055",
+      "price": 28.82,
+      "cum_volume": 349631.0,
+      "cum_amount": 1016475442.18,
+      "delta_volume": 788.0,
+      "delta_amount": 2272178.9899998903
+    },
+    {
+      "time": "1056",
+      "price": 28.84,
+      "cum_volume": 350492.0,
+      "cum_amount": 1018957651.16,
+      "delta_volume": 861.0,
+      "delta_amount": 2482208.980000019
+    },
+    {
+      "time": "1057",
+      "price": 28.82,
+      "cum_volume": 351649.0,
+      "cum_amount": 1022293228.13,
+      "delta_volume": 1157.0,
+      "delta_amount": 3335576.9700000286
+    },
+    {
+      "time": "1058",
+      "price": 28.85,
+      "cum_volume": 352522.0,
+      "cum_amount": 1024810565.12,
+      "delta_volume": 873.0,
+      "delta_amount": 2517336.9900000095
+    },
+    {
+      "time": "1059",
+      "price": 28.82,
+      "cum_volume": 353230.0,
+      "cum_amount": 1026852164.85,
+      "delta_volume": 708.0,
+      "delta_amount": 2041599.730000019
+    },
+    {
+      "time": "1100",
+      "price": 28.85,
+      "cum_volume": 353948.0,
+      "cum_amount": 1028922143.09,
+      "delta_volume": 718.0,
+      "delta_amount": 2069978.2400000095
+    },
+    {
+      "time": "1101",
+      "price": 28.76,
+      "cum_volume": 356501.0,
+      "cum_amount": 1036274465.03,
+      "delta_volume": 2553.0,
+      "delta_amount": 7352321.939999938
+    },
+    {
+      "time": "1102",
+      "price": 28.78,
+      "cum_volume": 359409.0,
+      "cum_amount": 1044638701.95,
+      "delta_volume": 2908.0,
+      "delta_amount": 8364236.920000076
+    },
+    {
+      "time": "1103",
+      "price": 28.76,
+      "cum_volume": 360919.0,
+      "cum_amount": 1048982908.91,
+      "delta_volume": 1510.0,
+      "delta_amount": 4344206.959999919
+    },
+    {
+      "time": "1104",
+      "price": 28.75,
+      "cum_volume": 363160.0,
+      "cum_amount": 1055425995.85,
+      "delta_volume": 2241.0,
+      "delta_amount": 6443086.940000057
     }
   ],
   "observations": [
@@ -718,6 +925,15 @@
       "head_sha": "ce9a968f0a95e1a3ba62be6cee5965d993aca79b",
       "source": "GITHUB_ACTIONS",
       "captured_point_count": 72
+    },
+    {
+      "runner_time_cst": "2026-08-13 11:05:55.070",
+      "runner_time_utc": "2026-08-13T03:05:55.070744+00:00",
+      "run_id": 31628029722,
+      "run_attempt": 9,
+      "head_sha": "ce9a968f0a95e1a3ba62be6cee5965d993aca79b",
+      "source": "GITHUB_ACTIONS",
+      "captured_point_count": 95
     }
   ],
   "source_anomalies": {
@@ -736,20 +952,22 @@
       "1005",
       "1042",
       "1043",
-      "1044"
+      "1044",
+      "1105",
+      "1106"
     ],
     "invalid_row_count": 0
   },
   "conflicts": [],
-  "updated_at_cst": "2026-08-13 10:43:00.603",
+  "updated_at_cst": "2026-08-13 11:05:55.070",
   "coverage": {
     "status": "COMPLETE",
-    "observed_count": 72,
-    "expected_count": 72,
+    "observed_count": 95,
+    "expected_count": 95,
     "missing_count": 0,
     "missing_times": [],
     "first_time": "0930",
-    "last_time": "1041"
+    "last_time": "1104"
   },
   "continuity": {
     "status": "PASS",
