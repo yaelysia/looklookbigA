@@ -7,10 +7,10 @@
   "source": "Tencent 1-minute cumulative series",
   "calendar_expectation": {
     "calendar_version": "sse-cn-a-2024-2026@2025-12-22",
-    "evaluated_at_cst": "2026-08-13T14:42:06+08:00",
+    "evaluated_at_cst": "2026-08-13T14:59:50+08:00",
     "status": "IN_PROGRESS",
     "verification_status": "VERIFIED",
-    "forming_minute": "1441",
+    "forming_minute": "1459",
     "expected_times": [
       "0930",
       "0931",
@@ -233,7 +233,25 @@
       "1437",
       "1438",
       "1439",
-      "1440"
+      "1440",
+      "1441",
+      "1442",
+      "1443",
+      "1444",
+      "1445",
+      "1446",
+      "1447",
+      "1448",
+      "1449",
+      "1450",
+      "1451",
+      "1452",
+      "1453",
+      "1454",
+      "1455",
+      "1456",
+      "1457",
+      "1458"
     ]
   },
   "points": [
@@ -2012,6 +2030,150 @@
       "cum_amount": 1719811083.69,
       "delta_volume": 2663.0,
       "delta_amount": 7644325.0
+    },
+    {
+      "time": "1441",
+      "price": 28.68,
+      "cum_volume": 597457.0,
+      "cum_amount": 1731399307.21,
+      "delta_volume": 4038.0,
+      "delta_amount": 11588223.51999998
+    },
+    {
+      "time": "1442",
+      "price": 28.68,
+      "cum_volume": 599087.0,
+      "cum_amount": 1736073941.18,
+      "delta_volume": 1630.0,
+      "delta_amount": 4674633.970000029
+    },
+    {
+      "time": "1443",
+      "price": 28.66,
+      "cum_volume": 600628.0,
+      "cum_amount": 1740491766.16,
+      "delta_volume": 1541.0,
+      "delta_amount": 4417824.980000019
+    },
+    {
+      "time": "1444",
+      "price": 28.63,
+      "cum_volume": 604467.0,
+      "cum_amount": 1751487555.08,
+      "delta_volume": 3839.0,
+      "delta_amount": 10995788.919999838
+    },
+    {
+      "time": "1445",
+      "price": 28.67,
+      "cum_volume": 607894.0,
+      "cum_amount": 1761304022.02,
+      "delta_volume": 3427.0,
+      "delta_amount": 9816466.940000057
+    },
+    {
+      "time": "1446",
+      "price": 28.71,
+      "cum_volume": 610210.0,
+      "cum_amount": 1767947237.98,
+      "delta_volume": 2316.0,
+      "delta_amount": 6643215.960000038
+    },
+    {
+      "time": "1447",
+      "price": 28.64,
+      "cum_volume": 613069.0,
+      "cum_amount": 1776144488.93,
+      "delta_volume": 2859.0,
+      "delta_amount": 8197250.950000048
+    },
+    {
+      "time": "1448",
+      "price": 28.62,
+      "cum_volume": 615346.0,
+      "cum_amount": 1782662392.88,
+      "delta_volume": 2277.0,
+      "delta_amount": 6517903.950000048
+    },
+    {
+      "time": "1449",
+      "price": 28.61,
+      "cum_volume": 617495.0,
+      "cum_amount": 1788812358.84,
+      "delta_volume": 2149.0,
+      "delta_amount": 6149965.9599998
+    },
+    {
+      "time": "1450",
+      "price": 28.6,
+      "cum_volume": 621426.0,
+      "cum_amount": 1800057848.76,
+      "delta_volume": 3931.0,
+      "delta_amount": 11245489.920000076
+    },
+    {
+      "time": "1451",
+      "price": 28.62,
+      "cum_volume": 623996.0,
+      "cum_amount": 1807413381.71,
+      "delta_volume": 2570.0,
+      "delta_amount": 7355532.950000048
+    },
+    {
+      "time": "1452",
+      "price": 28.62,
+      "cum_volume": 626383.0,
+      "cum_amount": 1814244063.66,
+      "delta_volume": 2387.0,
+      "delta_amount": 6830681.950000048
+    },
+    {
+      "time": "1453",
+      "price": 28.61,
+      "cum_volume": 628927.0,
+      "cum_amount": 1821522020.61,
+      "delta_volume": 2544.0,
+      "delta_amount": 7277956.949999809
+    },
+    {
+      "time": "1454",
+      "price": 28.58,
+      "cum_volume": 633465.0,
+      "cum_amount": 1834493664.52,
+      "delta_volume": 4538.0,
+      "delta_amount": 12971643.910000086
+    },
+    {
+      "time": "1455",
+      "price": 28.59,
+      "cum_volume": 636057.0,
+      "cum_amount": 1841902758.2,
+      "delta_volume": 2592.0,
+      "delta_amount": 7409093.680000067
+    },
+    {
+      "time": "1456",
+      "price": 28.57,
+      "cum_volume": 639997.0,
+      "cum_amount": 1853164160.2,
+      "delta_volume": 3940.0,
+      "delta_amount": 11261402.0
+    },
+    {
+      "time": "1457",
+      "price": 28.58,
+      "cum_volume": 644635.0,
+      "cum_amount": 1866418063.54,
+      "delta_volume": 4638.0,
+      "delta_amount": 13253903.339999914
+    },
+    {
+      "time": "1458",
+      "price": 28.58,
+      "cum_volume": 644780.0,
+      "cum_amount": 1866832393.53,
+      "delta_volume": 145.0,
+      "delta_amount": 414329.99000000954
     }
   ],
   "observations": [
@@ -2149,6 +2311,15 @@
       "head_sha": "8a7b9fd700598e3b7cf382da0d9c48653d9d5746",
       "source": "GITHUB_ACTIONS",
       "captured_point_count": 222
+    },
+    {
+      "runner_time_cst": "2026-08-13 14:59:50.492",
+      "runner_time_utc": "2026-08-13T06:59:50.492901+00:00",
+      "run_id": 31670537271,
+      "run_attempt": 6,
+      "head_sha": "8a7b9fd700598e3b7cf382da0d9c48653d9d5746",
+      "source": "GITHUB_ACTIONS",
+      "captured_point_count": 240
     }
   ],
   "source_anomalies": {
@@ -2183,7 +2354,9 @@
       "1423",
       "1441",
       "1442",
-      "1443"
+      "1443",
+      "1459",
+      "1500"
     ],
     "invalid_row_count": 0
   },
@@ -2222,17 +2395,22 @@
       "time": "1130",
       "current_digest": "55167c406e8def78e10c887cc4cfc9cc0d256394a77fa4ad1538bdf2315ba8dc",
       "incoming_digest": "e99cf6bec67ac69a325c3d0677279e44a8ec7438538e601fc182a465cb71ea4f"
+    },
+    {
+      "time": "1130",
+      "current_digest": "55167c406e8def78e10c887cc4cfc9cc0d256394a77fa4ad1538bdf2315ba8dc",
+      "incoming_digest": "e99cf6bec67ac69a325c3d0677279e44a8ec7438538e601fc182a465cb71ea4f"
     }
   ],
-  "updated_at_cst": "2026-08-13 14:42:06.174",
+  "updated_at_cst": "2026-08-13 14:59:50.492",
   "coverage": {
     "status": "COMPLETE",
-    "observed_count": 222,
-    "expected_count": 222,
+    "observed_count": 240,
+    "expected_count": 240,
     "missing_count": 0,
     "missing_times": [],
     "first_time": "0930",
-    "last_time": "1440"
+    "last_time": "1458"
   },
   "continuity": {
     "status": "PASS",
