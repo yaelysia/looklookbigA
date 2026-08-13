@@ -3,11 +3,26 @@ from collections import Counter
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+import upcoming_events
+import upcoming_events_status_bridge
+
+
+upcoming_events_status_bridge.install(upcoming_events)
 
 CST = timezone(timedelta(hours=8))
 QUALITY_SEVERITY = {"PASS": 0, "DEGRADED": 1, "PARTIAL": 2, "FAILED": 3}
 CONFIDENCE = {"PASS": "HIGH", "DEGRADED": "MEDIUM", "PARTIAL": "LOW", "FAILED": "NONE"}
 GOOD_SOURCE_STATUSES = {"OK", "PASS"}
+FAILED_SOURCE_STATUSES = {
+    "ERROR",
+    "FAILED",
+    "FAILURE",
+    "FATAL",
+    "TIMEOUT",
+    "TIMED_OUT",
+    "CANCELLED",
+    "ABORTED",
+}
 
 
 def _runner_time_iso(snapshot):
@@ -68,6 +83,15 @@ def _source_status_flags(source_status):
     return flags
 
 
+def _has_failed_source(source_status):
+    if not isinstance(source_status, dict):
+        return False
+    return any(
+        str(status or "").strip().upper() in FAILED_SOURCE_STATUSES
+        for status in source_status.values()
+    )
+
+
 def _decorate_layer(layer, fetched_at):
     metadata = layer.setdefault("metadata", {})
     quality = _quality_from_status(layer.get("status"))
@@ -75,8 +99,11 @@ def _decorate_layer(layer, fetched_at):
     if existing_quality:
         quality = _worse(quality, str(existing_quality).upper())
 
+    source_status = metadata.get("source_status")
     flags = list(metadata.get("quality_flags") or [])
-    flags.extend(_source_status_flags(metadata.get("source_status")))
+    flags.extend(_source_status_flags(source_status))
+    if _has_failed_source(source_status):
+        quality = _worse(quality, "PARTIAL")
 
     excluded = int(metadata.get("excluded_unproven_company_event_count") or 0)
     if excluded:
