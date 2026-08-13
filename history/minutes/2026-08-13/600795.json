@@ -7,10 +7,10 @@
   "source": "Tencent 1-minute cumulative series",
   "calendar_expectation": {
     "calendar_version": "sse-cn-a-2024-2026@2025-12-22",
-    "evaluated_at_cst": "2026-08-13T09:54:33+08:00",
+    "evaluated_at_cst": "2026-08-13T10:04:11+08:00",
     "status": "IN_PROGRESS",
     "verification_status": "VERIFIED",
-    "forming_minute": "0954",
+    "forming_minute": "1003",
     "expected_times": [
       "0930",
       "0931",
@@ -35,7 +35,16 @@
       "0950",
       "0951",
       "0952",
-      "0953"
+      "0953",
+      "0954",
+      "0955",
+      "0956",
+      "0957",
+      "0958",
+      "0959",
+      "1000",
+      "1001",
+      "1002"
     ]
   },
   "points": [
@@ -230,6 +239,78 @@
       "cum_amount": 92670787.0,
       "delta_volume": 3106.0,
       "delta_amount": 1565717.0
+    },
+    {
+      "time": "0954",
+      "price": 5.05,
+      "cum_volume": 187664.0,
+      "cum_amount": 94349710.0,
+      "delta_volume": 3327.0,
+      "delta_amount": 1678923.0
+    },
+    {
+      "time": "0955",
+      "price": 5.05,
+      "cum_volume": 190414.0,
+      "cum_amount": 95736977.0,
+      "delta_volume": 2750.0,
+      "delta_amount": 1387267.0
+    },
+    {
+      "time": "0956",
+      "price": 5.05,
+      "cum_volume": 202766.0,
+      "cum_amount": 101975290.85,
+      "delta_volume": 12352.0,
+      "delta_amount": 6238313.849999994
+    },
+    {
+      "time": "0957",
+      "price": 5.05,
+      "cum_volume": 205478.0,
+      "cum_amount": 103346530.86,
+      "delta_volume": 2712.0,
+      "delta_amount": 1371240.0100000054
+    },
+    {
+      "time": "0958",
+      "price": 5.04,
+      "cum_volume": 217724.0,
+      "cum_amount": 109531877.89,
+      "delta_volume": 12246.0,
+      "delta_amount": 6185347.030000001
+    },
+    {
+      "time": "0959",
+      "price": 5.05,
+      "cum_volume": 220382.0,
+      "cum_amount": 110872370.9,
+      "delta_volume": 2658.0,
+      "delta_amount": 1340493.0100000054
+    },
+    {
+      "time": "1000",
+      "price": 5.05,
+      "cum_volume": 222700.0,
+      "cum_amount": 112041879.9,
+      "delta_volume": 2318.0,
+      "delta_amount": 1169509.0
+    },
+    {
+      "time": "1001",
+      "price": 5.06,
+      "cum_volume": 230220.0,
+      "cum_amount": 115840569.92,
+      "delta_volume": 7520.0,
+      "delta_amount": 3798690.019999996
+    },
+    {
+      "time": "1002",
+      "price": 5.08,
+      "cum_volume": 272181.0,
+      "cum_amount": 137088873.06,
+      "delta_volume": 41961.0,
+      "delta_amount": 21248303.14
     }
   ],
   "observations": [
@@ -268,6 +349,15 @@
       "head_sha": "ce9a968f0a95e1a3ba62be6cee5965d993aca79b",
       "source": "GITHUB_ACTIONS",
       "captured_point_count": 24
+    },
+    {
+      "runner_time_cst": "2026-08-13 10:04:11.049",
+      "runner_time_utc": "2026-08-13T02:04:11.049988+00:00",
+      "run_id": 31628029722,
+      "run_attempt": 7,
+      "head_sha": "ce9a968f0a95e1a3ba62be6cee5965d993aca79b",
+      "source": "GITHUB_ACTIONS",
+      "captured_point_count": 33
     }
   ],
   "source_anomalies": {
@@ -280,20 +370,23 @@
       "0947",
       "0948",
       "0954",
-      "0955"
+      "0955",
+      "1003",
+      "1004",
+      "1005"
     ],
     "invalid_row_count": 0
   },
   "conflicts": [],
-  "updated_at_cst": "2026-08-13 09:54:33.865",
+  "updated_at_cst": "2026-08-13 10:04:11.049",
   "coverage": {
     "status": "COMPLETE",
-    "observed_count": 24,
-    "expected_count": 24,
+    "observed_count": 33,
+    "expected_count": 33,
     "missing_count": 0,
     "missing_times": [],
     "first_time": "0930",
-    "last_time": "0953"
+    "last_time": "1002"
   },
   "continuity": {
     "status": "PASS",
