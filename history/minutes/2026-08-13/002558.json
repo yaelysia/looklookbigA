@@ -7,13 +7,60 @@
   "source": "Tencent 1-minute cumulative series",
   "calendar_expectation": {
     "calendar_version": "sse-cn-a-2024-2026@2025-12-22",
-    "evaluated_at_cst": "2026-08-13T09:26:15+08:00",
+    "evaluated_at_cst": "2026-08-13T09:35:31+08:00",
     "status": "IN_PROGRESS",
     "verification_status": "VERIFIED",
-    "forming_minute": null,
-    "expected_times": []
+    "forming_minute": "0935",
+    "expected_times": [
+      "0930",
+      "0931",
+      "0932",
+      "0933",
+      "0934"
+    ]
   },
-  "points": [],
+  "points": [
+    {
+      "time": "0930",
+      "price": 28.78,
+      "cum_volume": 4384.0,
+      "cum_amount": 12617152.0,
+      "delta_volume": 4384.0,
+      "delta_amount": 12617152.0
+    },
+    {
+      "time": "0931",
+      "price": 29.0,
+      "cum_volume": 27939.0,
+      "cum_amount": 80987081.0,
+      "delta_volume": 23555.0,
+      "delta_amount": 68369929.0
+    },
+    {
+      "time": "0932",
+      "price": 28.95,
+      "cum_volume": 36982.0,
+      "cum_amount": 107146105.0,
+      "delta_volume": 9043.0,
+      "delta_amount": 26159024.0
+    },
+    {
+      "time": "0933",
+      "price": 28.98,
+      "cum_volume": 44245.0,
+      "cum_amount": 128195029.0,
+      "delta_volume": 7263.0,
+      "delta_amount": 21048924.0
+    },
+    {
+      "time": "0934",
+      "price": 28.99,
+      "cum_volume": 57561.0,
+      "cum_amount": 166724225.0,
+      "delta_volume": 13316.0,
+      "delta_amount": 38529196.0
+    }
+  ],
   "observations": [
     {
       "runner_time_cst": "2026-08-13 09:26:15.019",
@@ -23,25 +70,36 @@
       "head_sha": "ce9a968f0a95e1a3ba62be6cee5965d993aca79b",
       "source": "GITHUB_ACTIONS",
       "captured_point_count": 0
+    },
+    {
+      "runner_time_cst": "2026-08-13 09:35:31.716",
+      "runner_time_utc": "2026-08-13T01:35:31.716611+00:00",
+      "run_id": 31628029722,
+      "run_attempt": 4,
+      "head_sha": "ce9a968f0a95e1a3ba62be6cee5965d993aca79b",
+      "source": "GITHUB_ACTIONS",
+      "captured_point_count": 5
     }
   ],
   "source_anomalies": {
     "duplicate_times": [],
     "unexpected_times": [
-      "0930"
+      "0930",
+      "0935",
+      "0936"
     ],
     "invalid_row_count": 0
   },
   "conflicts": [],
-  "updated_at_cst": "2026-08-13 09:26:15.019",
+  "updated_at_cst": "2026-08-13 09:35:31.716",
   "coverage": {
     "status": "COMPLETE",
-    "observed_count": 0,
-    "expected_count": 0,
+    "observed_count": 5,
+    "expected_count": 5,
     "missing_count": 0,
     "missing_times": [],
-    "first_time": null,
-    "last_time": null
+    "first_time": "0930",
+    "last_time": "0934"
   },
   "continuity": {
     "status": "PASS",
