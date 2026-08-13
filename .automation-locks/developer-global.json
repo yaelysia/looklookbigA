@@ -1,13 +1,13 @@
 {
   "kind": "looklookbigA-auto-worker-lease",
-  "state": "IDLE",
-  "token": null,
-  "work_item": "issue-48/upcoming-events-docs-finalize",
-  "acquired_at": "2026-08-12T23:05:23+00:00",
-  "lease_until": "2026-08-12T23:55:23+00:00",
-  "released_at": "2026-08-12T23:12:20+00:00",
+  "state": "ACTIVE",
+  "token": "auto-20260813T0001Z-48-date-certainty-c7a49d2e",
+  "work_item": "issue-48/upcoming-events-date-certainty",
+  "acquired_at": "2026-08-13T00:01:00+00:00",
+  "lease_until": "2026-08-13T00:51:00+00:00",
+  "released_at": null,
   "last_token": "auto-20260812T230523Z-48-docs-finalize-9c41e2b7",
   "last_checkpoint": "ISSUE_48_DOCS_ACCEPTANCE_SUBMITTED",
   "last_head_sha": "2ef7f6df27085c85d34ecdf813fde5c90f35f4b9",
-  "note": "Previous exact-head quality gate was green. Submitted README and dedicated upcoming-events schema documentation, then final acceptance reconciliation identified a remaining CONFIRMED_RANGE/date-certainty contract gap. New exact-head Pre-merge Security Gate run 31649947793 triggered; PR remains Draft and MANUAL_GATE_REQUIRED."
+  "note": "Resume Issue #48 date-certainty acceptance group after exact-head CI success."
 }
