@@ -7,21 +7,322 @@
   "state": "PENDING",
   "reason": null,
   "bootstrap_key": "CN_A:2026-08-13:AFTERNOON",
-  "bootstrap_state": "FAILED",
+  "bootstrap_state": "READY",
   "owner": null,
-  "attempts": 1,
-  "claimed_at": "2026-08-13T13:15:45+08:00",
+  "attempts": 2,
+  "claimed_at": "2026-08-13T13:30:30+08:00",
   "lease_expires_at": null,
-  "bootstrap_at": null,
-  "next_retry_at": "2026-08-13T13:16:45+08:00",
+  "bootstrap_at": "2026-08-13T13:30:30+08:00",
+  "next_retry_at": null,
   "bootstrap_revision": {
-    "run_id": 31628029722,
-    "run_attempt": 11,
-    "head_sha": "ce9a968f0a95e1a3ba62be6cee5965d993aca79b",
-    "process_id": 2268,
-    "thread_id": 140627748579008
+    "run_id": 31670537271,
+    "run_attempt": 1,
+    "head_sha": "8a7b9fd700598e3b7cf382da0d9c48653d9d5746",
+    "process_id": 2105,
+    "thread_id": 139640895952576
   },
-  "breadth": null,
-  "error": "RuntimeError: market breadth full-universe and stratified fallbacks both failed: full=RemoteDisconnected: Remote end closed connection without response; sample=RuntimeError: unable to discover market universe size: page 1: HTTPError: HTTP Error 502: Bad Gateway; page 2: HTTPError: HTTP Error 502: Bad Gateway; page 3: HTTPError: HTTP Error 502: Bad Gateway",
-  "failed_at": "2026-08-13T13:15:45+08:00"
+  "breadth": {
+    "status": "PARTIAL",
+    "source": "Eastmoney clist complete stratified sample",
+    "collected_at_cst": "2026-08-13 13:30:30",
+    "market_session_date": "2026-08-13",
+    "freshness": "LIVE",
+    "freshness_basis": "INDEX_QUOTE_SESSION_ANCHOR",
+    "session_anchor": {
+      "source": "indices",
+      "members": [
+        "上证指数",
+        "深证成指",
+        "创业板指",
+        "沪深300",
+        "中证1000",
+        "科创50"
+      ],
+      "latest_market_time_cst": "2026-08-13 13:30:27",
+      "freshness_counts": {
+        "LIVE": 6
+      }
+    },
+    "reported_total_count": 5895,
+    "covered_count": 800,
+    "coverage_percent": 13.57,
+    "estimated": true,
+    "partial_reason": "FULL_UNIVERSE_UNAVAILABLE_USING_COMPLETE_STRATIFIED_SAMPLE",
+    "primary_error": "RuntimeError: Eastmoney full market universe was truncated: 100/5895",
+    "sampling": {
+      "method": "complete_stratified_code_rank_sample",
+      "page_size": 100,
+      "required_strata_count": 8,
+      "successful_strata_count": 8,
+      "all_strata_covered": true,
+      "neighbor_attempt_limit": 3,
+      "sample_count": 800,
+      "universe_count": 5895,
+      "sample_coverage_percent": 13.57,
+      "strata": [
+        {
+          "index": 0,
+          "page_start": 1,
+          "page_end": 7,
+          "target_page": 4,
+          "selected_page": 4,
+          "attempted_pages": [
+            4
+          ],
+          "population_count": 700,
+          "sample_count": 100,
+          "fallback_used": false,
+          "errors": []
+        },
+        {
+          "index": 1,
+          "page_start": 8,
+          "page_end": 14,
+          "target_page": 11,
+          "selected_page": 11,
+          "attempted_pages": [
+            11
+          ],
+          "population_count": 700,
+          "sample_count": 100,
+          "fallback_used": false,
+          "errors": []
+        },
+        {
+          "index": 2,
+          "page_start": 15,
+          "page_end": 22,
+          "target_page": 18,
+          "selected_page": 18,
+          "attempted_pages": [
+            18
+          ],
+          "population_count": 800,
+          "sample_count": 100,
+          "fallback_used": false,
+          "errors": []
+        },
+        {
+          "index": 3,
+          "page_start": 23,
+          "page_end": 29,
+          "target_page": 26,
+          "selected_page": 26,
+          "attempted_pages": [
+            26
+          ],
+          "population_count": 700,
+          "sample_count": 100,
+          "fallback_used": false,
+          "errors": []
+        },
+        {
+          "index": 4,
+          "page_start": 30,
+          "page_end": 36,
+          "target_page": 33,
+          "selected_page": 33,
+          "attempted_pages": [
+            33
+          ],
+          "population_count": 700,
+          "sample_count": 100,
+          "fallback_used": false,
+          "errors": []
+        },
+        {
+          "index": 5,
+          "page_start": 37,
+          "page_end": 44,
+          "target_page": 40,
+          "selected_page": 40,
+          "attempted_pages": [
+            40
+          ],
+          "population_count": 800,
+          "sample_count": 100,
+          "fallback_used": false,
+          "errors": []
+        },
+        {
+          "index": 6,
+          "page_start": 45,
+          "page_end": 51,
+          "target_page": 48,
+          "selected_page": 48,
+          "attempted_pages": [
+            48
+          ],
+          "population_count": 700,
+          "sample_count": 100,
+          "fallback_used": false,
+          "errors": []
+        },
+        {
+          "index": 7,
+          "page_start": 52,
+          "page_end": 59,
+          "target_page": 55,
+          "selected_page": 55,
+          "attempted_pages": [
+            55
+          ],
+          "population_count": 795,
+          "sample_count": 100,
+          "fallback_used": false,
+          "errors": []
+        }
+      ],
+      "note": "Every rank stratum must yield one page; failed targets retry nearby pages inside the same stratum. If any stratum remains uncovered, no universe counts are extrapolated."
+    },
+    "overall": {
+      "estimated": true,
+      "count": 5895,
+      "sample_count": 800,
+      "change_covered_count": 5445,
+      "unavailable_change_count": 450,
+      "count_semantics": "estimated_from_complete_stratified_code_rank_sample",
+      "up_count": 2117,
+      "down_count": 3173,
+      "flat_count": 155,
+      "sample_change_covered_count": 739,
+      "sample_unavailable_change_count": 61,
+      "sample_up_count": 289,
+      "sample_down_count": 429,
+      "sample_flat_count": 21,
+      "up_ratio_percent": 38.88,
+      "down_ratio_percent": 58.27,
+      "breadth_score_percent": -19.39,
+      "up_share_of_universe_percent": 35.91,
+      "down_share_of_universe_percent": 53.83,
+      "unavailable_share_of_universe_percent": 7.63,
+      "mean_change_percent": 0.2172,
+      "median_change_percent": -0.34,
+      "amount_1e8": null,
+      "sample_amount_1e8": 2865.85,
+      "amount_semantics": "sample_only_not_scaled",
+      "move_ge_3pct_count": 542,
+      "move_le_minus_3pct_count": 185,
+      "limit_up_count_approx": null,
+      "limit_down_count_approx": null,
+      "broken_limit_up_count_approx": null
+    },
+    "boards": {
+      "main_board": {
+        "estimated": true,
+        "sample_count": 500,
+        "sample_change_covered_count": 460,
+        "sample_unavailable_change_count": 40,
+        "sample_up_count": 163,
+        "sample_down_count": 279,
+        "sample_flat_count": 18,
+        "up_ratio_percent": 35.43,
+        "down_ratio_percent": 60.65,
+        "breadth_score_percent": -25.22,
+        "mean_change_percent": -0.0714,
+        "median_change_percent": -0.45,
+        "sample_amount_1e8": 1670.04
+      },
+      "chinext": {
+        "estimated": true,
+        "sample_count": 200,
+        "sample_change_covered_count": 188,
+        "sample_unavailable_change_count": 12,
+        "sample_up_count": 75,
+        "sample_down_count": 111,
+        "sample_flat_count": 2,
+        "up_ratio_percent": 39.89,
+        "down_ratio_percent": 59.04,
+        "breadth_score_percent": -19.15,
+        "mean_change_percent": 0.4423,
+        "median_change_percent": -0.23,
+        "sample_amount_1e8": 693.33
+      },
+      "star_market": {
+        "estimated": true,
+        "sample_count": 54,
+        "sample_change_covered_count": 51,
+        "sample_unavailable_change_count": 3,
+        "sample_up_count": 36,
+        "sample_down_count": 14,
+        "sample_flat_count": 1,
+        "up_ratio_percent": 70.59,
+        "down_ratio_percent": 27.45,
+        "breadth_score_percent": 43.14,
+        "mean_change_percent": 1.8339,
+        "median_change_percent": 1.41,
+        "sample_amount_1e8": 487.37
+      },
+      "bse": {
+        "estimated": true,
+        "sample_count": 46,
+        "sample_change_covered_count": 40,
+        "sample_unavailable_change_count": 6,
+        "sample_up_count": 15,
+        "sample_down_count": 25,
+        "sample_flat_count": 0,
+        "up_ratio_percent": 37.5,
+        "down_ratio_percent": 62.5,
+        "breadth_score_percent": -25.0,
+        "mean_change_percent": 0.4172,
+        "median_change_percent": -0.405,
+        "sample_amount_1e8": 15.12
+      }
+    },
+    "exchanges": {
+      "SH": {
+        "estimated": true,
+        "sample_count": 354,
+        "sample_change_covered_count": 330,
+        "sample_unavailable_change_count": 24,
+        "sample_up_count": 147,
+        "sample_down_count": 172,
+        "sample_flat_count": 11,
+        "up_ratio_percent": 44.55,
+        "down_ratio_percent": 52.12,
+        "breadth_score_percent": -7.58,
+        "mean_change_percent": 0.2664,
+        "median_change_percent": -0.23,
+        "sample_amount_1e8": 1454.95
+      },
+      "SZ": {
+        "estimated": true,
+        "sample_count": 400,
+        "sample_change_covered_count": 369,
+        "sample_unavailable_change_count": 31,
+        "sample_up_count": 127,
+        "sample_down_count": 232,
+        "sample_flat_count": 10,
+        "up_ratio_percent": 34.42,
+        "down_ratio_percent": 62.87,
+        "breadth_score_percent": -28.46,
+        "mean_change_percent": 0.1515,
+        "median_change_percent": -0.42,
+        "sample_amount_1e8": 1395.78
+      },
+      "BJ": {
+        "estimated": true,
+        "sample_count": 46,
+        "sample_change_covered_count": 40,
+        "sample_unavailable_change_count": 6,
+        "sample_up_count": 15,
+        "sample_down_count": 25,
+        "sample_flat_count": 0,
+        "up_ratio_percent": 37.5,
+        "down_ratio_percent": 62.5,
+        "breadth_score_percent": -25.0,
+        "mean_change_percent": 0.4172,
+        "median_change_percent": -0.405,
+        "sample_amount_1e8": 15.12
+      }
+    },
+    "limit_statistics": {
+      "method": "not_estimated_from_stratified_sample",
+      "available": false,
+      "estimated": false,
+      "note": "Limit-up/down and broken-board counts are omitted in sampled mode because rare-event extrapolation would be unstable."
+    }
+  },
+  "error": null,
+  "upstream_source": "Eastmoney clist complete stratified sample"
 }
