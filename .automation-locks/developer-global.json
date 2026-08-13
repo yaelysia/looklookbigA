@@ -1,14 +1,14 @@
 {
   "kind": "looklookbigA-auto-worker-lease",
   "schema_version": 2,
-  "state": "IDLE",
-  "lease_id": null,
-  "work_item": "issue-48/final-acceptance-ready",
-  "acquired_at": "2026-08-13T02:11:00+00:00",
-  "expires_at": "2026-08-13T03:01:00+00:00",
-  "released_at": "2026-08-13T02:16:20+00:00",
+  "state": "ACTIVE",
+  "lease_id": "lease-20260813T031000Z-48-ready-4c9d7a12",
+  "work_item": "issue-48/pr-67-ready-transition",
+  "acquired_at": "2026-08-13T03:10:00+00:00",
+  "expires_at": "2026-08-13T04:00:00+00:00",
+  "released_at": null,
   "last_lease_id": "lease-20260813T021100Z-48-finalize-6f8b3c21",
   "last_checkpoint": "ISSUE_48_FINAL_CLEANUP_SUBMITTED",
   "last_head_sha": "a4cacc1d564a5f875374db0be71bf73efd0bb938",
-  "note": "Lease schema v2 active. Issue #48 final acceptance/diff reconciliation completed and work-lock removed. Exact-head cleanup CI run 31660255334 triggered; next action is inspect that run and mark PR #67 Ready if green."
+  "note": "Acquired for exact-head PR #67 final CI verification and Ready transition. lease_id is a non-credential fencing identifier."
 }
