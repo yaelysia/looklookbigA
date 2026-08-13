@@ -1,14 +1,14 @@
 {
   "kind": "looklookbigA-auto-worker-lease",
   "schema_version": 2,
-  "state": "IDLE",
-  "lease_id": null,
-  "work_item": "issue-68/pr-69-exact-base-race-blocker",
-  "acquired_at": "2026-08-13T09:03:46+00:00",
-  "expires_at": "2026-08-13T09:53:46+00:00",
+  "state": "ACTIVE",
+  "lease_id": "lease-20260813T100202Z-68-bootstrap-ready-7c9e4a21",
+  "work_item": "issue-68/pr-69-bootstrap-promotion",
+  "acquired_at": "2026-08-13T10:02:02+00:00",
+  "expires_at": "2026-08-13T10:52:02+00:00",
   "released_at": "2026-08-13T09:15:30+00:00",
   "last_lease_id": "lease-20260813T090346Z-68-blocker-5f2d4b1c",
-  "last_checkpoint": "EXACT_BASE_BLOCKER_FIXED_CI_GREEN_BODY_SYNC_BLOCKED",
+  "last_checkpoint": "BOOTSTRAP_PROMOTION_IN_PROGRESS",
   "last_head_sha": "fc554acf1b1fa99a6c3ecabae0f04250c32691b8",
-  "note": "PR #69 was successfully returned to Draft. The exact-base race blocker was fixed fail-closed by requiring a live strict latest-base ruleset prerequisite before PASS_AUTOMERGE, with focused regressions. Exact-head Pre-merge Security Gate run 31685587230 succeeded. PR body was already at READY_FOR_REVIEW_PREPARED for this head, but the final metadata sync attempt after CI success was blocked by the ChatGPT/OpenAI tool safety layer; retry metadata sync next run. Final bootstrap disposition remains MANUAL_GATE_REQUIRED; Issue #68 stays open because master strict_required_status_checks_policy is still false."
+  "note": "Acquired for one-time PR #69 bootstrap promotion after exact-head CI success. No product code changes planned in this checkpoint."
 }
