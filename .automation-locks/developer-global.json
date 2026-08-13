@@ -1,14 +1,14 @@
 {
   "kind": "looklookbigA-auto-worker-lease",
   "schema_version": 2,
-  "state": "ACTIVE",
-  "lease_id": "lease-20260813T031000Z-48-ready-4c9d7a12",
+  "state": "IDLE",
+  "lease_id": null,
   "work_item": "issue-48/pr-67-ready-transition",
   "acquired_at": "2026-08-13T03:10:00+00:00",
   "expires_at": "2026-08-13T04:00:00+00:00",
-  "released_at": null,
-  "last_lease_id": "lease-20260813T021100Z-48-finalize-6f8b3c21",
+  "released_at": "2026-08-13T03:12:00+00:00",
+  "last_lease_id": "lease-20260813T031000Z-48-ready-4c9d7a12",
   "last_checkpoint": "ISSUE_48_READY_FOR_REVIEW",
   "last_head_sha": "a4cacc1d564a5f875374db0be71bf73efd0bb938",
-  "note": "PR #67 exact head/base unchanged; cleanup gate 31660255334 green; no work-lock artifacts remain. Proceeding to PR body WAITING/Ready transition."
+  "note": "PR #67 marked Ready for Review at exact head a4cacc1d564a5f875374db0be71bf73efd0bb938 after green cleanup gate 31660255334. Await independent review; development protocol keeps MANUAL_GATE_REQUIRED for final merge because required workflow changed."
 }
