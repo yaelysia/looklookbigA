@@ -37,7 +37,15 @@ HIGH_RISK_EXACT = {
     ".dockerignore",
 }
 HIGH_RISK_NAME_RE = re.compile(
-    r"(^|/)(?:[^/]*(?:security|auth|credential|secret|permission)[^/]*)($|/)",
+    r"(^|/)(?:[^/]*(?:security|auth|credential|secret|permission|ruleset|branch[_-]?protection|release|stable[_-]?v?1|deploy|dependabot|docker|requirements?)[^/]*)($|/)",
+    re.IGNORECASE,
+)
+DEPENDENCY_BASENAME_RE = re.compile(
+    r"^(?:pyproject\.toml|uv\.lock|poetry\.lock|Pipfile(?:\.lock)?|package(?:-lock)?\.json|pnpm-lock\.yaml|yarn\.lock|requirements(?:-[A-Za-z0-9_.-]+)?\.txt)$",
+    re.IGNORECASE,
+)
+DOCKER_BASENAME_RE = re.compile(
+    r"^(?:Dockerfile(?:\.[A-Za-z0-9_.-]+)?|docker-compose(?:\.[A-Za-z0-9_.-]+)?\.ya?ml|compose(?:\.[A-Za-z0-9_.-]+)?\.ya?ml|\.dockerignore)$",
     re.IGNORECASE,
 )
 ISSUE_REF_RE = re.compile(r"(?mi)^\s*(?:refs?|closes?|fixes?)\s+#(\d+)\s*$")
@@ -98,7 +106,8 @@ def high_risk_paths(changed_files, base_ref="master"):
         reasons.append(f"NON_MASTER_BASE:{base_ref}")
     for raw_path in changed_files or []:
         path = str(raw_path)
-        if path in HIGH_RISK_EXACT:
+        basename = path.rsplit("/", 1)[-1]
+        if path in HIGH_RISK_EXACT or DEPENDENCY_BASENAME_RE.fullmatch(basename) or DOCKER_BASENAME_RE.fullmatch(basename):
             reasons.append(path)
             continue
         if any(path.startswith(prefix) for prefix in HIGH_RISK_PREFIXES):

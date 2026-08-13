@@ -178,6 +178,13 @@ def test_auto_merge_fail_closes_high_risk_paths_and_non_master():
         "requirements-event-facts.txt",
         "Dockerfile",
         "scripts/pr_lifecycle_policy.py",
+        "docs/STABLE_V1.md",
+        "scripts/release_gate.py",
+        "infra/deploy-prod.yml",
+        "requirements-dev.txt",
+        "docker-compose.yml",
+        "infra/ruleset_policy.json",
+        "scripts/branch_protection.py",
     ):
         decision = policy.auto_merge_decision(
             pr=_pr(draft=False),
