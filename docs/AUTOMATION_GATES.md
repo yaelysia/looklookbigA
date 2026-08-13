@@ -28,7 +28,7 @@ Scheduled Reviewer
 GitHub PR Review Merge Gate
   -> stale verdict / head / base rejection
   -> CHANGES_REQUIRED: Ready -> Draft
-  -> PASS_AUTOMERGE: exact current gate + low-risk path policy + normal exact-head merge
+  -> PASS_AUTOMERGE: atomic latest-base prerequisite + exact current gate + low-risk path policy + normal exact-head merge
   -> optional linked-Issue close only when ISSUE_CLOSE_ON_MERGE=true
   -> dispatch Native Merge Postcheck
 ```
@@ -88,7 +88,13 @@ Before a native merge, the gate re-fetches:
 - structured verdict author/head/base;
 - an exact successful Pre-merge Security Gate whose merge-ref parents are the current base and head.
 
-The REST merge call includes `sha=<current head>` and uses the normal repository merge method. GitHub does not expose an expected-base SHA argument on this endpoint, so the gate serializes native merge attempts repository-wide, re-reads head/base immediately before the merge call, and verifies the returned merge commit parents are exactly `[validated base, validated head]` before closing the linked Issue. A post-merge parent mismatch fails loudly and leaves the Issue open for reconciliation. No force update, admin bypass or ruleset bypass is used.
+The REST merge endpoint can atomically bind `sha=<current head>`, but it has no expected-base SHA parameter. A preflight base re-read alone is therefore insufficient: another merge can advance `master` after that read and before the merge request.
+
+For every `PASS_AUTOMERGE` event, `scripts/pr_lifecycle_atomic_base.py` runs before the merge gate and fails closed unless the exact target base ref is covered by an **active ruleset that explicitly names that ref**, requires the `pre-merge-security-gate` status check, and has `strict_required_status_checks_policy=true`. When GitHub exposes bypass information, a bypassable ruleset is not accepted as this prerequisite. Under that strict policy, a base move makes the PR out-of-date and GitHub rejects the merge rather than allowing the newer, unvalidated base to land.
+
+The existing immediate head/base re-read remains a defense-in-depth check. The returned merge commit parent verification remains an audit/reconciliation check only; it is not treated as the base-CAS guarantee because it runs after the merge is irreversible. No force update, admin bypass or ruleset bypass is used.
+
+At the time this contract was added, repository ruleset `Protect master and v1` had `strict_required_status_checks_policy=false`. Therefore native `PASS_AUTOMERGE` intentionally remains disabled until that repository setting is manually changed to strict (or an equivalent atomic latest-base mechanism is introduced). `CHANGES_REQUIRED` demotion and other non-merge verdict handling continue to work without that prerequisite.
 
 ## GITHUB_TOKEN event suppression and postcheck
 
