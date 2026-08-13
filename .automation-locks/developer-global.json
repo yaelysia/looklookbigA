@@ -1,14 +1,14 @@
 {
   "kind": "looklookbigA-auto-worker-lease",
   "schema_version": 2,
-  "state": "IDLE",
-  "lease_id": null,
-  "work_item": "issue-68/pr-69-bootstrap-promotion",
-  "acquired_at": "2026-08-13T10:02:02+00:00",
-  "expires_at": "2026-08-13T10:52:02+00:00",
-  "released_at": "2026-08-13T10:04:21+00:00",
+  "state": "ACTIVE",
+  "lease_id": "lease-20260813T110419Z-68-review-fix-9b7e2c41",
+  "work_item": "issue-68/pr-69-review-fix",
+  "acquired_at": "2026-08-13T11:04:19+00:00",
+  "expires_at": "2026-08-13T11:54:19+00:00",
+  "released_at": null,
   "last_lease_id": "lease-20260813T100202Z-68-bootstrap-ready-7c9e4a21",
-  "last_checkpoint": "BOOTSTRAP_READY_AWAITING_REVIEW",
+  "last_checkpoint": "BOOTSTRAP_REVIEW_CHANGES_REQUIRED",
   "last_head_sha": "fc554acf1b1fa99a6c3ecabae0f04250c32691b8",
-  "note": "PR #69 one-time bootstrap promotion completed: exact head/base stayed stable, exact-head Pre-merge Security Gate 31685587230 is success, no work-lock artifact is in the PR diff, and PR #69 is now Ready/non-draft. Await a fresh independent Scheduled Reviewer verdict bound to this exact head/base before any bootstrap merge preflight."
+  "note": "Acquired for PR #69 current-head reviewer blockers POST_BOOTSTRAP_AUTOMERGE_DISABLED and HIGH_RISK_FORCED_MANUAL_POLICY."
 }
