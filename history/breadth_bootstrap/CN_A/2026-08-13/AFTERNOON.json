@@ -1,0 +1,27 @@
+{
+  "schema_version": 1,
+  "market": "CN_A",
+  "session_date": "2026-08-13",
+  "session_segment": "AFTERNOON",
+  "required": true,
+  "state": "PENDING",
+  "reason": null,
+  "bootstrap_key": "CN_A:2026-08-13:AFTERNOON",
+  "bootstrap_state": "FAILED",
+  "owner": null,
+  "attempts": 1,
+  "claimed_at": "2026-08-13T13:15:45+08:00",
+  "lease_expires_at": null,
+  "bootstrap_at": null,
+  "next_retry_at": "2026-08-13T13:16:45+08:00",
+  "bootstrap_revision": {
+    "run_id": 31628029722,
+    "run_attempt": 11,
+    "head_sha": "ce9a968f0a95e1a3ba62be6cee5965d993aca79b",
+    "process_id": 2268,
+    "thread_id": 140627748579008
+  },
+  "breadth": null,
+  "error": "RuntimeError: market breadth full-universe and stratified fallbacks both failed: full=RemoteDisconnected: Remote end closed connection without response; sample=RuntimeError: unable to discover market universe size: page 1: HTTPError: HTTP Error 502: Bad Gateway; page 2: HTTPError: HTTP Error 502: Bad Gateway; page 3: HTTPError: HTTP Error 502: Bad Gateway",
+  "failed_at": "2026-08-13T13:15:45+08:00"
+}
