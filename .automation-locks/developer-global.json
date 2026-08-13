@@ -3,12 +3,12 @@
   "schema_version": 2,
   "state": "IDLE",
   "lease_id": null,
-  "work_item": "issue-68/pr-69-review-fix",
-  "acquired_at": "2026-08-13T11:04:19+00:00",
-  "expires_at": "2026-08-13T11:54:19+00:00",
-  "released_at": "2026-08-13T11:22:53+00:00",
+  "work_item": "issue-68/pr-69-bootstrap-sync",
+  "acquired_at": null,
+  "expires_at": null,
+  "released_at": null,
   "last_lease_id": "lease-20260813T110419Z-68-review-fix-9b7e2c41",
-  "last_checkpoint": "REVIEW_BLOCKERS_FIXED_CI_IN_PROGRESS_BODY_SYNC_BLOCKED",
+  "last_checkpoint": "BOOTSTRAP_READY_AWAITING_REVIEW",
   "last_head_sha": "d3402f7c94558445e89ff9957d55f44f34fcbc0b",
-  "note": "PR #69 current-head reviewer blockers were implemented in one commit. New Pre-merge Security Gate run 31695179488 is in progress. PR body checkpoint sync was attempted twice but blocked before GitHub by the tool safety layer; equivalent state is persisted here for recovery. PR remains Draft until exact-head CI is green."
+  "note": "LEASE_DEGRADED_CAS_ONLY: the narrow reacquire for bootstrap metadata sync was blocked before GitHub by the tool safety layer while control state was confirmed IDLE. Exact head/base were re-read around each PR metadata write. Pre-merge Security Gate 31695179488 is success, PR #69 is Ready/non-draft, and the next required input is a fresh reviewer verdict for the current head/base."
 }
