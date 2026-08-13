@@ -1,3 +1,4 @@
+import os
 import re
 import shlex
 import subprocess
@@ -20,7 +21,27 @@ def safety_commands(text):
     return commands
 
 
+def verify_merge_identity():
+    expected_base = os.environ.get("EXPECTED_BASE_SHA", "").strip()
+    expected_head = os.environ.get("EXPECTED_HEAD_SHA", "").strip()
+    if not expected_base and not expected_head:
+        return
+    assert len(expected_base) == 40 and len(expected_head) == 40
+    observed = subprocess.run(
+        ["git", "show", "-s", "--format=%P", "HEAD"],
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip().split()
+    assert observed == [expected_base, expected_head], (observed, expected_base, expected_head)
+    print(
+        f"NATIVE_MERGE_IDENTITY base={expected_base} head={expected_head}",
+        flush=True,
+    )
+
+
 def main():
+    verify_merge_identity()
     text = WORKFLOW.read_text(encoding="utf-8")
     commands = safety_commands(text)
     assert commands, "no pre-merge safety commands discovered"

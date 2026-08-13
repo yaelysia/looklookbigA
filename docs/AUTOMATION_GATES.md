@@ -70,8 +70,9 @@ Native auto-merge is intentionally unavailable for non-`master` bases and for hi
 - `.github/workflows/**`, `.github/actions/**`, CODEOWNERS and Dependabot control files;
 - lifecycle-gate implementation files themselves;
 - security/auth/credential/secret/permission-related paths;
-- dependency manifests/lockfiles and event-fact requirements;
-- Docker/base-image control files;
+- release/stable-v1, ruleset/branch-protection and deployment control paths;
+- dependency manifests/lockfiles/requirements and package-manager control files;
+- Docker/base-image and compose control files;
 - `.automation-locks/**`.
 
 These changes require `MANUAL_GATE_REQUIRED`. The gate independently enforces this even if a stale or incorrect reviewer were to emit `PASS_AUTOMERGE`.
@@ -87,13 +88,13 @@ Before a native merge, the gate re-fetches:
 - structured verdict author/head/base;
 - an exact successful Pre-merge Security Gate whose merge-ref parents are the current base and head.
 
-The REST merge call includes `sha=<current head>` and uses the normal repository merge method. No force update, admin bypass or ruleset bypass is used.
+The REST merge call includes `sha=<current head>` and uses the normal repository merge method. GitHub does not expose an expected-base SHA argument on this endpoint, so the gate serializes native merge attempts repository-wide, re-reads head/base immediately before the merge call, and verifies the returned merge commit parents are exactly `[validated base, validated head]` before closing the linked Issue. A post-merge parent mismatch fails loudly and leaves the Issue open for reconciliation. No force update, admin bypass or ruleset bypass is used.
 
 ## GITHUB_TOKEN event suppression and postcheck
 
 A merge performed with Actions `GITHUB_TOKEN` may not create ordinary downstream workflow events. Native auto-merge therefore explicitly creates a `repository_dispatch` event after a successful merge.
 
-`Native Merge Postcheck` checks out the exact returned merge SHA, replays the pre-merge safety command catalog through `scripts/pr_native_postcheck.py`, and runs an exact-SHA `INTRADAY_FAST` reusable smoke. This keeps native merges from silently losing the validation that push-triggered repository workflows historically supplied.
+`Native Merge Postcheck` checks out the exact returned merge SHA, first verifies that the merge parents still match the validated base/head pair carried in the dispatch payload, then replays the pre-merge safety command catalog through `scripts/pr_native_postcheck.py` and runs an exact-SHA `INTRADAY_FAST` reusable smoke. This keeps native merges from silently losing the validation that push-triggered repository workflows historically supplied.
 
 ## Linked Issue closure
 

@@ -236,7 +236,7 @@ def _close_linked_issue_if_requested(pr):
         print(f"PR_LIFECYCLE issue_closed={number}", flush=True)
 
 
-def _dispatch_postcheck(merged_sha, pr_number):
+def _dispatch_postcheck(merged_sha, pr_number, validated_base_sha, head_sha):
     _request(
         "POST",
         _repo_path("/dispatches"),
@@ -245,6 +245,8 @@ def _dispatch_postcheck(merged_sha, pr_number):
             "client_payload": {
                 "merged_sha": merged_sha,
                 "pr_number": int(pr_number),
+                "validated_base_sha": validated_base_sha,
+                "head_sha": head_sha,
             },
         },
     )
@@ -361,6 +363,23 @@ def review_gate():
         return 0
 
     head_sha = (pr.get("head") or {}).get("sha")
+    validated_base_sha = current_base_sha
+
+    # GitHub's PR merge API supports an expected head SHA but not an expected
+    # base SHA. Narrow that residual race by re-reading both identities
+    # immediately before merge, then verify the returned merge commit parents.
+    preflight_pr = _get_pr(pr.get("number"))
+    preflight_base_sha = _current_base_sha(preflight_pr)
+    if (preflight_pr.get("head") or {}).get("sha") != head_sha:
+        print("PR_REVIEW_GATE premerge_head_moved", flush=True)
+        return 0
+    if preflight_base_sha != validated_base_sha:
+        print("PR_REVIEW_GATE premerge_base_moved", flush=True)
+        return 0
+    if preflight_pr.get("state") != "open" or preflight_pr.get("draft"):
+        print("PR_REVIEW_GATE premerge_state_changed", flush=True)
+        return 0
+
     result = _request(
         "PUT",
         _repo_path(f"/pulls/{pr.get('number')}/merge"),
@@ -370,9 +389,21 @@ def review_gate():
         raise GateError(f"Merge rejected: {result}")
     merged_sha = result["sha"]
     print(f"PR_REVIEW_GATE merged pr={pr.get('number')} sha={merged_sha}", flush=True)
-    _close_linked_issue_if_requested(pr)
-    _dispatch_postcheck(merged_sha, pr.get("number"))
+
+    merged_commit = _request("GET", _repo_path(f"/git/commits/{merged_sha}")) or {}
+    merged_parents = [parent.get("sha") for parent in merged_commit.get("parents") or []]
+    parent_decision = policy.merged_parent_decision(
+        validated_base_sha, head_sha, merged_parents
+    )
+    _dispatch_postcheck(
+        merged_sha, pr.get("number"), validated_base_sha, head_sha
+    )
     print(f"PR_REVIEW_GATE postcheck_dispatched sha={merged_sha}", flush=True)
+    if not parent_decision.allowed:
+        raise GateError(
+            f"{parent_decision.reason}: expected={[validated_base_sha, head_sha]} observed={merged_parents}"
+        )
+    _close_linked_issue_if_requested(pr)
     return 0
 
 

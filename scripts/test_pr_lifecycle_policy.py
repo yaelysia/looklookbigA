@@ -261,6 +261,8 @@ def test_non_pass_verdict_never_merges_and_issue_close_is_explicit():
     assert decision.reason == "VERDICT_MANUAL_GATE_REQUIRED"
     assert policy.should_close_issue_on_merge(_pr()) is True
     assert policy.should_close_issue_on_merge(_pr(body=_body(close="false"))) is False
+    assert policy.merged_parent_decision(BASE, HEAD, [BASE, HEAD]).allowed is True
+    assert policy.merged_parent_decision(BASE, HEAD, ["9" * 40, HEAD]).reason == "POST_MERGE_BASE_OR_HEAD_RACE"
 
 
 def test_native_workflow_contract_is_default_branch_fail_closed():
@@ -288,6 +290,7 @@ def test_native_workflow_contract_is_default_branch_fail_closed():
     assert "ref: ${{ github.event.repository.default_branch }}" in review
     assert "persist-credentials: false" in review
     assert "python3 scripts/github_pr_lifecycle_gate.py review" in review
+    assert "group: pr-review-merge-${{ github.repository_id }}" in review
 
     assert "repository_dispatch:" in postcheck
     assert "looklookbiga-native-merge-postcheck" in postcheck
@@ -295,6 +298,8 @@ def test_native_workflow_contract_is_default_branch_fail_closed():
     assert "python3 scripts/pr_native_postcheck.py" in postcheck
     assert "source_ref: ${{ github.event.client_payload.merged_sha }}" in postcheck
     assert "execution_mode: INTRADAY_FAST" in postcheck
+    assert "EXPECTED_BASE_SHA: ${{ github.event.client_payload.validated_base_sha }}" in postcheck
+    assert "EXPECTED_HEAD_SHA: ${{ github.event.client_payload.head_sha }}" in postcheck
 
     assert "Run PR lifecycle policy tests" in premerge
     assert "python3 scripts/test_pr_lifecycle_policy.py" in premerge

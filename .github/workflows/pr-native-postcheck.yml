@@ -24,7 +24,10 @@ jobs:
         with:
           ref: ${{ github.event.client_payload.merged_sha }}
           persist-credentials: false
-      - name: Replay exact pre-merge safety catalog
+      - name: Verify merge identity and replay exact pre-merge safety catalog
+        env:
+          EXPECTED_BASE_SHA: ${{ github.event.client_payload.validated_base_sha }}
+          EXPECTED_HEAD_SHA: ${{ github.event.client_payload.head_sha }}
         run: python3 scripts/pr_native_postcheck.py
 
   reusable-selftest:

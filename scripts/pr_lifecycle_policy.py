@@ -232,6 +232,13 @@ def auto_merge_decision(
     return Decision(True, "MERGE")
 
 
+def merged_parent_decision(validated_base_sha, head_sha, merged_parents):
+    parents = list(merged_parents or [])
+    if parents != [validated_base_sha, head_sha]:
+        return Decision(False, "POST_MERGE_BASE_OR_HEAD_RACE")
+    return Decision(True, "MERGED_PARENTS_EXACT")
+
+
 def should_close_issue_on_merge(pr):
     state = parse_auto_state(pr.get("body"))
     return str(state.get("ISSUE_CLOSE_ON_MERGE") or "").strip().lower() == "true"
