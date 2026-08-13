@@ -7,10 +7,10 @@
   "source": "Tencent 1-minute cumulative series",
   "calendar_expectation": {
     "calendar_version": "sse-cn-a-2024-2026@2025-12-22",
-    "evaluated_at_cst": "2026-08-13T14:59:50+08:00",
-    "status": "IN_PROGRESS",
+    "evaluated_at_cst": "2026-08-13T15:06:34+08:00",
+    "status": "COMPLETE_SESSION",
     "verification_status": "VERIFIED",
-    "forming_minute": "1459",
+    "forming_minute": null,
     "expected_times": [
       "0930",
       "0931",
@@ -251,7 +251,9 @@
       "1455",
       "1456",
       "1457",
-      "1458"
+      "1458",
+      "1459",
+      "1500"
     ]
   },
   "points": [
@@ -2174,6 +2176,22 @@
       "cum_amount": 1866832393.53,
       "delta_volume": 145.0,
       "delta_amount": 414329.99000000954
+    },
+    {
+      "time": "1459",
+      "price": 28.58,
+      "cum_volume": 644780.0,
+      "cum_amount": 1866832393.53,
+      "delta_volume": 0.0,
+      "delta_amount": 0.0
+    },
+    {
+      "time": "1500",
+      "price": 28.57,
+      "cum_volume": 651449.0,
+      "cum_amount": 1885885732.87,
+      "delta_volume": 6669.0,
+      "delta_amount": 19053339.339999914
     }
   ],
   "observations": [
@@ -2320,6 +2338,15 @@
       "head_sha": "8a7b9fd700598e3b7cf382da0d9c48653d9d5746",
       "source": "GITHUB_ACTIONS",
       "captured_point_count": 240
+    },
+    {
+      "runner_time_cst": "2026-08-13 15:06:34.357",
+      "runner_time_utc": "2026-08-13T07:06:34.357923+00:00",
+      "run_id": 31670537271,
+      "run_attempt": 7,
+      "head_sha": "8a7b9fd700598e3b7cf382da0d9c48653d9d5746",
+      "source": "GITHUB_ACTIONS",
+      "captured_point_count": 242
     }
   ],
   "source_anomalies": {
@@ -2356,7 +2383,9 @@
       "1442",
       "1443",
       "1459",
-      "1500"
+      "1500",
+      "1506",
+      "1507"
     ],
     "invalid_row_count": 0
   },
@@ -2400,17 +2429,22 @@
       "time": "1130",
       "current_digest": "55167c406e8def78e10c887cc4cfc9cc0d256394a77fa4ad1538bdf2315ba8dc",
       "incoming_digest": "e99cf6bec67ac69a325c3d0677279e44a8ec7438538e601fc182a465cb71ea4f"
+    },
+    {
+      "time": "1130",
+      "current_digest": "55167c406e8def78e10c887cc4cfc9cc0d256394a77fa4ad1538bdf2315ba8dc",
+      "incoming_digest": "e99cf6bec67ac69a325c3d0677279e44a8ec7438538e601fc182a465cb71ea4f"
     }
   ],
-  "updated_at_cst": "2026-08-13 14:59:50.492",
+  "updated_at_cst": "2026-08-13 15:06:34.357",
   "coverage": {
     "status": "COMPLETE",
-    "observed_count": 240,
-    "expected_count": 240,
+    "observed_count": 242,
+    "expected_count": 242,
     "missing_count": 0,
     "missing_times": [],
     "first_time": "0930",
-    "last_time": "1458"
+    "last_time": "1500"
   },
   "continuity": {
     "status": "PASS",
@@ -2420,7 +2454,6 @@
   "finality": {
     "status": "PROVISIONAL",
     "reason_codes": [
-      "SESSION_NOT_COMPLETE",
       "CONFLICTING_MINUTE_REVISIONS"
     ]
   },
@@ -2428,9 +2461,8 @@
     "contract_version": "v1",
     "eligible": false,
     "reason_codes": [
-      "SESSION_NOT_COMPLETE",
       "CONFLICTING_MINUTE_REVISIONS"
     ]
   },
-  "status": "IN_PROGRESS"
+  "status": "PARTIAL"
 }

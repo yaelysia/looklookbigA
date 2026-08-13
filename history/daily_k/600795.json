@@ -3,23 +3,13 @@
   "code": "600795",
   "adjustment": "qfq",
   "source": "Tencent qfq",
-  "validation_key": "2026-08-13:preopen",
+  "validation_key": "2026-08-13:closed",
   "validation_mode": "INCREMENTAL_VALIDATION",
-  "updated_at_cst": "2026-08-13 02:31:17",
+  "updated_at_cst": "2026-08-13 15:06:37",
   "bar_count": 120,
-  "latest_bar_date": "2026-08-12",
+  "latest_bar_date": "2026-08-13",
   "errors": [],
   "bars": [
-    {
-      "date": "2026-02-11",
-      "open": 4.519,
-      "close": 4.539,
-      "high": 4.549,
-      "low": 4.499,
-      "volume": 1417456.0,
-      "amount": null,
-      "source": "Tencent qfq"
-    },
     {
       "date": "2026-02-12",
       "open": 4.559,
@@ -1207,6 +1197,16 @@
       "high": 5.08,
       "low": 4.99,
       "volume": 869098.0,
+      "amount": null,
+      "source": "Tencent qfq"
+    },
+    {
+      "date": "2026-08-13",
+      "open": 5.04,
+      "close": 5.07,
+      "high": 5.08,
+      "low": 5.01,
+      "volume": 997644.0,
       "amount": null,
       "source": "Tencent qfq"
     }
