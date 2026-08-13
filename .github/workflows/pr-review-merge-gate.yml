@@ -1,0 +1,37 @@
+name: PR Review Merge Gate
+
+on:
+  issue_comment:
+    types:
+      - created
+      - edited
+
+permissions:
+  contents: write
+  actions: read
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: pr-review-merge-${{ github.repository_id }}
+  cancel-in-progress: false
+
+jobs:
+  apply-verdict:
+    if: ${{ github.event.issue.pull_request != null }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    steps:
+      - name: Checkout trusted default-branch gate code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          persist-credentials: false
+      - name: Verify an atomic merge transport is available
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 scripts/pr_lifecycle_atomic_base.py
+      - name: Apply exact-head structured review verdict
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: python3 scripts/pr_review_merge_gate.py

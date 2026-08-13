@@ -1,0 +1,45 @@
+name: Native Merge Postcheck
+
+on:
+  repository_dispatch:
+    types:
+      - looklookbiga-native-merge-postcheck
+
+permissions:
+  contents: read
+
+concurrency:
+  group: native-merge-postcheck-${{ github.repository_id }}-${{ github.event.client_payload.merged_sha || github.run_id }}
+  cancel-in-progress: false
+
+jobs:
+  safety-tests:
+    name: Native merge safety replay
+    if: ${{ github.event.client_payload.merged_sha != '' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Checkout exact merged revision
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.client_payload.merged_sha }}
+          persist-credentials: false
+      - name: Verify merge identity and replay exact pre-merge safety catalog
+        env:
+          EXPECTED_BASE_SHA: ${{ github.event.client_payload.validated_base_sha }}
+          EXPECTED_HEAD_SHA: ${{ github.event.client_payload.head_sha }}
+        run: python3 scripts/pr_native_postcheck.py
+
+  reusable-selftest:
+    name: Native merge reusable smoke
+    if: ${{ github.event.client_payload.merged_sha != '' }}
+    uses: ./.github/workflows/reusable-a-share-quotes.yml
+    with:
+      source_ref: ${{ github.event.client_payload.merged_sha }}
+      execution_mode: INTRADAY_FAST
+      enable_history_cache: true
+      cache_namespace: native-merge-postcheck
+      snapshot_artifact_name: native-merge-postcheck-snapshot
+      retention_days: 1
+      config_json: >-
+        {"detail_codes":["002558"],"light_codes":["002555","002517"],"groups":{"native_merge":{"label":"native merge postcheck","target_code":"002558","member_codes":["002555","002517"]}},"max_total_codes":10,"event_lookback_days":7}
