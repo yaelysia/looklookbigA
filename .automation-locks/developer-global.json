@@ -8,7 +8,7 @@
   "expires_at": "2026-08-13T04:00:00+00:00",
   "released_at": null,
   "last_lease_id": "lease-20260813T021100Z-48-finalize-6f8b3c21",
-  "last_checkpoint": "ISSUE_48_FINAL_CLEANUP_SUBMITTED",
+  "last_checkpoint": "ISSUE_48_READY_FOR_REVIEW",
   "last_head_sha": "a4cacc1d564a5f875374db0be71bf73efd0bb938",
-  "note": "Acquired for exact-head PR #67 final CI verification and Ready transition. lease_id is a non-credential fencing identifier."
+  "note": "Exact-head cleanup gate 31660255334 is green and PR #67 has no .automation-locks/**. Preparing Ready for Review transition at unchanged head/base."
 }
