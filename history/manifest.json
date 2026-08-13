@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
-  "latest_snapshot": "snapshots/2026-08-13/023115_run31628029722_a1.json",
-  "latest_runner_time_cst": "2026-08-13 02:31:15.606",
+  "latest_snapshot": "snapshots/2026-08-13/090910_run31628029722_a2.json",
+  "latest_runner_time_cst": "2026-08-13 09:09:10.328",
   "daily_k_codes": [
     "002558",
     "600795"
@@ -9,19 +9,19 @@
   "minute_sessions": [
     "2026-08-12"
   ],
-  "updated_at_cst": "2026-08-13 02:31:15.606",
+  "updated_at_cst": "2026-08-13 09:09:10.328",
   "latest_run_id": 31628029722,
-  "latest_run_attempt": 1,
+  "latest_run_attempt": 2,
   "latest_head_sha": "ce9a968f0a95e1a3ba62be6cee5965d993aca79b",
   "latest_observation": {
-    "runner_time_cst": "2026-08-13 02:31:15.606",
-    "runner_time_utc": "2026-08-12T18:31:15.606374+00:00",
+    "runner_time_cst": "2026-08-13 09:09:10.328",
+    "runner_time_utc": "2026-08-13T01:09:10.328228+00:00",
     "run_id": 31628029722,
-    "run_attempt": 1,
+    "run_attempt": 2,
     "head_sha": "ce9a968f0a95e1a3ba62be6cee5965d993aca79b",
     "source": "GITHUB_ACTIONS"
   },
   "last_merged_run_id": 31628029722,
-  "last_merged_run_attempt": 1,
-  "persisted_at_utc": "2026-08-12T18:32:20+00:00"
+  "last_merged_run_attempt": 2,
+  "persisted_at_utc": "2026-08-13T01:09:57+00:00"
 }
