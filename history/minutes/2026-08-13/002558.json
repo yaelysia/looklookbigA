@@ -7,16 +7,27 @@
   "source": "Tencent 1-minute cumulative series",
   "calendar_expectation": {
     "calendar_version": "sse-cn-a-2024-2026@2025-12-22",
-    "evaluated_at_cst": "2026-08-13T09:35:31+08:00",
+    "evaluated_at_cst": "2026-08-13T09:47:06+08:00",
     "status": "IN_PROGRESS",
     "verification_status": "VERIFIED",
-    "forming_minute": "0935",
+    "forming_minute": "0946",
     "expected_times": [
       "0930",
       "0931",
       "0932",
       "0933",
-      "0934"
+      "0934",
+      "0935",
+      "0936",
+      "0937",
+      "0938",
+      "0939",
+      "0940",
+      "0941",
+      "0942",
+      "0943",
+      "0944",
+      "0945"
     ]
   },
   "points": [
@@ -59,6 +70,94 @@
       "cum_amount": 166724225.0,
       "delta_volume": 13316.0,
       "delta_amount": 38529196.0
+    },
+    {
+      "time": "0935",
+      "price": 29.17,
+      "cum_volume": 70581.0,
+      "cum_amount": 204674148.97,
+      "delta_volume": 13020.0,
+      "delta_amount": 37949923.97
+    },
+    {
+      "time": "0936",
+      "price": 29.3,
+      "cum_volume": 84967.0,
+      "cum_amount": 246779334.69,
+      "delta_volume": 14386.0,
+      "delta_amount": 42105185.72
+    },
+    {
+      "time": "0937",
+      "price": 29.44,
+      "cum_volume": 100749.0,
+      "cum_amount": 293138940.12,
+      "delta_volume": 15782.0,
+      "delta_amount": 46359605.43000001
+    },
+    {
+      "time": "0938",
+      "price": 29.38,
+      "cum_volume": 109065.0,
+      "cum_amount": 317570953.88,
+      "delta_volume": 8316.0,
+      "delta_amount": 24432013.75999999
+    },
+    {
+      "time": "0939",
+      "price": 29.28,
+      "cum_volume": 114656.0,
+      "cum_amount": 333962923.23,
+      "delta_volume": 5591.0,
+      "delta_amount": 16391969.350000024
+    },
+    {
+      "time": "0940",
+      "price": 29.45,
+      "cum_volume": 125858.0,
+      "cum_amount": 366888148.53,
+      "delta_volume": 11202.0,
+      "delta_amount": 32925225.299999952
+    },
+    {
+      "time": "0941",
+      "price": 29.32,
+      "cum_volume": 135268.0,
+      "cum_amount": 394581621.21,
+      "delta_volume": 9410.0,
+      "delta_amount": 27693472.680000007
+    },
+    {
+      "time": "0942",
+      "price": 29.25,
+      "cum_volume": 140070.0,
+      "cum_amount": 408657738.38,
+      "delta_volume": 4802.0,
+      "delta_amount": 14076117.170000017
+    },
+    {
+      "time": "0943",
+      "price": 29.15,
+      "cum_volume": 144448.0,
+      "cum_amount": 421446322.42,
+      "delta_volume": 4378.0,
+      "delta_amount": 12788584.040000021
+    },
+    {
+      "time": "0944",
+      "price": 29.2,
+      "cum_volume": 149190.0,
+      "cum_amount": 435269078.76,
+      "delta_volume": 4742.0,
+      "delta_amount": 13822756.339999974
+    },
+    {
+      "time": "0945",
+      "price": 29.19,
+      "cum_volume": 152743.0,
+      "cum_amount": 445648740.77,
+      "delta_volume": 3553.0,
+      "delta_amount": 10379662.00999999
     }
   ],
   "observations": [
@@ -79,6 +178,15 @@
       "head_sha": "ce9a968f0a95e1a3ba62be6cee5965d993aca79b",
       "source": "GITHUB_ACTIONS",
       "captured_point_count": 5
+    },
+    {
+      "runner_time_cst": "2026-08-13 09:47:06.157",
+      "runner_time_utc": "2026-08-13T01:47:06.157899+00:00",
+      "run_id": 31628029722,
+      "run_attempt": 5,
+      "head_sha": "ce9a968f0a95e1a3ba62be6cee5965d993aca79b",
+      "source": "GITHUB_ACTIONS",
+      "captured_point_count": 16
     }
   ],
   "source_anomalies": {
@@ -86,20 +194,23 @@
     "unexpected_times": [
       "0930",
       "0935",
-      "0936"
+      "0936",
+      "0946",
+      "0947",
+      "0948"
     ],
     "invalid_row_count": 0
   },
   "conflicts": [],
-  "updated_at_cst": "2026-08-13 09:35:31.716",
+  "updated_at_cst": "2026-08-13 09:47:06.157",
   "coverage": {
     "status": "COMPLETE",
-    "observed_count": 5,
-    "expected_count": 5,
+    "observed_count": 16,
+    "expected_count": 16,
     "missing_count": 0,
     "missing_times": [],
     "first_time": "0930",
-    "last_time": "0934"
+    "last_time": "0945"
   },
   "continuity": {
     "status": "PASS",
